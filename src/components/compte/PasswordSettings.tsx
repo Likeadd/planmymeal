@@ -96,7 +96,7 @@ export function PasswordSettings() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <h2 className="font-semibold font-display text-gray-900 text-lg flex items-center gap-2 mb-5">
         <ShieldCheck className="w-5 h-5 text-brand-500" /> Sécurité — Mot de passe
       </h2>
@@ -117,7 +117,7 @@ export function PasswordSettings() {
               type={showCurrent ? 'text' : 'password'}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
               autoComplete="current-password"
             />
             <button type="button" onClick={() => setShowCurrent((s) => !s)}
@@ -138,7 +138,7 @@ export function PasswordSettings() {
               type={showNew ? 'text' : 'password'}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
               autoComplete="new-password"
             />
             <button type="button" onClick={() => setShowNew((s) => !s)}
@@ -171,7 +171,7 @@ export function PasswordSettings() {
               type={showNew ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
               autoComplete="new-password"
             />
           </div>

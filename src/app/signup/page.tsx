@@ -161,7 +161,7 @@ export default function SignupPage() {
               <ul className="mt-8 space-y-3.5">
                 {BENEFITS.map(b => (
                   <li key={b} className="flex items-center gap-3 text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
                       <Check className="w-3.5 h-3.5 text-brand-600" />
                     </span>
                     <span className="text-sm">{b}</span>
@@ -172,7 +172,7 @@ export default function SignupPage() {
 
             {/* Carte formulaire */}
             <div className="w-full max-w-md mx-auto lg:ml-auto">
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
+              <div className="bg-white rounded-3xl border border-gray-200 shadow-xs p-8">
                 {error && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
                     {error}
@@ -198,7 +198,7 @@ export default function SignupPage() {
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ''))}
                         placeholder="123456"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-center text-lg tracking-[0.4em] text-gray-900 placeholder-gray-300 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-center text-lg tracking-[0.4em] text-gray-900 placeholder-gray-300 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                         autoFocus
                       />
                     </div>
@@ -257,7 +257,7 @@ export default function SignupPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Marie"
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                         autoComplete="given-name"
                       />
                     </div>
@@ -276,7 +276,7 @@ export default function SignupPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="vous@exemple.com"
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                         autoComplete="email"
                       />
                     </div>
@@ -295,7 +295,7 @@ export default function SignupPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="8 caractères, 1 lettre, 1 chiffre"
-                        className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                         autoComplete="new-password"
                       />
                       <button

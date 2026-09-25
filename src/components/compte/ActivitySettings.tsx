@@ -39,30 +39,30 @@ export function ActivitySettings() {
   const expiresAt = session?.expires_at != null ? new Date(session.expires_at * 1000).toISOString() : null;
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2 mb-5">
         <Activity className="w-5 h-5 text-brand-500" /> Activité récente
       </h2>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <CalendarClock className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <CalendarClock className="w-4 h-4 text-gray-500 shrink-0" />
           <span className="text-sm text-gray-500 w-40">Dernière connexion</span>
           <span className="text-sm text-gray-900">{fmt(lastSignIn)}</span>
         </div>
         <div className="flex items-center gap-3">
-          <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <Clock className="w-4 h-4 text-gray-500 shrink-0" />
           <span className="text-sm text-gray-500 w-40">Session expire</span>
           <span className="text-sm text-gray-900">{fmt(expiresAt)}</span>
         </div>
         <div className="flex items-center gap-3">
-          <MonitorSmartphone className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <MonitorSmartphone className="w-4 h-4 text-gray-500 shrink-0" />
           <span className="text-sm text-gray-500 w-40">Session actuelle</span>
           <span className="text-sm text-gray-900">
             {session ? 'Active — ce navigateur' : '—'}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <Activity className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <Activity className="w-4 h-4 text-gray-500 shrink-0" />
           <span className="text-sm text-gray-500 w-40">Compte créé</span>
           <span className="text-sm text-gray-900">{fmt(createdAt)}</span>
         </div>

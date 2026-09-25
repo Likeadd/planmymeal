@@ -164,7 +164,7 @@ function FaqAccordion({ items }: { items: FaqItem[] }) {
                 {item.q}
               </span>
               <span
-                className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                   isOpen ? 'bg-brand-500 text-white rotate-45' : 'bg-gray-100 text-gray-700'
                 }`}>
                 <Plus className="w-4 h-4" />
@@ -222,7 +222,7 @@ function FaqCta() {
         <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
             href="mailto:contact@getplanmymeal.com"
-            className="inline-flex items-center gap-2 px-7 py-3 bg-white text-brand-700 font-semibold text-sm rounded-full hover:bg-gray-50 transition-colors shadow-sm">
+            className="inline-flex items-center gap-2 px-7 py-3 bg-white text-brand-700 font-semibold text-sm rounded-full hover:bg-gray-50 transition-colors shadow-xs">
             <Mail className="w-4 h-4" /> Nous écrire
           </a>
           <Link href="/signup"

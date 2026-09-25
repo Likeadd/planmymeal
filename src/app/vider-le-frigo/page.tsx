@@ -106,7 +106,7 @@ export default function ViderLeFrigoPage() {
         </div>
 
         {/* Sélection en cours */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 text-sm">
               Mon frigo <span className="text-gray-500 font-normal">({selection.size}/15)</span>
@@ -137,7 +137,7 @@ export default function ViderLeFrigoPage() {
         </div>
 
         {/* Recherche + catalogue */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs mb-6">
           <div className="relative mb-4">
             <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -145,7 +145,7 @@ export default function ViderLeFrigoPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un ingrédient (œufs, crème, lardons...)"
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
             />
           </div>
           {loading ? (
@@ -215,7 +215,7 @@ export default function ViderLeFrigoPage() {
                     </div>
                     {r.nb_manquants > 0 ? (
                       <p className="text-[11px] text-sable-600 flex items-start gap-1">
-                        <ShoppingCart className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <ShoppingCart className="w-3 h-3 mt-0.5 shrink-0" />
                         <span>Acheter : {r.manquants.join(', ')}{r.nb_manquants > 4 ? '…' : ''}</span>
                       </p>
                     ) : (

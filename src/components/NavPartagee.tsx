@@ -134,7 +134,7 @@ export function MenuUtilisateur({
       <button onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open}
         className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full border border-transparent hover:border-gray-200 hover:bg-white transition-colors">
         {/* Avatar : initiale du prénom */}
-        <span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold uppercase flex-shrink-0 shadow-sm">
+        <span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold uppercase shrink-0 shadow-xs">
           {initiale}
         </span>
         <span className={`text-[11px] font-semibold tracking-[0.14em] uppercase text-gray-800 ${nomToujoursVisible ? '' : 'hidden xl:inline'}`}>

@@ -131,7 +131,7 @@ function PlanningInner() {
                 autres pages (texte sur la ligne de base, pas centré sur une
                 grande icône). */}
             <div className="flex items-center gap-3">
-              <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+              <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
                 <Calendar className="w-5 h-5 text-brand-500" />
               </span>
               <h1 className="text-3xl font-bold font-display text-gray-900">Planning</h1>
@@ -151,7 +151,7 @@ function PlanningInner() {
 
             <button onClick={goToCurrent}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                isCurrent ? 'bg-brand-500 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-brand-300'
+                isCurrent ? 'bg-brand-500 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:border-brand-300'
               }`}>
               {isCurrent ? 'Semaine courante' : 'Aujourd\'hui'}
             </button>
@@ -183,7 +183,7 @@ function PlanningInner() {
         {/* ─── Première utilisation ─── */}
         {!error && weeks.length === 0 && (
           <div className="bg-brand-50 border border-brand-200 rounded-2xl p-5 mb-8 flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-brand-500 flex-shrink-0" />
+            <Sparkles className="w-5 h-5 text-brand-500 shrink-0" />
             <p className="text-sm text-brand-800">
               Optimisez votre première semaine directement depuis cette page : naviguez jusqu&apos;à la semaine voulue puis lancez l&apos;optimisation.
             </p>
@@ -221,12 +221,12 @@ function PlanningInner() {
                     className={`bg-white rounded-2xl border p-4 transition-all cursor-pointer ${
                       isSelected ? 'border-brand-400 shadow-md ring-1 ring-brand-200' :
                       isThisCurrent ? 'border-sauge-300 bg-sauge-50/30' :
-                      week ? 'border-gray-100 hover:border-gray-200 hover:shadow-sm' :
+                      week ? 'border-gray-100 hover:border-gray-200 hover:shadow-xs' :
                       'border-dashed border-gray-200 hover:border-brand-300'
                     }`}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-4 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                           isThisCurrent ? 'bg-sauge-100 text-sauge-600' :
                           week ? 'bg-brand-50 text-brand-600' : 'bg-gray-100 text-gray-500'
                         }`}>
@@ -240,7 +240,7 @@ function PlanningInner() {
                           </div>
                           <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
                             {week ? (<>
-                              <span className="flex items-center gap-1 flex-shrink-0"><UtensilsCrossed className="w-3 h-3" /> {week.nbRepas} repas</span>
+                              <span className="flex items-center gap-1 shrink-0"><UtensilsCrossed className="w-3 h-3" /> {week.nbRepas} repas</span>
                               <span className="text-gray-500 truncate">{week.recap}</span>
                             </>) : (
                               <span className="text-gray-500 truncate">Aucun planning — cliquez pour préparer cette semaine</span>
@@ -249,7 +249,7 @@ function PlanningInner() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         {week ? (<>
                           {/* Puce navigation */}
                           <button
@@ -287,7 +287,7 @@ function PlanningInner() {
 
         {/* ─── Modal de confirmation régénération ─── */}
         {confirmRegen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 backdrop-blur-sm p-4" onClick={() => setConfirmRegen(null)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 backdrop-blur-xs p-4" onClick={() => setConfirmRegen(null)}>
             <div className="bg-creme-50 rounded-3xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-sable-100 flex items-center justify-center mx-auto mb-4">

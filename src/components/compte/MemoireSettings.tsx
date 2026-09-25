@@ -119,7 +119,7 @@ export function MemoireSettings() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center py-10">
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs flex items-center justify-center py-10">
         <Loader2 className="w-5 h-5 text-brand-500 animate-spin" />
       </div>
     );
@@ -130,7 +130,7 @@ export function MemoireSettings() {
   );
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <div className="flex items-center gap-3 mb-1">
         <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center">
           <SlidersHorizontal className="w-5 h-5" />
@@ -168,7 +168,7 @@ export function MemoireSettings() {
                 }}
                 placeholder="—"
                 aria-label={`Temps de cuisine le ${jour}`}
-                className="w-full px-2 py-1.5 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300"
+                className="w-full px-2 py-1.5 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300"
               />
             </label>
           ))}
@@ -183,7 +183,7 @@ export function MemoireSettings() {
         <div className="space-y-2">
           {JOURS_NOMS.map((jour, i) => (
             <div key={jour} className="flex items-center gap-3">
-              <span className="w-20 text-xs font-medium text-gray-500 flex-shrink-0">{jour}</span>
+              <span className="w-20 text-xs font-medium text-gray-500 shrink-0">{jour}</span>
               <div className="flex flex-wrap gap-1.5">
                 {CONTEXTES_JOUR.map(c => {
                   const actif = contextes[i] === c.value;
@@ -269,7 +269,7 @@ export function MemoireSettings() {
                   </p>
                 </div>
                 <button onClick={() => oublier(p.meal_id, p.titre)} aria-label={`Oublier ${p.titre}`}
-                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0">
+                  className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </li>

@@ -43,7 +43,7 @@ export default function LandingHeader() {
   const userName = nomAffiche(profile?.full_name, user?.email);
 
   return (
-    <header className="sticky top-0 z-50 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center h-20">
           {/* Nav gauche */}

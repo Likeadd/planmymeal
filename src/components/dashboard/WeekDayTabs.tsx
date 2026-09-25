@@ -134,7 +134,7 @@ export function WeekDayTabs({
       <div role="tabpanel" className="mt-5 touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="font-display font-bold text-2xl text-gray-900 truncate">{day.jour}</h3>
-          <span className="text-xs font-semibold tracking-[0.14em] uppercase text-gray-500 flex-shrink-0">
+          <span className="text-xs font-semibold tracking-[0.14em] uppercase text-gray-500 shrink-0">
             {repasDuJour.length} repas · {formatMinutes(minutesDuJour)}
           </span>
         </div>

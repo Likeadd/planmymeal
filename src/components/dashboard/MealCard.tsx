@@ -200,10 +200,10 @@ export function MealCard({
           <div className="flex items-start gap-4 min-w-0">
             {/* Pastille repas : dégradés doux de la charte, soleil/lune/dessert */}
             <div className={cn(
-              'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 border',
+              'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 border',
               estReste ? 'bg-accent-100 border-accent-200'
                 : estSlotDessert ? 'bg-sauge-100 border-sauge-200'
-                : 'bg-gradient-to-br from-brand-100 to-accent-100 border-brand-200/60',
+                : 'bg-linear-to-br from-brand-100 to-accent-100 border-brand-200/60',
             )}>
               {estReste ? '🍱' : famille ? famille.emoji : repas === 'Dîner' ? '🌙' : '☀️'}
             </div>
@@ -225,7 +225,7 @@ export function MealCard({
           {/* Audit mobile #10 : une seule action visible — « Remplacer ». Toutes
               les autres (noter, pourquoi, régénérer, restes) vivent dans le menu
               « ⋯ » ; quatre pictos simultanés attiraient l'œil sur chaque carte. */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             {/* Cibles tactiles 44×44 (audit mobile : p-2 = 34px, trop petit) */}
             <button onClick={e => { e.preventDefault(); e.stopPropagation(); onSwap(); }}
               className="flex items-center justify-center w-11 h-11 rounded-xl text-accent-600 hover:bg-accent-50 transition-colors"
@@ -364,7 +364,7 @@ export function MealCard({
       ) : (
         <div className="flex items-center justify-center gap-2.5 mt-2">
           <button onClick={() => onMarkStatus(meal.id, 'cooked')}
-            className="flex items-center gap-1.5 px-4 min-h-[44px] text-[13px] font-semibold rounded-full bg-sauge-100 text-sauge-700 hover:bg-sauge-200 active:scale-95 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-4 min-h-[44px] text-[13px] font-semibold rounded-full bg-sauge-100 text-sauge-700 hover:bg-sauge-200 active:scale-95 transition-all shadow-xs"
             title="Marquer comme cuisiné">
             <Check className="w-4 h-4" strokeWidth={2.5} /> C&apos;est fait
           </button>

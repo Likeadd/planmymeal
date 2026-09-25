@@ -95,7 +95,7 @@ function AccountContent() {
               titre sur la ligne de base commune). */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+              <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
                 <Settings className="w-5 h-5 text-brand-500" />
               </span>
               <div>
@@ -130,7 +130,7 @@ function AccountContent() {
           )}
 
           {/* Plan actuel */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                 profile.plan === 'gratuit' ? 'bg-gray-100 text-gray-500' : 'bg-brand-100 text-brand-600'
@@ -178,7 +178,7 @@ function AccountContent() {
             <ul className="space-y-2">
               {currentPlan.features.map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                  <Check className="w-4 h-4 text-sauge-500 flex-shrink-0" />
+                  <Check className="w-4 h-4 text-sauge-500 shrink-0" />
                   {f}
                 </li>
               ))}

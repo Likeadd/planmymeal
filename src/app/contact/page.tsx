@@ -99,7 +99,7 @@ export default function ContactPage() {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Votre nom"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                       />
                     </div>
                     <div>
@@ -113,7 +113,7 @@ export default function ContactPage() {
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="vous@exemple.com"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                       />
                     </div>
                   </div>
@@ -126,7 +126,7 @@ export default function ContactPage() {
                       id="subject"
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors">
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors">
                       {SUBJECTS.map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -144,7 +144,7 @@ export default function ContactPage() {
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       placeholder="Dites-nous tout…"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-400 focus:bg-white transition-colors resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-hidden focus:border-brand-400 focus:bg-white transition-colors resize-none"
                     />
                   </div>
 

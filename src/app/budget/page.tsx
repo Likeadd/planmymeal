@@ -277,7 +277,7 @@ export default function BudgetPage() {
         <div className="flex items-center gap-3 mb-2">
           {/* Pastille 44px = convention des autres pages (/recettes, /planning) :
               icône 20px, le titre sur la ligne de base commune. */}
-          <div className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+          <div className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
             <Wallet className="w-5 h-5 text-brand-500" />
           </div>
           <div>
@@ -287,7 +287,7 @@ export default function BudgetPage() {
         </div>
 
         {/* ─── Bloc budget ─── */}
-        <div className={`mt-8 rounded-3xl border p-6 sm:p-8 transition-all ${depassement ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+        <div className={`mt-8 rounded-3xl border p-6 sm:p-8 transition-all ${depassement ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-xs'}`}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-sm text-gray-500 mb-1">Budget hebdomadaire</p>
@@ -298,7 +298,7 @@ export default function BudgetPage() {
                       type="number" min="0" step="1" autoFocus value={budgetInput}
                       onChange={e => setBudgetInput(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') saveBudget(parseFloat(budgetInput.replace(',', '.')) || null); }}
-                      className="w-40 px-4 py-2 pr-9 text-3xl font-bold border-2 border-brand-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
+                      className="w-40 px-4 py-2 pr-9 text-3xl font-bold border-2 border-brand-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-200"
                       placeholder="50"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xl text-gray-500 font-semibold">€</span>
@@ -401,7 +401,7 @@ export default function BudgetPage() {
                       <input type="number" min="0.5" step="0.5" autoFocus value={prixMaxInput}
                         onChange={e => setPrixMaxInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') savePrixMax(parseFloat(prixMaxInput.replace(',', '.')) || null); }}
-                        className="w-28 px-3 py-2 pr-8 text-lg font-bold border-2 border-brand-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
+                        className="w-28 px-3 py-2 pr-8 text-lg font-bold border-2 border-brand-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-200"
                         placeholder="3" />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-semibold">€</span>
                     </div>
@@ -449,7 +449,7 @@ export default function BudgetPage() {
 
         {/* ─── Économies vs VOTRE base (décision produit : ancrage utilisateur) ───
             La base n'est jamais devinée : widget masqué tant que non saisie. */}
-        <div className="mt-4 rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="mt-4 rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-xs">
           {editingRef ? (
             <div>
               <p className="text-sm font-semibold text-gray-900">
@@ -464,7 +464,7 @@ export default function BudgetPage() {
                       if (e.key === 'Enter') saveDepenseReference();
                       if (e.key === 'Escape') setEditingRef(false);
                     }}
-                    className="w-36 px-4 py-2 pr-9 font-display text-2xl font-bold border-2 border-brand-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
+                    className="w-36 px-4 py-2 pr-9 font-display text-2xl font-bold border-2 border-brand-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-200"
                     placeholder="80"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 font-semibold">€</span>
@@ -507,7 +507,7 @@ export default function BudgetPage() {
                   <p className="text-sm text-gray-500 mb-1 flex items-center gap-1.5">
                     🎯 Économies vs votre base
                     <button onClick={() => { setRefInput(String(data.depense_reference_hebdo)); setEditingRef(true); }}
-                      className="p-1 rounded text-gray-300 hover:text-brand-500 transition-colors" title="Modifier la base">
+                      className="p-1 rounded-sm text-gray-300 hover:text-brand-500 transition-colors" title="Modifier la base">
                       <Pencil className="w-3 h-3" />
                     </button>
                   </p>
@@ -545,7 +545,7 @@ export default function BudgetPage() {
                             if (e.key === 'Enter') saveDepenseReelle();
                             if (e.key === 'Escape') setEditingReelle(false);
                           }}
-                          className="w-36 px-4 py-2 pr-9 font-display text-2xl font-bold border-2 border-brand-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-200"
+                          className="w-36 px-4 py-2 pr-9 font-display text-2xl font-bold border-2 border-brand-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-200"
                           placeholder="62,40"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 font-semibold">€</span>
@@ -650,12 +650,12 @@ export default function BudgetPage() {
 
                       {/* Prix éditable */}
                       {editingItem === item.ingredient_id ? (
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <input
                             type="number" min="0" step="0.01" autoFocus value={prixInput}
                             onChange={e => setPrixInput(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') savePrix(item.ingredient_id); if (e.key === 'Escape') setEditingItem(null); }}
-                            className="w-24 px-2.5 py-1.5 text-sm border-2 border-brand-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200"
+                            className="w-24 px-2.5 py-1.5 text-sm border-2 border-brand-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-200"
                             placeholder={item.prix_unitaire != null ? String(item.prix_unitaire) : 'prix'}
                           />
                           <button onClick={() => savePrix(item.ingredient_id)} disabled={savingPrix}
@@ -668,7 +668,7 @@ export default function BudgetPage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <div className="text-right">
                             <p className={`text-sm font-semibold ${item.prix != null ? 'text-gray-900' : 'text-gray-300'}`}>
                               {formatPrix(item.prix)}
@@ -771,8 +771,8 @@ function SavingsChart({
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-semibold text-gray-900">8 dernières semaines</h3>
         <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-brand-500" /> Dépense</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded-sm bg-gray-500" /> Budget</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-xs bg-brand-500" /> Dépense</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded-xs bg-gray-500" /> Budget</span>
         </div>
       </div>
 
@@ -840,7 +840,7 @@ function formatSemaine(iso: string): string {
 
 function SparklesIcon() {
   return (
-    <svg className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
     </svg>
   );

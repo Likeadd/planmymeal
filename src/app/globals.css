@@ -1,6 +1,130 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-50: #faf0e9;
+  --color-brand-100: #f3ded1;
+  --color-brand-200: #e7bca3;
+  --color-brand-300: #d9946e;
+  --color-brand-400: #cf7040;
+  --color-brand-500: #c2532a;
+  --color-brand-600: #a84422;
+  --color-brand-700: #8a351a;
+  --color-brand-800: #6f2b15;
+  --color-brand-900: #5a2412;
+  --color-brand-950: #31110a;
+
+  --color-accent-50: #f5f2fb;
+  --color-accent-100: #ebe5f6;
+  --color-accent-200: #d6cbec;
+  --color-accent-300: #b8a6dd;
+  --color-accent-400: #997ccb;
+  --color-accent-500: #7c5fbf;
+  --color-accent-600: #6a4dab;
+  --color-accent-700: #583e90;
+  --color-accent-800: #493474;
+  --color-accent-900: #3c2b5e;
+  --color-accent-950: #251834;
+
+  --color-sauge-50: #f2f9f5;
+  --color-sauge-100: #e2f1e7;
+  --color-sauge-200: #c5e2cf;
+  --color-sauge-300: #9ecbac;
+  --color-sauge-400: #74af85;
+  --color-sauge-500: #549266;
+  --color-sauge-600: #3f7551;
+  --color-sauge-700: #335e42;
+  --color-sauge-800: #2b4c37;
+  --color-sauge-900: #253f2e;
+  --color-sauge-950: #12221a;
+
+  --color-sable-50: #fcfaf4;
+  --color-sable-100: #f3ebdd;
+  --color-sable-200: #e8dcc4;
+  --color-sable-300: #d9c6a2;
+  --color-sable-400: #c5ab7e;
+  --color-sable-500: #b39463;
+  --color-sable-600: #a07f52;
+  --color-sable-700: #856744;
+  --color-sable-800: #6c5338;
+  --color-sable-900: #59452f;
+  --color-sable-950: #322519;
+
+  --color-creme-50: #fdfaf3;
+
+  --color-forest-50: #f2f5ec;
+  --color-forest-100: #e2e8d3;
+  --color-forest-200: #c6d3a8;
+  --color-forest-300: #a4b97b;
+  --color-forest-400: #859e55;
+  --color-forest-500: #6a823f;
+  --color-forest-600: #546832;
+  --color-forest-700: #435228;
+  --color-forest-800: #374122;
+  --color-forest-900: #2e371d;
+  --color-forest-950: #181d0e;
+
+  --color-gray-50: #fbf8f1;
+  --color-gray-100: #f6f0e4;
+  --color-gray-200: #ece2ce;
+  --color-gray-300: #ddcfb3;
+  --color-gray-400: #9c8a6b;
+  --color-gray-500: #7a6850;
+  --color-gray-600: #6a5a44;
+  --color-gray-700: #605242;
+  --color-gray-800: #483c2f;
+  --color-gray-900: #332a1e;
+  --color-gray-950: #241d14;
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display:
+    Georgia, Iowan Old Style, Palatino Linotype, Book Antiqua, Times New Roman,
+    serif;
+
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-card:
+    0 1px 2px rgba(51, 42, 30, 0.03), 0 1px 4px rgba(51, 42, 30, 0.04);
+  --shadow-pop:
+    0 10px 28px -12px rgba(51, 42, 30, 0.12), 0 2px 6px rgba(51, 42, 30, 0.05);
+  --shadow-cta: 0 6px 16px -6px rgba(196, 85, 44, 0.3);
+
+  --animate-fade-in: fadeIn 0.5s ease-out;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility container-app {
+  @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+}
 
 @layer base {
   html { scroll-behavior: smooth; }
@@ -16,10 +140,6 @@
      terracotta/crème commence immédiatement) — la marge d'ancrage doit lui
      fournir l'air que les autres ont en interne, sinon elle colle au header. */
   section#rituels { scroll-margin-top: 88px; }
-}
-
-@layer components {
-  .container-app { @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8; }
 }
 
 @keyframes shimmer {

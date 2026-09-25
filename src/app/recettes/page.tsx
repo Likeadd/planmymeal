@@ -175,7 +175,7 @@ function PuceFiltre({
   return (
     <button onClick={onClick}
       className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${actif
-        ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
+        ? 'bg-brand-500 text-white border-brand-500 shadow-xs'
         : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'}`}>
       {children}
       {compteur != null && (
@@ -207,7 +207,7 @@ function CarteSquelette() {
           <div className="h-5 bg-gray-100 rounded-full w-16" />
           <div className="h-5 bg-gray-100 rounded-full w-14" />
         </div>
-        <div className="h-9 bg-gray-100 rounded-full w-full !mt-5" />
+        <div className="h-9 bg-gray-100 rounded-full w-full mt-5!" />
       </div>
     </div>
   );
@@ -408,7 +408,7 @@ export default function RecettesPage() {
               l'icône et faisait « flotter » le titre au-dessus de la marge
               du paragraphe en dessous. */}
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+            <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
               <BookOpen className="w-5 h-5 text-brand-500" />
             </span>
             <h1 className="font-display text-3xl font-bold text-gray-900 tracking-tight">Catalogue de recettes</h1>
@@ -446,7 +446,7 @@ export default function RecettesPage() {
                 return (
                   <button key={f.value} onClick={() => setTypeFilter(f.value)}
                   className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full transition-colors ${typeFilter === f.value
-                    ? 'bg-brand-500 text-white shadow-sm'
+                    ? 'bg-brand-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                     {f.label}
                     <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({count})</span>
@@ -459,7 +459,7 @@ export default function RecettesPage() {
             <div className="flex flex-wrap gap-1.5 mb-3">
               <button onClick={() => setEquipementFilter('tous')}
                 className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === 'tous'
-                  ? 'bg-accent-500 text-white border-accent-500 shadow-sm'
+                  ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
                 🍳 Tout appareil
               </button>
@@ -469,7 +469,7 @@ export default function RecettesPage() {
                 return (
                   <button key={eq} onClick={() => setEquipementFilter(eq)}
                   className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === eq
-                    ? 'bg-accent-500 text-white border-accent-500 shadow-sm'
+                    ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
                     {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({count})</span>
                   </button>
@@ -484,21 +484,21 @@ export default function RecettesPage() {
                 <ArrowUpDown className="w-3.5 h-3.5 text-gray-500" />
                 <span className="font-semibold uppercase tracking-wide text-[11px]">Trier :</span>
                 <select value={tri} onChange={e => setTri(e.target.value as TriChamp)}
-                  className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                  className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                   {TRI_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </label>
 
               {/* Difficulté */}
               <select value={difficulteFilter} onChange={e => setDifficulteFilter(e.target.value as typeof difficulteFilter)}
-                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                 {DIFFICULTES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
               </select>
 
               {/* Cuisine */}
               {cuisines.length > 1 && (
                 <select value={cuisineFilter} onChange={e => setCuisineFilter(e.target.value)}
-                  className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                  className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                   <option value="toutes">Toutes cuisines</option>
                   {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -506,14 +506,14 @@ export default function RecettesPage() {
 
               {/* Saison */}
               <select value={saisonFilter} onChange={e => setSaisonFilter(e.target.value as Saison | 'toutes')}
-                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-none focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                 {SAISONS_FILTRES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
 
               {/* Panneau avancé (temps, calories, prix, batch, régimes) */}
               <button onClick={() => setShowAdvanced(v => !v)} aria-expanded={showAdvanced}
                 className={`inline-flex items-center gap-1.5 px-4 min-h-[40px] py-2 text-xs font-semibold rounded-full border transition-colors ${showAdvanced || nbFiltresAvances > 0
-                  ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
+                  ? 'bg-brand-500 text-white border-brand-500 shadow-xs'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'}`}>
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 Plus de filtres
@@ -603,7 +603,7 @@ export default function RecettesPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Rechercher un plat ou un ingrédient..."
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
               />
             </div>
           </>
@@ -633,14 +633,14 @@ export default function RecettesPage() {
                   className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all group">
                   {/* Illustration : emoji selon le type de recette (plus de photos) */}
                   <div className="bg-brand-50 h-32 flex items-center justify-center overflow-hidden">
-                    <span className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110">
+                    <span className="w-14 h-14 rounded-2xl bg-white shadow-xs flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110">
                       {typeEmoji(meal.type_repas)}
                     </span>
                   </div>
 
                   <div className="p-4">
                     <Link href={`/recette/${meal.id}`}>
-                    <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-[2.5rem]">
+                    <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-10">
                       {titreMajuscules(meal.titre)}
                     </h3>
                   </Link>

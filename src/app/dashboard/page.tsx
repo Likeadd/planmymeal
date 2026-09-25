@@ -338,7 +338,7 @@ function DashboardInner() {
                   le libellé complet faisait passer la rangée sur DEUX lignes
                   (+42px avant le 1er repas) → icône seule < sm, texte ≥ sm. */}
               <Link href="/vider-le-frigo" title="Cuisiner avec mon frigo"
-                className="flex items-center gap-1.5 w-11 h-11 justify-center sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase text-accent-700 bg-accent-100 rounded-full hover:bg-accent-200 transition-colors flex-shrink-0 shadow-card">
+                className="flex items-center gap-1.5 w-11 h-11 justify-center sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase text-accent-700 bg-accent-100 rounded-full hover:bg-accent-200 transition-colors shrink-0 shadow-card">
                 <Refrigerator className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Cuisiner avec mon frigo</span>
               </Link>
@@ -367,7 +367,7 @@ function DashboardInner() {
               { key: 'courses' as const, icon: <ShoppingCart className="w-4 h-4" />, label: 'Liste de courses' }]
               .map(t => (
                 <button key={t.key} onClick={() => setActiveTab(t.key)}
-                  className={`flex items-center gap-2 px-4 min-h-[40px] rounded-full text-sm font-medium transition-all ${activeTab === t.key ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  className={`flex items-center gap-2 px-4 min-h-[40px] rounded-full text-sm font-medium transition-all ${activeTab === t.key ? 'bg-white text-brand-600 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}>
                   {t.icon}{t.label}
                 </button>
               ))}
@@ -470,7 +470,7 @@ function WeekNav({ semaineDebut, weekOffset, estSemaineCourante, onGo, compact }
         </button>
       </div>
       <div className="flex items-center gap-1.5 min-w-0">
-        {!compact && <Calendar className="w-4 h-4 text-brand-400 flex-shrink-0" />}
+        {!compact && <Calendar className="w-4 h-4 text-brand-400 shrink-0" />}
         <span className={cn('tabular-nums whitespace-nowrap', compact
           ? 'text-[11px] font-semibold tracking-[0.08em] uppercase text-gray-800'
           : 'font-semibold text-gray-900 text-sm truncate')}
@@ -479,14 +479,14 @@ function WeekNav({ semaineDebut, weekOffset, estSemaineCourante, onGo, compact }
         </span>
         {/* Cible tactile 40px (audit mobile : p-1 = 22px, trop petit) */}
         <button onClick={handleCopy}
-          className="w-10 h-10 flex items-center justify-center rounded-full text-gray-300 hover:text-brand-500 hover:bg-brand-50 transition-colors flex-shrink-0"
+          className="w-10 h-10 flex items-center justify-center rounded-full text-gray-300 hover:text-brand-500 hover:bg-brand-50 transition-colors shrink-0"
           title="Copier le lien de cette semaine" aria-label="Copier le lien de cette semaine">
           <Copy className="w-3.5 h-3.5" />
         </button>
       </div>
       {!estSemaineCourante ? (
         <button onClick={() => onGo(0)}
-          className="flex-shrink-0 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
+          className="shrink-0 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
           Aujourd&apos;hui
         </button>
       ) : <span className="w-1" />}
@@ -500,7 +500,7 @@ function FallbackBanner({ cuisines = [] }: { cuisines?: string[] }) {
   return (
     <div className="mb-6 bg-sable-50 border border-sable-200 rounded-2xl p-5">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-sable-100 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-sable-100 flex items-center justify-center shrink-0">
           <AlertTriangle className="w-5 h-5 text-sable-600" />
         </div>
         <div>
@@ -572,7 +572,7 @@ function BatchCookingAccordion({ days, open, onToggle }: {
       {/* Ligne repliable : badge lavande cliquable (charte landing) */}
       <button onClick={onToggle} aria-expanded={open}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent-100/60 transition-colors">
-        <span className="w-8 h-8 rounded-lg bg-accent-500 flex items-center justify-center flex-shrink-0">
+        <span className="w-8 h-8 rounded-lg bg-accent-500 flex items-center justify-center shrink-0">
           <Package className="w-4 h-4 text-white" />
         </span>
         <span className="flex-1 min-w-0">
@@ -586,10 +586,10 @@ function BatchCookingAccordion({ days, open, onToggle }: {
             {batchRecipes.size} recettes couvrent vos repas jusqu&apos;à {JOURS_NOMS[(batchJour + 3) % 7]}
           </span>
         </span>
-        <span className="text-xs font-semibold text-accent-600 flex-shrink-0 hidden sm:inline">
+        <span className="text-xs font-semibold text-accent-600 shrink-0 hidden sm:inline">
           {open ? 'Masquer' : 'Voir la session'}
         </span>
-        <ChevronDown className={cn('w-4 h-4 text-accent-600 flex-shrink-0 transition-transform', open && 'rotate-180')} />
+        <ChevronDown className={cn('w-4 h-4 text-accent-600 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
 
       {/* Détail de la session (déplié) */}

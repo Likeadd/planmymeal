@@ -67,7 +67,7 @@ export function MaCuisineSettings() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <h2 className="font-semibold font-display text-gray-900 text-lg flex items-center gap-2 mb-1">
         🍳 Ma cuisine
       </h2>

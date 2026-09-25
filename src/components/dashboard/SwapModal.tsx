@@ -117,7 +117,7 @@ export function SwapModal({
     // et le padding desktop (p-6) laissait peu de place utile sur petit écran.
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       role="dialog" aria-modal="true" aria-label="Remplacer ce repas">
-      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xs" onClick={onClose} aria-hidden />
 
       <motion.div
         // `initial` identique au SSR (useReducedMotion vaut null côté serveur) :
@@ -127,12 +127,12 @@ export function SwapModal({
         transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
         className="relative w-full sm:max-w-lg bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
 
-        <div className="sticky top-0 bg-creme-50/95 backdrop-blur px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
+        <div className="sticky top-0 bg-creme-50/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
           <h3 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
             <Shuffle className="w-5 h-5 text-brand-500" /> Remplacer ce repas
           </h3>
           <button onClick={onClose} aria-label="Fermer"
-            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 flex-shrink-0"><X className="w-5 h-5" /></button>
+            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 shrink-0"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="px-5 py-4">
@@ -141,7 +141,7 @@ export function SwapModal({
             {swapFiltersPour(repas).map(f => (
               <button key={f.value} onClick={() => setFilter(f.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${filter === f.value
-                  ? 'bg-brand-500 text-white shadow-sm'
+                  ? 'bg-brand-500 text-white shadow-xs'
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                 {f.label}
               </button>
@@ -154,7 +154,7 @@ export function SwapModal({
               {DESSERT_EXPRESS_FILTERS.map(f => (
                 <button key={f.value} onClick={() => setDessertFilter(f.value)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${dessertFilter === f.value
-                    ? 'bg-accent-500 text-white shadow-sm'
+                    ? 'bg-accent-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-accent-50 hover:text-accent-600'}`}>
                   {f.label}
                 </button>
@@ -182,7 +182,7 @@ export function SwapModal({
                 const prix = prixParPortion(meal);
                 return (
                   <button key={meal.id} onClick={() => onSelect(meal.id)} disabled={swapping}
-                    className="w-full text-left p-3 rounded-2xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/50 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-start justify-between gap-2">
+                    className="w-full text-left p-3 rounded-2xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/50 hover:shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="font-medium text-gray-900 text-sm flex items-center gap-1.5">
                         {famille && <span aria-hidden>{famille.emoji}</span>}
@@ -197,7 +197,7 @@ export function SwapModal({
                         {prix != null && <span className="font-semibold text-sauge-700 bg-sauge-100 px-1.5 py-0.5 rounded-full">{formatPrix(prix)}</span>}
                       </div>
                     </div>
-                    <Plus className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+                    <Plus className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
                   </button>
                 );
               })}

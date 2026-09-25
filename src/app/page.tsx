@@ -83,7 +83,7 @@ function Hero() {
             <ul className="mt-6 space-y-2 text-sm text-gray-700">
               {['Menu personnalisé', 'Liste de courses automatique', 'Adapté à votre budget'].map(item => (
                 <li key={item} className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                  <Check className="w-4 h-4 text-brand-500 shrink-0" />
                   {item}
                 </li>
               ))}
@@ -97,9 +97,9 @@ function Hero() {
         {/* Côté droit : terracotta tuilé, lever de soleil en haut à droite */}
         <div className="relative overflow-hidden bg-brand-600">
           {/* Motif tuiles */}
-          <div className="absolute inset-0 [background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.07)_0_2px,transparent_2px_16px)]" aria-hidden />
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.07)_0_2px,transparent_2px_16px)]" aria-hidden />
           {/* Lever de soleil : halo chaud au coin supérieur droit */}
-          <div className="absolute inset-0 [background-image:radial-gradient(ellipse_at_top_right,rgba(207,112,64,0.55),transparent_55%)]" aria-hidden />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(207,112,64,0.55),transparent_55%)]" aria-hidden />
           {/* Vague crème */}
           <svg className="absolute inset-y-0 left-0 h-full w-[70px] sm:w-[110px] text-gray-50" viewBox="0 0 110 800" preserveAspectRatio="none" aria-hidden>
             <path d="M110 0 H0 C25 100 75 160 40 240 C5 320 85 380 55 460 C25 540 85 600 50 680 C25 740 70 780 110 800 Z" fill="currentColor" />
@@ -108,8 +108,8 @@ function Hero() {
           <div className="relative flex items-center justify-center py-16 lg:py-24 pl-10 sm:pl-16 pr-6 sm:pr-12">
             {/* Pile de menus : deux cartes en arrière-plan */}
             <Reveal className="relative" delay={0.15} y={16}>
-              <div className="absolute inset-0 translate-x-3 translate-y-4 -rotate-3 bg-white/85 rounded-[2rem] shadow-lg" aria-hidden />
-              <div className="absolute inset-0 translate-x-1.5 translate-y-2 rotate-1 bg-white/60 rounded-[2rem] shadow" aria-hidden />
+              <div className="absolute inset-0 translate-x-3 translate-y-4 -rotate-3 bg-white/85 rounded-4xl shadow-lg" aria-hidden />
+              <div className="absolute inset-0 translate-x-1.5 translate-y-2 rotate-1 bg-white/60 rounded-4xl shadow-sm" aria-hidden />
               <HeroMealCard />
             </Reveal>
             {/* Badge circulaire */}
@@ -134,7 +134,7 @@ function HeroMealCard() {
   ];
 
   return (
-    <div className="w-[320px] sm:w-[380px] bg-white rounded-[2rem] shadow-2xl shadow-brand-900/20 p-6 rotate-2">
+    <div className="w-[320px] sm:w-[380px] bg-white rounded-4xl shadow-2xl shadow-brand-900/20 p-6 rotate-2">
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="text-[11px] tracking-[0.22em] uppercase text-brand-600 font-semibold">Mardi · Déjeuner</div>
@@ -148,7 +148,7 @@ function HeroMealCard() {
       <div className="space-y-2.5">
         {meals.map(m => (
           <div key={m.t} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
-            <span className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-lg flex-shrink-0">{m.e}</span>
+            <span className="w-9 h-9 rounded-full bg-white shadow-xs flex items-center justify-center text-lg shrink-0">{m.e}</span>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-gray-900 truncate">{m.t}</div>
               <div className="text-[11px] text-gray-500">{m.meta}</div>
@@ -311,7 +311,7 @@ function Collection() {
         {/* Cartes produits */}
         <div className="grid sm:grid-cols-3 gap-6">
           {PRODUCTS.map((p, i) => (
-            <Reveal key={p.title} delay={i * 0.1} className="bg-white rounded-t-3xl rounded-b-xl border border-gray-200 shadow-sm overflow-hidden">
+            <Reveal key={p.title} delay={i * 0.1} className="bg-white rounded-t-3xl rounded-b-xl border border-gray-200 shadow-xs overflow-hidden">
               <div className={`h-32 flex items-center justify-center text-5xl ${p.pastel}`}>
                 {p.e}
               </div>
@@ -322,7 +322,7 @@ function Collection() {
                 <ul className="mt-3 space-y-1.5">
                   {p.ingrédients.map(ing => (
                     <li key={ing} className="flex items-center gap-2 text-xs text-gray-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-300 flex-shrink-0" aria-hidden />{ing}
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand-300 shrink-0" aria-hidden />{ing}
                     </li>
                   ))}
                 </ul>
@@ -366,7 +366,7 @@ function NouveautesMonde() {
   return (
     <section id="nouveautes" className="pb-20 sm:pb-28 -mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8 sm:p-10">
+        <Reveal className="bg-white rounded-3xl border border-gray-200 shadow-xs p-8 sm:p-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <span className="text-accent-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
@@ -439,7 +439,7 @@ function Promo() {
   const hasTestimonial = Boolean(TESTIMONIAL.quote.trim() && TESTIMONIAL.author.trim());
   return (
     <section id="rituels" className="bg-gray-50 pb-20 sm:pb-28">
-      <Reveal className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 overflow-hidden rounded-3xl shadow-sm">
+      <Reveal className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 overflow-hidden rounded-3xl shadow-xs">
         {/* Bloc terracotta */}
         <div className="relative bg-brand-600 p-10 sm:p-12">
           <span className="text-white/70 text-[11px] tracking-[0.28em] uppercase">
@@ -459,13 +459,13 @@ function Promo() {
         </div>
 
         {/* Bloc central : la semaine */}
-        <div className="bg-gray-100 flex items-center justify-center p-8 [background-image:radial-gradient(#DDCFB3_1px,transparent_1px)] [background-size:18px_18px]">
-          <div className="bg-gray-50 rounded-3xl p-6 shadow-sm w-full max-w-sm">
+        <div className="bg-gray-100 flex items-center justify-center p-8 bg-[radial-gradient(#DDCFB3_1px,transparent_1px)] bg-size-[18px_18px]">
+          <div className="bg-gray-50 rounded-3xl p-6 shadow-xs w-full max-w-sm">
             <div className="grid grid-cols-7 gap-1.5">
               {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5">
                   <span className="text-[11px] font-bold text-gray-700">{d}</span>
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${i === 1 ? 'bg-brand-500' : 'bg-white shadow-sm'}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${i === 1 ? 'bg-brand-500' : 'bg-white shadow-xs'}`}>
                     {['🍗', '🎃', '🐟', '🥗', '🍛', '🍕', '🥘'][i]}
                   </div>
                 </div>
@@ -494,7 +494,7 @@ function Promo() {
               </blockquote>
               <p className="mt-3 text-sm text-gray-600">{TESTIMONIAL.author} — {TESTIMONIAL.detail}</p>
               {/* Avatar pastille */}
-              <div className="mt-5 w-12 h-12 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 text-white flex items-center justify-center font-bold shadow-sm">{TESTIMONIAL.initials}</div>
+              <div className="mt-5 w-12 h-12 rounded-full bg-linear-to-br from-accent-400 to-accent-600 text-white flex items-center justify-center font-bold shadow-xs">{TESTIMONIAL.initials}</div>
             </>
           ) : (
             <>
@@ -619,7 +619,7 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
         Le détail de chaque plan, ligne par ligne.
       </p>
 
-      <div className="mt-6 bg-white rounded-3xl border border-gray-200 shadow-sm overflow-x-auto">
+      <div className="mt-6 bg-white rounded-3xl border border-gray-200 shadow-xs overflow-x-auto">
         <table className="w-full min-w-[640px] text-left">
           <thead>
             <tr className="border-b border-gray-200">
@@ -752,7 +752,7 @@ function Pricing() {
               <ul className="mt-6 mb-8 space-y-2.5 flex-1">
                 {plan.features.map((f, i) => (
                   <li key={i} className={`flex items-start gap-2.5 text-sm ${plan.highlighted ? 'text-white/90' : 'text-gray-600'}`}>
-                    <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${plan.highlighted ? 'text-white' : 'text-brand-500'}`} />
+                    <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.highlighted ? 'text-white' : 'text-brand-500'}`} />
                     <span>{f}</span>
                   </li>
                 ))}

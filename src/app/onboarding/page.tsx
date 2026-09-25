@@ -205,7 +205,7 @@ export default function OnboardingPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{STEPS[step].title}</h1>
           <p className="text-gray-500 mb-10">{STEPS[step].subtitle}</p>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-2xl p-8 shadow-xs border border-gray-100">
             {step === 0 && (
               <div className="text-center">
                 <div className="text-6xl mb-6">👋</div>
@@ -381,7 +381,7 @@ export default function OnboardingPage() {
                     type="checkbox"
                     checked={form.batch_cooking}
                     onChange={e => setForm(f => ({ ...f, batch_cooking: e.target.checked }))}
-                    className="w-5 h-5 rounded accent-brand-500"
+                    className="w-5 h-5 rounded-sm accent-brand-500"
                   />
                   <div>
                     <div className="font-semibold text-gray-900">Activer le batch cooking</div>

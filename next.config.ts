@@ -48,8 +48,17 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: isDev ? false : { exclude: ['error', 'warn'] },
   },
-  // Le repo git est le dossier parent (C:\…\SAAS) : sans cette racine
-  // explicite, Turbopack émet un warning à chaque démarrage dev.
+  // Racine explicite pour Turbopack (évite un warning si le repo git est
+  // ouvert depuis un dossier parent).
+  //
+  // ⚠️ `npm run dev` force --webpack (voir package.json) : avec Tailwind v4
+  // (CSS-first, @tailwindcss/postcss), Turbopack dev échoue sur Next.js
+  // 16.3.6 avec « Cannot find module '@tailwindcss/postcss' » dans son
+  // sous-processus postcss (pool_entry-[turbopack-node]_transforms_postcss),
+  // alors que Node résout le module sans problème et que `next build`
+  // (webpack par défaut) fonctionne. Bug de résolution de module propre à
+  // Turbopack dev, pas à ce projet — à retirer `--webpack` quand corrigé
+  // en amont (suivre les release notes Next.js).
   turbopack: {
     root: __dirname,
   },

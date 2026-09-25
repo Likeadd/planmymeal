@@ -122,7 +122,7 @@ export default function FavorisPage() {
           {/* Icône en pastille : même convention d'alignement que /recettes et
               /planning (texte sur la ligne de base commune). */}
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-sable-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+            <span className="w-11 h-11 rounded-2xl bg-sable-50 flex items-center justify-center shrink-0" aria-hidden>
               <Star className="w-5 h-5 text-sable-400 fill-sable-400" />
             </span>
             <h1 className="font-display text-3xl font-bold text-gray-900 tracking-tight">Mes favoris</h1>
@@ -167,7 +167,7 @@ export default function FavorisPage() {
               return (
                 <button key={f.value} onClick={() => setTypeFilter(f.value)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${typeFilter === f.value
-                    ? 'bg-brand-500 text-white shadow-sm'
+                    ? 'bg-brand-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                   {f.label}
                   <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({count})</span>
@@ -184,7 +184,7 @@ export default function FavorisPage() {
             {SORT_OPTIONS.map(s => (
               <button key={s.value} onClick={() => handleSort(s.value)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${sortKey === s.value
-                  ? 'bg-accent-500 text-white shadow-sm'
+                  ? 'bg-accent-500 text-white shadow-xs'
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-accent-50 hover:text-accent-600'}`}>
                 {s.label}{sortKey === s.value && s.value !== 'defaut' && (
                   <span className="ml-1">{sortAsc ? '↑' : '↓'}</span>
@@ -281,7 +281,7 @@ export default function FavorisPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
           role="dialog" aria-modal="true" aria-label="Ajouter au planning"
           onClick={() => setAddModal(null)}>
-          <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm" aria-hidden />
+          <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xs" aria-hidden />
 
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -289,12 +289,12 @@ export default function FavorisPage() {
             transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
             className="relative w-full sm:max-w-md bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-creme-50/95 backdrop-blur px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between gap-3">
+            <div className="sticky top-0 bg-creme-50/95 backdrop-blur-sm px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between gap-3">
               <h3 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
                 <Plus className="w-5 h-5 text-brand-500" /> Ajouter au planning
               </h3>
               <button onClick={() => setAddModal(null)} aria-label="Fermer"
-                className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 flex-shrink-0">
+                className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -317,7 +317,7 @@ export default function FavorisPage() {
                   onClick={() => setSelectedDay(idx)}
                   className={`px-2 py-2 rounded-full text-xs font-medium transition-all ${
                     selectedDay === idx
-                      ? 'bg-brand-500 text-white shadow-sm'
+                      ? 'bg-brand-500 text-white shadow-xs'
                       : idx >= 5
                         ? 'bg-sable-100 text-sable-700 hover:bg-sable-200'
                         : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
@@ -335,7 +335,7 @@ export default function FavorisPage() {
                   onClick={() => setSelectedRepas(r)}
                   className={`flex-1 py-3 rounded-full text-sm font-medium transition-all ${
                     selectedRepas === r
-                      ? 'bg-brand-500 text-white shadow-sm'
+                      ? 'bg-brand-500 text-white shadow-xs'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
                   }`}>
                   {r === 'dejeuner' ? '☀️ Déjeuner' : '🌙 Dîner'}

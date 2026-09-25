@@ -20,7 +20,7 @@ export default function ConfidentialitePage() {
       </header>
 
       <div className="container-app py-12">
-        <article className="max-w-3xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-sm p-8 sm:p-12 space-y-8">
+        <article className="max-w-3xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-xs p-8 sm:p-12 space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Confidentialité &amp; RGPD</h1>
             <p className="text-gray-500 mt-2 text-sm">

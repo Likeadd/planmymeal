@@ -154,7 +154,7 @@ export default function RecettePage() {
             <svg className="absolute bottom-0 left-0 w-full text-gray-50" viewBox="0 0 800 60" preserveAspectRatio="none" aria-hidden>
               <path d="M0 60 V30 C150 0 300 55 450 28 C600 5 720 35 800 18 V60 Z" fill="currentColor" opacity="0.5" />
             </svg>
-            <span className="text-8xl drop-shadow-sm" aria-hidden>{typeEmoji(meal.type_repas)}</span>
+            <span className="text-8xl drop-shadow-xs" aria-hidden>{typeEmoji(meal.type_repas)}</span>
           </div>
 
           {/* ─── Titre + badges ──────────────────────── */}
@@ -182,7 +182,7 @@ export default function RecettePage() {
             </div>
 
             {/* Like / Dislike */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => handleFeedback('liked')}
                 disabled={saving}
@@ -252,14 +252,14 @@ export default function RecettePage() {
           <FamilleBadges
             meal={meal}
             libelle="Ce que le foyer en pense"
-            className="mb-8 px-3 py-2 rounded-xl border border-gray-100 bg-white shadow-sm"
+            className="mb-8 px-3 py-2 rounded-xl border border-gray-100 bg-white shadow-xs"
           />
 
           <div className="grid lg:grid-cols-3 gap-8">
             {/* ─── Colonne gauche : ingrédients + macros ─── */}
             <div className="lg:col-span-1 space-y-6">
               {/* Ingrédients avec prix */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-bold text-gray-900 flex items-center gap-2">
                     <Utensils className="w-5 h-5 text-brand-500" />
@@ -305,7 +305,7 @@ export default function RecettePage() {
 
               {/* Ustensiles */}
               {meal.ustensiles && meal.ustensiles.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                   <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <CookingPot className="w-5 h-5 text-brand-500" />
                     Ustensiles nécessaires
@@ -321,7 +321,7 @@ export default function RecettePage() {
               )}
 
               {/* Macros détaillés */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                 <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Flame className="w-5 h-5 text-brand-500" />
                   Valeurs nutritionnelles
@@ -347,7 +347,7 @@ export default function RecettePage() {
 
             {/* ─── Colonne droite : instructions pas à pas ─── */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-8 shadow-sm">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-8 shadow-xs">
                 <h2 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-lg">
                   <ChefIcon className="w-5 h-5 text-brand-500" />
                   Instructions pas à pas
@@ -360,7 +360,7 @@ export default function RecettePage() {
                       return (
                         <div key={i} className="flex gap-4 group">
                           {/* Numéro */}
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
                             {i + 1}
                           </div>
                           {/* Texte */}
@@ -385,7 +385,7 @@ export default function RecettePage() {
                 {/* Astuce batch cooking */}
                 {meal.conservation_jours != null && meal.conservation_jours >= 3 && (
                   <div className="mt-8 p-4 bg-brand-50 border border-brand-100 rounded-xl flex items-start gap-3">
-                    <Package className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" />
+                    <Package className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-brand-800 text-sm">Idéal pour le batch cooking !</p>
                       <p className="text-brand-600 text-sm mt-0.5">
@@ -439,7 +439,7 @@ function InfoChip({
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border p-3 text-center shadow-sm ${
+    <div className={`rounded-xl border p-3 text-center shadow-xs ${
       highlight ? 'bg-sauge-50 border-sauge-200' : 'bg-white border-gray-100'
     }`}>
       <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">

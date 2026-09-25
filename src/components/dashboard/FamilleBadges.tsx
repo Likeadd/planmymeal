@@ -44,12 +44,12 @@ export const HUMEUR_LIBELLE: Record<HumeurMembre, string> = {
 
 /**
  * Classes d'une pastille de foyer (partagées avec la légende).
- * `flex-shrink-0` en fait partie : une pastille écrasée dans une ligne serrée
+ * `shrink-0` en fait partie : une pastille écrasée dans une ligne serrée
  * deviendrait illisible — c'est la même pastille sur une carte et dans la légende.
  */
 export function classePastille(humeur: HumeurMembre, compacte = false): string {
   return cn(
-    'inline-flex items-center justify-center rounded-full border leading-none flex-shrink-0',
+    'inline-flex items-center justify-center rounded-full border leading-none shrink-0',
     compacte ? 'w-[18px] h-[18px] text-[11px]' : 'w-5 h-5 text-[11px]',
     HUMEUR_PASTILLE[humeur],
   );

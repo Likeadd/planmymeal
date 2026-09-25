@@ -268,7 +268,7 @@ export function FamilleSettings() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-center py-10">
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs flex items-center justify-center py-10">
         <Loader2 className="w-5 h-5 text-brand-500 animate-spin" />
       </div>
     );
@@ -282,9 +282,9 @@ export function FamilleSettings() {
       : 'Équilibre : tes goûts et ceux du foyer pèsent d\'un poids comparable.';
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <div className="flex items-start gap-3 mb-1">
-        <div className="w-10 h-10 rounded-xl bg-accent-100 text-accent-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-accent-100 text-accent-600 flex items-center justify-center shrink-0">
           <Users className="w-5 h-5" />
         </div>
         <div>
@@ -349,7 +349,7 @@ export function FamilleSettings() {
               placeholder="Prénom"
               maxLength={40}
               aria-label="Prénom du membre"
-              className="flex-1 min-w-[120px] px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="flex-1 min-w-[120px] px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300"
             />
             <div className="flex items-center gap-1">
               {POIDS_MEMBRE.map(p => (
@@ -417,7 +417,7 @@ export function FamilleSettings() {
           <span>Tout le monde 💛</span>
         </div>
         <p className="mt-1.5 text-[11px] text-gray-500 flex items-start gap-1.5">
-          <Info className="w-3.5 h-3.5 flex-shrink-0 mt-[1px] text-gray-500" />
+          <Info className="w-3.5 h-3.5 shrink-0 mt-px text-gray-500" />
           {poidsFamille === 0
             ? 'À 0 %, la famille n\'influence plus le score : tu gardes exactement le planning d\'avant.'
             : `${descriptionPoids} Les aliments « 🚫 interdit » et les allergies restent exclus dans tous les cas.`}
@@ -490,14 +490,14 @@ function CarteMembre({
         <button
           onClick={onSupprimer}
           aria-label={`Retirer ${membre.nom || 'ce membre'}`}
-          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
         >
           <Trash2 className="w-4 h-4" />
         </button>
         <button
           onClick={onOuvrir}
           aria-label={ouvert ? 'Replier' : 'Déplier'}
-          className="p-1.5 rounded-lg text-gray-500 hover:text-gray-600 transition-colors flex-shrink-0"
+          className="p-1.5 rounded-lg text-gray-500 hover:text-gray-600 transition-colors shrink-0"
         >
           <ChevronDown className={cn('w-4 h-4 transition-transform', ouvert && 'rotate-180')} />
         </button>
@@ -521,7 +521,7 @@ function CarteMembre({
               placeholder="Prénom"
               maxLength={40}
               aria-label="Prénom du membre"
-              className="flex-1 min-w-[120px] px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="flex-1 min-w-[120px] px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300"
             />
             <input
               value={membre.age}
@@ -530,7 +530,7 @@ function CarteMembre({
               inputMode="numeric"
               maxLength={3}
               aria-label="Âge du membre"
-              className="w-16 px-2 py-1.5 text-sm text-center bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="w-16 px-2 py-1.5 text-sm text-center bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300"
             />
           </div>
 
@@ -634,7 +634,7 @@ function PickAliments({ choix, ingredients, onAjouter, onSupprimer, onRelation }
           onChange={e => setRecherche(e.target.value)}
           placeholder="Chercher un aliment (2 lettres min.)…"
           aria-label="Chercher un aliment"
-          className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300"
         />
       </div>
 
@@ -697,7 +697,7 @@ function PickAliments({ choix, ingredients, onAjouter, onSupprimer, onRelation }
                 type="button"
                 onClick={() => onSupprimer(a.ingredient_id)}
                 aria-label={`Retirer ${a.nom}`}
-                className="p-1 rounded text-gray-300 hover:text-red-500 transition-colors"
+                className="p-1 rounded-sm text-gray-300 hover:text-red-500 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -746,7 +746,7 @@ function PickRecettes({ choix, recettes, onAjouter, onSupprimer, onNote, onVeto 
           onChange={e => setRecherche(e.target.value)}
           placeholder="Chercher une recette (2 lettres min.)…"
           aria-label="Chercher une recette"
-          className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300"
         />
       </div>
 
@@ -818,7 +818,7 @@ function PickRecettes({ choix, recettes, onAjouter, onSupprimer, onNote, onVeto 
                 type="button"
                 onClick={() => onSupprimer(r.meal_id)}
                 aria-label={`Retirer ${r.titre}`}
-                className="p-1 rounded text-gray-300 hover:text-red-500 transition-colors"
+                className="p-1 rounded-sm text-gray-300 hover:text-red-500 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>

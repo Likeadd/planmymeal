@@ -122,7 +122,7 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
     <div className="rounded-3xl border border-gray-200 bg-white shadow-card">
       {/* Mobile : grille 2×2 compacte (icône + valeur) — tout reste visible,
           sans défilement horizontal ni cellule coupée au bord de l'écran. */}
-      <div className="grid grid-cols-2 md:hidden [&>*]:border-gray-100 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b">
+      <div className="grid grid-cols-2 md:hidden *:border-gray-100 [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b">
         <CelluleCompacte
           href="/compte" titre="Économies"
           icone={<PiggyBank className="w-3.5 h-3.5" />} iconCls="bg-brand-50 text-brand-600"
@@ -130,12 +130,12 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
           loadingClass="w-12" />
         {editionBudget ? (
           <span className="flex items-center gap-1.5 px-3 py-2.5 min-w-0">
-            <MetricIcon className="bg-accent-50 text-accent-600 !w-7 !h-7"><Wallet className="w-3.5 h-3.5" /></MetricIcon>
+            <MetricIcon className="bg-accent-50 text-accent-600 w-7! h-7!"><Wallet className="w-3.5 h-3.5" /></MetricIcon>
             <input type="number" min={0} max={10000} step="0.5" value={budgetSaisie}
               onChange={e => setBudgetSaisie(e.target.value)} placeholder="45" autoFocus
               aria-label="Budget hebdomadaire en euros"
               onKeyDown={e => { if (e.key === 'Escape') setEditionBudget(false); }}
-              className="w-16 px-1.5 py-1 text-[13px] bg-white border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300" />
+              className="w-16 px-1.5 py-1 text-[13px] bg-white border border-accent-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent-300" />
             <button onClick={enregistrerBudget} disabled={enregistreBudget} title="Enregistrer"
               className="p-1.5 rounded-lg bg-sauge-500 text-white hover:bg-sauge-600 disabled:opacity-50 transition-colors">
               {enregistreBudget ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
@@ -194,7 +194,7 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
                 placeholder="ex : 45"
                 autoFocus
                 aria-label="Budget hebdomadaire en euros"
-                className="w-20 px-2 py-1 text-sm bg-white border border-accent-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-300"
+                className="w-20 px-2 py-1 text-sm bg-white border border-accent-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-accent-300"
               />
               <span className="text-sm text-gray-500 font-medium">€/sem</span>
               <button type="submit" disabled={enregistreBudget} title="Enregistrer"
@@ -294,7 +294,7 @@ function CelluleCompacte({ href, onClicSansLien, titre, icone, iconCls, valeur, 
 }) {
   const contenu = (
     <>
-      <MetricIcon className={cn('!w-7 !h-7 rounded-lg', iconCls)}>{icone}</MetricIcon>
+      <MetricIcon className={cn('w-7! h-7! rounded-lg', iconCls)}>{icone}</MetricIcon>
       <span className="min-w-0">
         {valeur === null
           ? <span className={cn('inline-block h-4 rounded-lg animate-shimmer align-middle', loadingClass)} />
@@ -315,7 +315,7 @@ function CelluleCompacte({ href, onClicSansLien, titre, icone, iconCls, valeur, 
 
 function MetricIcon({ className = '', children }: { className?: string; children: React.ReactNode }) {
   return (
-    <span className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors', className)}>
+    <span className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors', className)}>
       {children}
     </span>
   );
@@ -334,7 +334,7 @@ function MetricValue({ children, loading, loadingClass = 'w-14' }: {
 
 function MetricLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="mt-1 block text-[11px] font-semibold tracking-[0.1em] uppercase text-gray-500 truncate">
+    <span className="mt-1 block text-[11px] font-semibold tracking-widest uppercase text-gray-500 truncate">
       {children}
     </span>
   );

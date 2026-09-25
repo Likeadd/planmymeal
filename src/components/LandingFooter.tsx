@@ -47,7 +47,7 @@ export default function LandingFooter() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="ADRESSE EMAIL"
-                  className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-none uppercase"
+                  className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-hidden uppercase"
                 />
                 <button type="submit" aria-label="S’inscrire"
                   className="text-brand-600 hover:text-brand-700 transition-colors">

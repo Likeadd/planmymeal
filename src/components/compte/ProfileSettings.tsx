@@ -69,7 +69,7 @@ export function ProfileSettings() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <div className="flex items-center justify-between mb-5">
         <h2 className="font-semibold font-display text-gray-900 text-lg flex items-center gap-2">
           <User className="w-5 h-5 text-brand-500" /> Profil
@@ -89,12 +89,12 @@ export function ProfileSettings() {
       {!editing ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <User className="w-4 h-4 text-gray-500 shrink-0" />
             <span className="text-sm text-gray-500 w-24">Nom</span>
             <span className="text-sm text-gray-900">{profile?.full_name || '—'}</span>
           </div>
           <div className="flex items-center gap-3">
-            <Mail className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <Mail className="w-4 h-4 text-gray-500 shrink-0" />
             <span className="text-sm text-gray-500 w-24">Email</span>
             <span className="text-sm text-gray-900">{profile?.email}</span>
           </div>
@@ -110,7 +110,7 @@ export function ProfileSettings() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
               autoComplete="name"
             />
           </div>
@@ -125,7 +125,7 @@ export function ProfileSettings() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:border-brand-400 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:bg-white transition-colors"
                 autoComplete="email"
               />
             </div>

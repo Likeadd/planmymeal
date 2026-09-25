@@ -94,13 +94,13 @@ function Topbar({ onRegenerate, regenerating, showRegenerate }: {
   showRegenerate?: boolean;
 }) {
   return (
-    <header className="hidden lg:block sticky top-0 z-30 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+    <header className="hidden lg:block sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
       {/* Alignement topbar ↔ contenu : mêmes bornes que .container-app
           (max-w-6xl + px-4/6/8), sinon le logo et la nav ne s'alignent pas
           avec les titres des pages en dessous. */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
         {/* Logo à gauche — BrandMark (identité unique dérivée de la landing) */}
-        <BrandMark href="/" height={34} className="flex-shrink-0" />
+        <BrandMark href="/" height={34} className="shrink-0" />
 
         {/* Nav centrale : liens micro-caps espacés comme la landing (gap-6/9) */}
         <nav className="flex-1 flex items-center justify-center gap-6 lg:gap-9 min-w-0">
@@ -110,7 +110,7 @@ function Topbar({ onRegenerate, regenerating, showRegenerate }: {
         </nav>
 
         {/* Actions à droite : plan, avatar terracotta + menu, optimiser */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <PlanChip />
           <UserMenu />
           {showRegenerate && (
@@ -196,7 +196,7 @@ function PlanChip() {
 function MobileTopbar() {
   const { profile } = useAuth();
   return (
-    <header className="lg:hidden sticky top-0 z-20 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+    <header className="lg:hidden sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
       <div className="flex items-center justify-between px-4 py-3">
         <BrandMark href="/aujourdhui" height={30} className="py-2.5 -my-2.5" />
         {profile?.plan && profile.plan !== 'gratuit' && (

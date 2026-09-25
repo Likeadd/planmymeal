@@ -90,12 +90,12 @@ export function ShoppingListView({
           <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-full w-fit p-1">
             <button onClick={() => setTriMagasin(true)} aria-pressed={triMagasin}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                triMagasin ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                triMagasin ? 'bg-white text-brand-600 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}>
               <Route className="w-3.5 h-3.5" /> Parcours magasin
             </button>
             <button onClick={() => setTriMagasin(false)} aria-pressed={!triMagasin}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                !triMagasin ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                !triMagasin ? 'bg-white text-brand-600 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}>
               <ArrowDownAZ className="w-3.5 h-3.5" /> A → Z
             </button>
           </div>
@@ -122,7 +122,7 @@ export function ShoppingListView({
             <div className="px-4 sm:px-5 py-3.5 bg-gray-50 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-[15.5px] flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-lg" aria-hidden>
+                  <span className="w-9 h-9 rounded-full bg-white shadow-xs flex items-center justify-center text-lg" aria-hidden>
                     {section.label.match(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u)?.[0] ?? '🛒'}
                   </span>
                   {section.label.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+\s*/u, '')}
@@ -147,7 +147,7 @@ export function ShoppingListView({
                   <button onClick={() => onToggle(section.label, item.nom)}
                     aria-pressed={item.checked}
                     aria-label={item.checked ? `Décocher ${item.nom}` : `Cocher ${item.nom}`}
-                    className="w-9 h-9 -m-1 rounded-full flex items-center justify-center flex-shrink-0 transition-transform duration-150 active:scale-90">
+                    className="w-9 h-9 -m-1 rounded-full flex items-center justify-center shrink-0 transition-transform duration-150 active:scale-90">
                     <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${item.checked ? 'bg-forest-500 border-forest-500' : 'border-gray-300 hover:border-forest-400 scale-95'}`}>
                       {/* Check dessiné : le trait suit la coche (stroke-dashoffset) */}
                       <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>

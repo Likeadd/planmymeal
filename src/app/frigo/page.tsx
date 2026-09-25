@@ -308,7 +308,7 @@ export default function FrigoPage() {
             lieu du bloc 64px empilé qui décentrait la page en colonne étroite. */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center flex-shrink-0" aria-hidden>
+            <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
               <Refrigerator className="w-5 h-5 text-brand-500" />
             </span>
             <h1 className="text-3xl font-bold font-display text-gray-900">Mon frigo</h1>
@@ -329,7 +329,7 @@ export default function FrigoPage() {
         {items.length > 0 && (
           <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-sauge-50 border border-sauge-200 px-4 py-3">
             <div className="flex items-center gap-3 min-w-0">
-              <CalendarDays className="w-5 h-5 text-sauge-600 flex-shrink-0" />
+              <CalendarDays className="w-5 h-5 text-sauge-600 shrink-0" />
               <p className="text-sm text-sauge-800 min-w-0">
                 {creneauxCouverts > 0
                   ? <>✨ <strong>{creneauxCouverts} repas</strong> de cette semaine peuvent utiliser ce que tu as déjà.</>
@@ -337,7 +337,7 @@ export default function FrigoPage() {
               </p>
             </div>
             <Link href="/vider-le-frigo" title="3 recettes rapides avec ce que tu as"
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 min-h-[40px] text-xs font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 transition-colors">
+              className="shrink-0 flex items-center gap-1.5 px-4 min-h-[40px] text-xs font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 transition-colors">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Optimiser avec mon frigo</span>
               <span className="sm:hidden">Optimiser</span>
@@ -388,7 +388,7 @@ export default function FrigoPage() {
         )}
 
         {/* Ajout d'un article */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mb-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 text-sm">Ajouter un article</h2>
             {selection && (
@@ -429,7 +429,7 @@ export default function FrigoPage() {
                   value={recherche}
                   onChange={e => setRecherche(e.target.value)}
                   placeholder="Rechercher un ingrédient (œufs, poulet, carottes…)"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
                 />
               </div>
               <div className="flex flex-wrap gap-1.5 max-h-52 overflow-y-auto">
@@ -471,12 +471,12 @@ export default function FrigoPage() {
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Quantité</span>
                   <input type="number" min={0.1} step="0.1" value={quantite}
                     onChange={e => setQuantite(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300" />
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Unité</span>
                   <select value={unite} onChange={e => setUnite(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300">
+                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300">
                     {['g', 'kg', 'ml', 'cl', 'L', ...UNITES_FRIGO.filter(u => u !== 'g' && u !== 'ml')]
                       .filter((u, i, arr) => arr.indexOf(u) === i)
                       .map(u => <option key={u} value={u}>{u}</option>)}
@@ -485,7 +485,7 @@ export default function FrigoPage() {
                 <label className="flex flex-col gap-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Péremption</span>
                   <input type="date" value={expiration} onChange={e => setExpiration(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300" />
                 </label>
               </div>
 
@@ -499,7 +499,7 @@ export default function FrigoPage() {
         </div>
 
         {/* Inventaire */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 text-sm">
               Mon garde-manger <span className="text-gray-500 font-normal">({items.length})</span>
@@ -537,7 +537,7 @@ export default function FrigoPage() {
                     </p>
                   </div>
                   <button onClick={() => retirer(item.id)} aria-label={`Retirer ${item.ingredient?.nom ?? ''}`}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0">
+                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </li>

@@ -67,7 +67,7 @@ export function OptimiserBar({
                     <span className="block text-sm font-semibold text-gray-900">{it.label}</span>
                     <span className="block text-xs text-gray-500">{it.sous}</span>
                   </span>
-                  {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 flex-shrink-0" aria-label="défaut" />}
+                  {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />}
                 </button>
               ))}
             </div>
@@ -139,7 +139,7 @@ export function OptimiserButton({
                   <span className="block text-sm font-semibold text-gray-900">{it.label}</span>
                   <span className="block text-xs text-gray-500">{it.sous}</span>
                 </span>
-                {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 flex-shrink-0" aria-label="défaut" />}
+                {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />}
               </button>
             ))}
           </div>

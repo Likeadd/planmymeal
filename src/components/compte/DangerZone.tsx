@@ -38,7 +38,7 @@ export function DangerZone() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-red-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 border border-red-100 shadow-xs">
       <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2 mb-1">
         <Trash2 className="w-5 h-5 text-red-500" /> Supprimer mon compte
       </h2>
@@ -66,7 +66,7 @@ export function DangerZone() {
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="SUPPRIMER"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-red-400 focus:bg-white transition-colors"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-hidden focus:border-red-400 focus:bg-white transition-colors"
             autoComplete="off"
           />
           <div className="flex gap-3">

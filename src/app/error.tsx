@@ -26,7 +26,7 @@ export default function ErrorPage({
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center bg-white rounded-3xl border border-gray-200 shadow-sm p-10 animate-fade-in">
+      <div className="max-w-md w-full text-center bg-white rounded-3xl border border-gray-200 shadow-xs p-10 animate-fade-in">
         <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="w-8 h-8 text-brand-500" />
         </div>

@@ -68,7 +68,7 @@ export function FamilleLegende({ className }: { className?: string }) {
       className,
     )}>
       <span className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-        <Users className="w-4 h-4 text-accent-500 flex-shrink-0" />
+        <Users className="w-4 h-4 text-accent-500 shrink-0" />
         Avis du foyer
         <span className="font-normal text-gray-500">
           {/* Une seule chaîne : du JSX interpolé insérerait des commentaires HTML
@@ -98,7 +98,7 @@ export function FamilleLegende({ className }: { className?: string }) {
       </ul>
 
       <Link href="/compte"
-        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-accent-700 bg-white rounded-full border border-accent-200 hover:bg-accent-100 transition-colors flex-shrink-0">
+        className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-accent-700 bg-white rounded-full border border-accent-200 hover:bg-accent-100 transition-colors shrink-0">
         <Settings2 className="w-3.5 h-3.5" /> Régler mes convives
       </Link>
     </div>

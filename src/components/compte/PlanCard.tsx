@@ -28,7 +28,7 @@ export function PlanCard({
       plan === 'pro'
         ? 'border-brand-200 hover:border-brand-400'
         : 'border-accent-200 hover:border-accent-400'
-    } shadow-sm`}>
+    } shadow-xs`}>
       {/* Badge */}
       <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-4 ${
         plan === 'pro' ? 'bg-brand-100 text-brand-700' : 'bg-accent-100 text-accent-700'
@@ -47,7 +47,7 @@ export function PlanCard({
       <ul className="space-y-2 mb-6">
         {p.features.map((f, i) => (
           <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-            <Check className="w-4 h-4 text-sauge-500 flex-shrink-0" />
+            <Check className="w-4 h-4 text-sauge-500 shrink-0" />
             {f}
           </li>
         ))}

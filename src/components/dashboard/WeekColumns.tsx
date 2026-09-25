@@ -159,13 +159,13 @@ function DayColumn({
           : estAujourdhui
             ? 'border-brand-300 ring-1 ring-brand-200 shadow-card'
             : 'border-gray-200 shadow-card'}
-        ${!creneauSurvolé && estJourBatch ? 'bg-gradient-to-b from-accent-100 to-white border-accent-200' : ''}
+        ${!creneauSurvolé && estJourBatch ? 'bg-linear-to-b from-accent-100 to-white border-accent-200' : ''}
       `}
     >
       {/* En-tête : jour + date réelle (ex : LUN 7) — aligné sur le bord des
           cartes (pas de px-1 : le texte ne « flotte » plus 4px à l'intérieur). */}
       <div className="flex items-center justify-between mb-2.5">
-        <span className={`text-xs font-extrabold uppercase tracking-[0.1em] ${estAujourdhui ? 'text-brand-600' : 'text-gray-500'}`}>
+        <span className={`text-xs font-extrabold uppercase tracking-widest ${estAujourdhui ? 'text-brand-600' : 'text-gray-500'}`}>
           {day.jour.slice(0, 3)}
         </span>
         <span className={`text-[11px] font-bold ${estAujourdhui ? 'text-brand-400' : 'text-gray-300'}`}>
@@ -352,7 +352,7 @@ function MealChip({ type, meal, jour, status, restesDe, regenerating, dropSurvol
           onClick={e => { e.preventDefault(); e.stopPropagation(); onMarkStatus(meal.id, 'cooked'); }}
           title={status === 'cooked' ? 'Cuisiné ✓' : 'Marquer comme cuisiné'}
           aria-label={status === 'cooked' ? 'Cuisiné' : 'Marquer comme cuisiné'}
-          className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center shadow-sm transition-colors ${
+          className={`absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center shadow-xs transition-colors ${
             status === 'cooked'
               ? 'bg-sauge-500 text-white'
               : estReste
@@ -463,7 +463,7 @@ function ChipAction({ icon, title, onClick, className = '', disabled }: {
   return (
     <button onClick={e => { e.preventDefault(); e.stopPropagation(); onClick(); }}
       disabled={disabled} title={title} aria-label={title}
-      className={`p-1.5 rounded-full bg-white border border-gray-100 shadow-sm text-gray-500 transition-colors hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 ${className}`}>
+      className={`p-1.5 rounded-full bg-white border border-gray-100 shadow-xs text-gray-500 transition-colors hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 ${className}`}>
       {icon}
     </button>
   );

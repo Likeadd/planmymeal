@@ -3,11 +3,17 @@
 // ============================================================================
 
 import { createBrowserClient } from '@/lib/supabase';
+import { STRIPE_ENABLED } from '@/lib/stripe';
 
 /**
  * Redirige vers la page de checkout Stripe pour le plan choisi
  */
 export async function redirectToCheckout(plan: 'pro' | 'famille') {
+  // Garde de sécurité : aucun bouton de l'app n'appelle cette fonction tant
+  // que STRIPE_ENABLED est à false, mais on la bloque aussi ici en dernier
+  // recours (défense en profondeur).
+  if (!STRIPE_ENABLED) throw new Error('Les paiements ne sont pas encore ouverts.');
+
   // Appel à l'Edge Function Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

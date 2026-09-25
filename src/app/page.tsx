@@ -16,6 +16,7 @@ import { Underlined } from '@/components/WavyUnderline';
 import { Reveal } from '@/components/Reveal';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
+import { STRIPE_ENABLED } from '@/lib/stripe';
 
 export default function LandingPage() {
   return (
@@ -642,20 +643,27 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
                       viewport={{ once: true, margin: '-80px' }}
                       transition={reduceMotion ? { duration: 0 } : { duration: 0.45, delay: c.key === 'famille' ? 0.35 : 0, ease: 'easeOut' }}
                     >
-                    <button
-                      type="button"
-                      onClick={() => onUpgrade(c.key as 'pro' | 'famille')}
-                      disabled={loadingPlan !== null}
-                      className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-full text-white text-xs font-semibold transition-colors disabled:opacity-60 ${
-                        c.accent ? 'bg-brand-500 hover:bg-brand-600' : 'bg-accent-500 hover:bg-accent-600'
-                      }`}
-                    >
-                      {loadingPlan === c.key ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirection…</>
-                      ) : (
-                        <>Choisir {c.name} <ArrowRight className="w-3.5 h-3.5" /></>
-                      )}
-                    </button>
+                    {STRIPE_ENABLED ? (
+                      <button
+                        type="button"
+                        onClick={() => onUpgrade(c.key as 'pro' | 'famille')}
+                        disabled={loadingPlan !== null}
+                        className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-full text-white text-xs font-semibold transition-colors disabled:opacity-60 ${
+                          c.accent ? 'bg-brand-500 hover:bg-brand-600' : 'bg-accent-500 hover:bg-accent-600'
+                        }`}
+                      >
+                        {loadingPlan === c.key ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirection…</>
+                        ) : (
+                          <>Choisir {c.name} <ArrowRight className="w-3.5 h-3.5" /></>
+                        )}
+                      </button>
+                    ) : (
+                      // Paiement pas encore ouvert : pas de clic mort, un état honnête.
+                      <span className="inline-flex items-center justify-center w-full px-3 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
+                        Bientôt disponible
+                      </span>
+                    )}
                     </motion.div>
                   )}
                 </th>

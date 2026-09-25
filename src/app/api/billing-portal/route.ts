@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
+import { STRIPE_ENABLED } from '@/lib/stripe';
 
 // Import dynamique : Stripe peut ne pas être configuré (clé absente) — la
 // route (et donc le build, qui charge ce module pour collecter les métadonnées
@@ -27,6 +28,10 @@ async function getStripeClient(): Promise<Stripe | null> {
  * ouvrir le portail de facturation d'un autre (faille IDOR critique).
  */
 export async function POST(request: NextRequest) {
+  if (!STRIPE_ENABLED) {
+    return NextResponse.json({ error: 'Facturation momentanément indisponible.' }, { status: 503 });
+  }
+
   // Anti-abus : chaque appel consomme un quota d'API Stripe
   const limited = enforceRateLimit(request, { name: 'billing-portal', limit: 10, windowMs: 60_000 });
   if (limited) return limited;

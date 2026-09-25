@@ -2,6 +2,15 @@
 // Configuration Stripe — Prix et plans
 // ============================================================================
 
+/**
+ * Interrupteur temporaire : les paiements Stripe ne sont pas encore prêts
+ * (clés non configurées sur le déploiement). Tant que c'est `false`, aucun
+ * bouton de l'app ne déclenche de checkout ni n'appelle Stripe — l'app tourne
+ * sans qu'aucune variable Stripe (clé secrète, clé publique, ID de prix) soit
+ * définie côté Vercel. Repasser à `true` une fois les clés en place.
+ */
+export const STRIPE_ENABLED = false;
+
 // Features alignées sur la landing (src/app/page.tsx) : les deux écrans
 // vendent le même produit — toute divergence serait un signal de méfiance.
 // Rappel des gates réels : générations 4/7j en gratuit (api/generate-week),

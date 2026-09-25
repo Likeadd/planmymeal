@@ -71,6 +71,15 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   {
+    // ESLint 10 a retiré `context.getFilename()` (remplacé par `context.filename`).
+    // eslint-plugin-react (dépendance d'eslint-config-next) l'utilise encore pour
+    // DÉTECTER automatiquement la version de React depuis le package.json le plus
+    // proche → plante avec ESLint 10. Fixer la version explicitement court-circuite
+    // cette détection (le plugin ne l'appelle plus) : plus besoin d'attendre la
+    // correction en amont d'eslint-plugin-react.
+    settings: { react: { version: '19.2.7' } },
+  },
+  {
     plugins: { charte: { rules: { 'no-off-palette-colors': noOffPaletteColors } } },
     rules: {
       // Fin de la dette « any » : tous les appels Supabase sont typés via les

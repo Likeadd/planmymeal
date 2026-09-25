@@ -1,0 +1,57 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# captures d'écran générées (Playwright)
+/screenshots
+
+# artefacts de test Playwright (traces, rapports)
+/test-results
+/playwright-report
+
+# misc
+.DS_Store
+*.pem
+*.log
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files (aucun secret dans le code partagé)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# archives (peuvent embarquer .env.local / sessions)
+*.zip
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase
+supabase/.branches
+supabase/.temp
+# Session Playwright locale (cookies) — jamais commitée
+.pf-session.json
+
+# sauvegardes de la base (données personnelles)
+/backups

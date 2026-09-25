@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-gray-50 text-gray-900 antialiased; font-family: var(--font-inter), 'Inter', system-ui, sans-serif; }
+  h1, h2, h3, h4, h5, h6 { @apply font-display; }
+  /* Ancres de navigation (/#tarifs…) : les sections de la landing portent
+     déjà 80–112px de padding interne (py-20/py-28) — la marge ne doit couvrir
+     QUE le rabat sous le header collant, pas s'y ajouter. Avec 24px, le titre
+     atterrit à ~24px sous le header en mobile (py-20) et ~56px en desktop
+     (py-28) : proche, lisible, sans grand vide ni section coupée. */
+  section[id] { scroll-margin-top: 24px; }
+  /* Exception : #rituels est la SEULE section sans padding haut (sa carte
+     terracotta/crème commence immédiatement) — la marge d'ancrage doit lui
+     fournir l'air que les autres ont en interne, sinon elle colle au header. */
+  section#rituels { scroll-margin-top: 88px; }
+}
+
+@layer components {
+  .container-app { @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+/* Squelettes : crème chaud de la palette (gray-100 → gray-200), pas de gris froid */
+.animate-shimmer {
+  background: linear-gradient(90deg, #f6f0e4 25%, #ece2ce 50%, #f6f0e4 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Transition de page (template.tsx) : fade 150 ms, feel « app native » ── */
+@keyframes pageIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-page-in { animation: pageIn 0.15s ease-out; }
+
+/* ── Coche animée de la liste de courses : le trait SVG se dessine ──
+   (stroke-dasharray 24 = longueur du path « M5 13l4 4L19 7 ») */
+.check-path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  transition: stroke-dashoffset 0.25s ease-out 0.05s;
+}
+.check-path-on { stroke-dashoffset: 0; }
+
+/* ── Accessibilité : prefers-reduced-motion coupe TOUTES les animations CSS ──
+   (shimmer, slide-up, transitions, smooth-scroll…) — les états finaux restent
+   lisibles. Les animations framer-motion sont gérées par useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto !important; }
+  .check-path { transition: none; }
+  .check-path-on { stroke-dashoffset: 0; }
+}

@@ -78,11 +78,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // ── Source de vérité serveur : l'état d'onboarding est relu en base à
-  // chaque navigation (pas d'état client susceptible d'être périmé). Sans
-  // ce garde, une requête « profiles » perdue côté client renvoyait un
-  // utilisateur DÉJÀ onboardé vers /onboarding (course observée en E2E).
-  if (user) {
+  // ── Source de vérité serveur : l'état d'onboarding est relu en base (pas
+  // d'état client susceptible d'être périmé). Sans ce garde, une requête
+  // « profiles » perdue côté client renvoyait un utilisateur DÉJÀ onboardé
+  // vers /onboarding (course observée en E2E). Lu UNIQUEMENT sur les routes
+  // qui en dépendent : ailleurs, c'était un aller-retour base inutile à
+  // chaque navigation.
+  const pathname = request.nextUrl.pathname;
+  const dependOnboarding = ['/onboarding', '/dashboard', '/aujourdhui'].some(p => pathname.startsWith(p));
+  if (user && dependOnboarding) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('onboarding_complete')
@@ -118,6 +122,6 @@ export async function proxy(request: NextRequest) {
 // (route serveur), le sitemap/robots et tous les assets statiques.
 export const config = {
   matcher: [
-    '/((?!auth/|_next/static|_next/image|favicon\.ico|sitemap\.xml|robots\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!auth/|_next/static|_next/image|favicon\.ico|sitemap\.xml|robots\.txt|manifest\.webmanifest|sw\.js|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|txt|xml|js)$).*)',
   ],
 };

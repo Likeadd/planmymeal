@@ -15,15 +15,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  Refrigerator, Loader2, Plus, Trash2, Search, Sparkles, CalendarDays, Check, Zap, AlertTriangle,
+  Refrigerator, Loader2, Plus, Trash2, Sparkles, Check, Zap, AlertTriangle, X, Minus,
 } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import type { FridgeItem, Ingredient } from '@/types';
 import { createBrowserClient } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
-import { ALIMENTS_FRIGO, cleNomIngredient, UNITES_FRIGO } from '@/lib/frigo';
+import { ALIMENTS_FRIGO, cleNomIngredient } from '@/lib/frigo';
 import { getMonday } from '@/lib/dates';
+import { DICT_FR } from '@/lib/i18n/fr';
 import { errorMessage, cn } from '@/lib/utils';
 
 /** Ligne de plan_meals avec l'embed minimal nécessaire au comptage frigo */
@@ -33,36 +35,62 @@ interface PlanMealFrigo {
   meals: { meal_ingredients: { ingredient_id: number }[] } | null;
 }
 
+/** Un aliment d'ajout rapide résolu contre le catalogue réel, en attente d'ajout. */
+interface AlimentPanier {
+  nom: string;
+  emoji: string;
+  quantite: number;
+  unite: string;
+  ingredient: Ingredient;
+}
+
+/** Pas d'incrément du stepper de quantité, adapté à l'unité — 1 pièce n'a pas
+ *  le même sens qu'1 gramme. */
+function stepPourUnite(unite: string): number {
+  if (['pcs', 'botte', 'boite', 'sachet'].includes(unite)) return 1;
+  if (unite === 'kg' || unite === 'L') return 0.5;
+  if (unite === 'cl') return 5;
+  return 50; // g, ml
+}
+
 /**
- * Groupe d'ajouts rapides : les puces du rayon, cliquables une à une, avec
- * l'état « déjà au frigo » (pastille sauge + coche, comme la recherche).
+ * Groupe d'ajouts rapides : les puces du rayon, cliquables une à une pour
+ * basculer dans le panier ci-dessous. Deux états visuels indépendants :
+ * « déjà au frigo » (informatif, pastille sauge) et « dans le panier »
+ * (sélection en cours, pastille brand — c'est celui qui prime).
  */
 function GroupeAjoutsRapides({
-  label, aliments, frigoCles, onChoisir,
+  label, aliments, frigoCles, panierIds, onToggle,
 }: {
   label: string;
-  aliments: { nom: string; emoji: string; quantite: number; unite: string; ingredient: Ingredient }[];
+  aliments: AlimentPanier[];
   /** Clés (noms normalisés) des ingrédients déjà dans le garde-manger */
   frigoCles: Set<string>;
-  onChoisir: (a: { nom: string; emoji: string; quantite: number; unite: string; ingredient: Ingredient }) => void;
+  /** Ids des ingrédients actuellement dans le panier (en attente d'ajout) */
+  panierIds: Set<number>;
+  onToggle: (a: AlimentPanier) => void;
 }) {
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {aliments.map(a => {
-          const dedans = frigoCles.has(cleNomIngredient(a.nom));
+          const dansPanier = panierIds.has(a.ingredient.id);
+          const dejaDedans = !dansPanier && frigoCles.has(cleNomIngredient(a.nom));
           return (
-            <button key={a.nom} onClick={() => onChoisir(a)}
+            <button key={a.nom} onClick={() => onToggle(a)}
               title={`${a.nom} — ${a.quantite} ${a.unite}`}
               className={cn(
                 'inline-flex items-center min-h-[40px] px-3 py-2 text-xs font-medium rounded-full border transition-colors',
-                dedans
-                  ? 'bg-sauge-50 text-sauge-700 border-sauge-200'
-                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'
+                dansPanier
+                  ? 'bg-brand-500 text-white border-brand-500'
+                  : dejaDedans
+                    ? 'bg-sauge-50 text-sauge-700 border-sauge-200'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'
               )}>
               <span aria-hidden>{a.emoji}</span> {a.nom}
-              {dedans && <Check className="w-3 h-3 inline ml-1 -mt-0.5" />}
+              {dansPanier && <Check className="w-3 h-3 inline ml-1 -mt-0.5" />}
+              {dejaDedans && <Check className="w-3 h-3 inline ml-1 -mt-0.5" />}
             </button>
           );
         })}
@@ -77,17 +105,18 @@ export default function FrigoPage() {
 
   const [items, setItems] = useState<FridgeItem[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [recherche, setRecherche] = useState('');
-  const [selection, setSelection] = useState<Ingredient | null>(null);
-  const [quantite, setQuantite] = useState('1');
-  const [unite, setUnite] = useState<string>('g');
-  const [expiration, setExpiration] = useState('');
+  /** Panier de la modale : aliments cochés dans les ajouts rapides, en attente
+   *  de validation (récap affiché sous les puces). */
+  const [panier, setPanier] = useState<AlimentPanier[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [planMeals, setPlanMeals] = useState<PlanMealFrigo[]>([]);
   const [error, setError] = useState('');
   /** Date seuil « périme bientôt » (J+3), calculée dans l'effet de chargement */
   const [seuilPeremption, setSeuilPeremption] = useState('');
+  /** Modale « Ajouter un article » — repliée par défaut (nouveau design) */
+  const [ajoutOuvert, setAjoutOuvert] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const semaine = getMonday();
 
@@ -128,12 +157,6 @@ export default function FrigoPage() {
     return () => { alive = false; };
   }, [supabase, user, authLoading, semaine]);
 
-  const ingredientsFiltres = useMemo(() => {
-    const q = recherche.trim().toLowerCase();
-    if (!q) return ingredients.slice(0, 40);
-    return ingredients.filter(i => i.nom.toLowerCase().includes(q)).slice(0, 40);
-  }, [ingredients, recherche]);
-
   const frigoIds = useMemo(() => new Set(items.map(i => i.ingredient_id)), [items]);
 
   // Clés (noms normalisés) du garde-manger : l'état « déjà au frigo » des
@@ -164,18 +187,31 @@ export default function FrigoPage() {
       .filter(g => g.aliments.length > 0);
   }, [ingredients]);
 
-  /** Sélectionne un aliment d'ajout rapide : même formulaire que la recherche,
-   *  mais quantité et unité pré-remplies pour un stock courant. */
-  const choisirRapide = useCallback(
-    (a: { nom: string; emoji: string; quantite: number; unite: string; ingredient: Ingredient }) => {
-      setSelection(a.ingredient);
-      setQuantite(String(a.quantite));
-      setUnite(a.unite);
-      setExpiration('');
-      setRecherche(a.nom);
-    },
-    []
-  );
+  /** Ids du panier (pour l'état visuel des puces) */
+  const panierIds = useMemo(() => new Set(panier.map(p => p.ingredient.id)), [panier]);
+
+  /** Coche/décoche un aliment d'ajout rapide : bascule dans le panier avec sa
+   *  quantité courante, prête à ajuster dans le récap. */
+  const togglePanier = useCallback((a: AlimentPanier) => {
+    setPanier(prev => {
+      const i = prev.findIndex(p => p.ingredient.id === a.ingredient.id);
+      if (i >= 0) return prev.filter((_, idx) => idx !== i);
+      return [...prev, a];
+    });
+  }, []);
+
+  /** Ajuste la quantité d'un article du panier (jamais en dessous de 0,1). */
+  const ajusterQuantitePanier = useCallback((ingredientId: number, delta: number) => {
+    setPanier(prev => prev.map(p =>
+      p.ingredient.id === ingredientId
+        ? { ...p, quantite: Math.max(0.1, Math.round((p.quantite + delta) * 100) / 100) }
+        : p
+    ));
+  }, []);
+
+  const retirerDuPanier = useCallback((ingredientId: number) => {
+    setPanier(prev => prev.filter(p => p.ingredient.id !== ingredientId));
+  }, []);
 
   /**
    * Créneaux de la semaine qui utilisent au moins un ingrédient du frigo.
@@ -210,55 +246,67 @@ export default function FrigoPage() {
       }));
   }, [items, seuilPeremption]);
 
-  /** Répartition du garde-manger par rayon (compteurs, comme la maquette) */
-  const parRayon = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const i of items) {
-      const r = i.ingredient?.rayon ?? 'autres';
-      m.set(r, (m.get(r) ?? 0) + 1);
+  /** Inventaire groupé par rayon (libellé + emoji du dictionnaire), triés par
+   *  nombre d'articles décroissant — lecture par famille au lieu d'une liste
+   *  plate, plus lisible dès qu'il y a plus d'une poignée d'articles. */
+  const inventaireParRayon = useMemo(() => {
+    const groupes = new Map<string, FridgeItem[]>();
+    for (const item of items) {
+      const r = item.ingredient?.rayon ?? 'autres';
+      const arr = groupes.get(r) ?? [];
+      arr.push(item);
+      groupes.set(r, arr);
     }
-    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(groupes.entries())
+      .map(([rayon, arr]) => ({
+        rayon,
+        label: DICT_FR.rayons[rayon as keyof typeof DICT_FR.rayons] ?? `📦 ${rayon}`,
+        items: arr,
+      }))
+      .sort((a, b) => b.items.length - a.items.length);
   }, [items]);
 
-  const ajouter = useCallback(async () => {
-    if (!selection) return;
-    const q = Number(quantite);
-    if (!Number.isFinite(q) || q <= 0) {
-      toast.error('Indique une quantité valide');
-      return;
-    }
-
+  /** Valide le panier : ajoute chaque article coché, un appel API à la fois
+   *  (l'endpoint ne prend qu'un ingrédient par requête). En cas d'échec, les
+   *  articles déjà ajoutés restent enregistrés et seuls ceux qui restent sont
+   *  laissés dans le panier pour un nouvel essai. */
+  const ajouterPanier = useCallback(async () => {
+    if (panier.length === 0) return;
     setSaving(true);
+    let dernierRecalcul = false;
+    const restants = [...panier];
     try {
-      const res = await fetch('/api/frigo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ingredient_id: selection.id,
-          quantite: q,
-          unite,
-          expiration: expiration || null,
-          semaine_debut: semaine,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`);
-      setItems(json.items ?? []);
-      setSelection(null);
-      setRecherche('');
-      setQuantite('1');
-      setExpiration('');
+      while (restants.length > 0) {
+        const a = restants[0];
+        const res = await fetch('/api/frigo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredient_id: a.ingredient.id,
+            quantite: a.quantite,
+            unite: a.unite,
+            semaine_debut: semaine,
+          }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`);
+        setItems(json.items ?? []);
+        dernierRecalcul = json.liste_recalculee ?? dernierRecalcul;
+        restants.shift();
+        setPanier([...restants]);
+      }
       toast.success(
-        json.liste_recalculee
-          ? 'Ajouté — liste de courses mise à jour'
-          : 'Ajouté à ton frigo'
+        dernierRecalcul
+          ? `${panier.length} article(s) ajouté(s) — liste de courses mise à jour`
+          : `${panier.length} article(s) ajouté(s) à ton frigo`
       );
+      setAjoutOuvert(false);
     } catch (e) {
-      toast.error(errorMessage(e, "Impossible d'ajouter cet article"));
+      toast.error(errorMessage(e, "Impossible d'ajouter certains articles"));
     } finally {
       setSaving(false);
     }
-  }, [selection, quantite, unite, expiration, semaine]);
+  }, [panier, semaine]);
 
   const retirer = useCallback(async (id: number) => {
     try {
@@ -304,19 +352,24 @@ export default function FrigoPage() {
   return (
     <DashboardShell>
       <div className="container-app py-8 max-w-4xl">
-        {/* Titre — pastille 44px inline (même convention que /recettes) au
-            lieu du bloc 64px empilé qui décentrait la page en colonne étroite. */}
-        <div className="mb-8">
+        {/* En-tête : titre + CTA d'ajout principal, sur la même ligne en desktop
+            (nouveau design — l'action la plus fréquente est visible sans scroll). */}
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="w-11 h-11 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
               <Refrigerator className="w-5 h-5 text-brand-500" />
             </span>
-            <h1 className="text-3xl font-bold font-display text-gray-900">Mon frigo</h1>
+            <div>
+              <h1 className="text-3xl font-bold font-display text-gray-900">Mon frigo</h1>
+              <p className="text-gray-500 text-sm mt-0.5 max-w-md">
+                Ce que tu as déjà chez toi — le moteur privilégie ces recettes. Anti-gaspillage 🌱
+              </p>
+            </div>
           </div>
-          <p className="text-gray-500 mt-2 max-w-xl mx-auto">
-            Ce que tu as déjà chez toi : le moteur privilégie les recettes qui l&apos;utilisent
-            et la liste de courses en déduit les quantités. Anti-gaspillage 🌱
-          </p>
+          <button onClick={() => setAjoutOuvert(true)}
+            className="flex items-center gap-2 px-5 py-3 min-h-[44px] text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 shadow-cta transition-colors shrink-0">
+            <Plus className="w-4 h-4" /> Ajouter un article
+          </button>
         </div>
 
         {error && (
@@ -325,24 +378,35 @@ export default function FrigoPage() {
           </div>
         )}
 
-        {/* Insight : créneaux de la semaine couverts par le frigo + CTA (audit #18) */}
-        {items.length > 0 && (
-          <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl bg-sauge-50 border border-sauge-200 px-4 py-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <CalendarDays className="w-5 h-5 text-sauge-600 shrink-0" />
-              <p className="text-sm text-sauge-800 min-w-0">
-                {creneauxCouverts > 0
-                  ? <>✨ <strong>{creneauxCouverts} repas</strong> de cette semaine peuvent utiliser ce que tu as déjà.</>
-                  : <>Ta semaine en cours n&apos;utilise encore aucun article de ton frigo.</>}
-              </p>
-            </div>
-            <Link href="/vider-le-frigo" title="3 recettes rapides avec ce que tu as"
-              className="shrink-0 flex items-center gap-1.5 px-4 min-h-[40px] text-xs font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 transition-colors">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Optimiser avec mon frigo</span>
-              <span className="sm:hidden">Optimiser</span>
-            </Link>
+        {/* Stats en un coup d'œil (nouveau design — remplace le bandeau unique) */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="rounded-2xl bg-white border border-gray-100 shadow-xs px-4 py-3.5 text-center">
+            <p className="text-2xl font-bold font-display text-gray-900">{items.length}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">Articles</p>
           </div>
+          <div className="rounded-2xl bg-sauge-50 border border-sauge-200 px-4 py-3.5 text-center">
+            <p className="text-2xl font-bold font-display text-sauge-700">{creneauxCouverts}</p>
+            <p className="text-[11px] text-sauge-700 mt-0.5">Repas couverts</p>
+          </div>
+          <div className={cn(
+            'rounded-2xl border px-4 py-3.5 text-center',
+            aUtiliser.length > 0 ? 'bg-sable-50 border-sable-300' : 'bg-white border-gray-100 shadow-xs'
+          )}>
+            <p className={cn('text-2xl font-bold font-display', aUtiliser.length > 0 ? 'text-sable-700' : 'text-gray-900')}>
+              {aUtiliser.length}
+            </p>
+            <p className={cn('text-[11px] mt-0.5', aUtiliser.length > 0 ? 'text-sable-700' : 'text-gray-500')}>
+              À utiliser vite
+            </p>
+          </div>
+        </div>
+
+        {/* CTA recette, séparé des stats pour rester lisible sur petit écran */}
+        {items.length > 0 && (
+          <Link href="/vider-le-frigo" title="Recettes rapides avec ce que tu as"
+            className="mb-6 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-sm font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 transition-colors">
+            <Sparkles className="w-4 h-4" /> Trouver une recette avec ce frigo
+          </Link>
         )}
 
         {/* À utiliser rapidement : péremption ≤ 3 jours (audit #18 — la priorité
@@ -376,176 +440,164 @@ export default function FrigoPage() {
           </div>
         )}
 
-        {/* Répartition par rayon : lecture d'un coup d'œil (audit #18) */}
-        {parRayon.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-1.5">
-            {parRayon.map(([rayon, n]) => (
-              <span key={rayon} className="inline-flex items-center gap-1 px-3 py-1.5 min-h-[36px] text-xs font-medium rounded-full bg-white border border-gray-200 text-gray-600">
-                {rayon} <span className="font-bold text-gray-900">{n}</span>
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Ajout d'un article */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-900 text-sm">Ajouter un article</h2>
-            {selection && (
-              <span className="text-xs text-gray-500">Le formulaire ci-dessous est pré-rempli — ajustez puis validez.</span>
-            )}
-          </div>
-
-          {/* Ajouts rapides : le garde-manger courant, par rayon, en un clic.
-              Croisés avec le catalogue (jamais de création côté client) et
-              repliés quand un ingredient est déjà sélectionné. */}
-          {!selection && groupesRapides.length > 0 && (
-            <div className="mb-4 rounded-xl bg-gray-50/60 border border-gray-100 p-4">
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-3">
-                <Zap className="w-3.5 h-3.5 text-brand-500" />
-                Ajouts rapides
-                <span className="font-normal text-gray-500">— un clic pré-remplit le formulaire</span>
-              </p>
-              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {groupesRapides.map(g => (
-                  <GroupeAjoutsRapides
-                    key={g.label}
-                    label={g.label}
-                    aliments={g.aliments}
-                    frigoCles={frigoCles}
-                    onChoisir={choisirRapide}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!selection ? (
-            <>
-              <div className="relative mb-3">
-                <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={recherche}
-                  onChange={e => setRecherche(e.target.value)}
-                  placeholder="Rechercher un ingrédient (œufs, poulet, carottes…)"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
-                />
-              </div>
-              <div className="flex flex-wrap gap-1.5 max-h-52 overflow-y-auto">
-                {ingredientsFiltres.map(ing => {
-                  const dejaDedans = frigoIds.has(ing.id);
-                  return (
-                    <button key={ing.id}
-                      onClick={() => { setSelection(ing); setQuantite('1'); }}
-                      className={cn(
-                        'inline-flex items-center min-h-[40px] px-3.5 py-2 text-xs font-medium rounded-full border transition-colors',
-                        dejaDedans
-                          ? 'bg-sauge-50 text-sauge-700 border-sauge-200 hover:border-sauge-300'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'
-                      )}>
-                      {dejaDedans && <Check className="w-3 h-3 inline mr-1" />}
-                      {ing.nom}
-                    </button>
-                  );
-                })}
-                {ingredientsFiltres.length === 0 && (
-                  <p className="text-sm text-gray-500 py-4">Aucun ingrédient trouvé.</p>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-brand-500 text-white text-xs font-medium rounded-full">
-                  {selection.nom}
-                </span>
-                <button onClick={() => setSelection(null)}
-                  className="text-xs text-gray-500 hover:text-gray-600 transition-colors">
-                  changer
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Quantité</span>
-                  <input type="number" min={0.1} step="0.1" value={quantite}
-                    onChange={e => setQuantite(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300" />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Unité</span>
-                  <select value={unite} onChange={e => setUnite(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300">
-                    {['g', 'kg', 'ml', 'cl', 'L', ...UNITES_FRIGO.filter(u => u !== 'g' && u !== 'ml')]
-                      .filter((u, i, arr) => arr.indexOf(u) === i)
-                      .map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Péremption</span>
-                  <input type="date" value={expiration} onChange={e => setExpiration(e.target.value)}
-                    className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300" />
-                </label>
-              </div>
-
-              <button onClick={ajouter} disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 disabled:opacity-50 transition-colors">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Ajouter au frigo
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Inventaire */}
+        {/* Inventaire — groupé par rayon (nouveau design : lecture par famille
+            au lieu d'une liste plate, qui devenait illisible passé 15 articles) */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-900 text-sm">
-              Mon garde-manger <span className="text-gray-500 font-normal">({items.length})</span>
-            </h2>
-            <Link href="/vider-le-frigo"
-              className="flex items-center gap-1 py-2.5 -my-2.5 text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
-              <Sparkles className="w-3 h-3" /> Trouver une recette avec ce frigo
-            </Link>
-          </div>
+          <h2 className="font-semibold text-gray-900 text-sm mb-4">
+            Mon garde-manger <span className="text-gray-500 font-normal">({items.length})</span>
+          </h2>
 
           {items.length === 0 ? (
             <div className="py-10 text-center">
               <p className="text-4xl mb-2" aria-hidden>🧊</p>
               <p className="text-sm text-gray-500">Ton frigo est vide ici.</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1 mb-4">
                 Ajoute ce que tu as chez toi : le moteur en tiendra compte dès la prochaine génération.
               </p>
+              <button onClick={() => setAjoutOuvert(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 transition-colors">
+                <Plus className="w-4 h-4" /> Ajouter un article
+              </button>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-50">
-              {items.map(item => (
-                <li key={item.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">
-                      {item.ingredient?.nom ?? `Ingrédient #${item.ingredient_id}`}
-                    </p>
-                    <p className="text-[11px] text-gray-500">
-                      {item.quantite} {item.unite}
-                      {item.expiration && (
-                        <span className={cn('ml-2 font-semibold', estProchePeremption(item.expiration) ? 'text-sable-600' : 'text-gray-500')}>
-                          {estProchePeremption(item.expiration) ? '⏳ ' : ''}
-                          à consommer avant le {new Date(`${item.expiration}T12:00:00`).toLocaleDateString('fr-FR')}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <button onClick={() => retirer(item.id)} aria-label={`Retirer ${item.ingredient?.nom ?? ''}`}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </li>
+            <div className="space-y-5">
+              {inventaireParRayon.map(groupe => (
+                <div key={groupe.rayon}>
+                  <p className="text-xs font-semibold text-gray-600 mb-2">
+                    {groupe.label} <span className="text-gray-400 font-normal">({groupe.items.length})</span>
+                  </p>
+                  <ul className="divide-y divide-gray-50 rounded-xl border border-gray-50">
+                    {groupe.items.map(item => (
+                      <li key={item.id} className="px-3 py-2.5 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">
+                            {item.ingredient?.nom ?? `Ingrédient #${item.ingredient_id}`}
+                          </p>
+                          <p className="text-[11px] text-gray-500">
+                            {item.quantite} {item.unite}
+                            {item.expiration && (
+                              <span className={cn('ml-2 font-semibold', estProchePeremption(item.expiration) ? 'text-sable-600' : 'text-gray-500')}>
+                                {estProchePeremption(item.expiration) ? '⏳ ' : ''}
+                                à consommer avant le {new Date(`${item.expiration}T12:00:00`).toLocaleDateString('fr-FR')}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <button onClick={() => retirer(item.id)} aria-label={`Retirer ${item.ingredient?.nom ?? ''}`}
+                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Modale « Ajouter un article » — même patron que les autres modales de
+          l'app (bottom-sheet mobile / centrée desktop, cf. WhyModal) : plus de
+          formulaire toujours visible qui alourdissait la page en permanence. */}
+      {ajoutOuvert && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
+          role="dialog" aria-modal="true" aria-label="Ajouter un article au frigo">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-xs" onClick={() => setAjoutOuvert(false)} aria-hidden />
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
+            className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[88vh] overflow-y-auto">
+
+            <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500">Garde-manger</p>
+                <h3 className="font-display font-bold text-gray-900 leading-snug">Ajouter des articles</h3>
+              </div>
+              <button onClick={() => setAjoutOuvert(false)} aria-label="Fermer"
+                className="p-1.5 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4">
+              {/* Ajouts rapides : le garde-manger courant, par rayon, en un clic
+                  qui coche/décoche l'aliment dans le panier ci-dessous. Croisés
+                  avec le catalogue — on ne crée jamais d'ingrédient côté client. */}
+              {groupesRapides.length > 0 ? (
+                <div className="rounded-xl bg-gray-50/60 border border-gray-100 p-4">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 mb-3">
+                    <Zap className="w-3.5 h-3.5 text-brand-500" />
+                    Ajouts rapides
+                    <span className="font-normal text-gray-500">— coche ce que tu as chez toi</span>
+                  </p>
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                    {groupesRapides.map(g => (
+                      <GroupeAjoutsRapides
+                        key={g.label}
+                        label={g.label}
+                        aliments={g.aliments}
+                        frigoCles={frigoCles}
+                        panierIds={panierIds}
+                        onToggle={togglePanier}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 py-4 text-center">Aucun aliment disponible pour le moment.</p>
+              )}
+
+              {/* Récap du panier : tout ce qui a été coché ci-dessus, avec une
+                  quantité ajustable, avant validation groupée. */}
+              {panier.length > 0 && (
+                <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/40 p-4">
+                  <p className="text-xs font-semibold text-gray-700 mb-3">
+                    Sélection ({panier.length})
+                  </p>
+                  <ul className="space-y-2">
+                    {panier.map(a => (
+                      <li key={a.ingredient.id} className="flex items-center justify-between gap-3 bg-white rounded-xl border border-gray-100 px-3 py-2">
+                        <span className="min-w-0 flex items-center gap-2 text-sm font-medium text-gray-800 truncate">
+                          <span aria-hidden>{a.emoji}</span> {a.nom}
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => ajusterQuantitePanier(a.ingredient.id, -stepPourUnite(a.unite))}
+                            aria-label={`Diminuer la quantité de ${a.nom}`}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors">
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-xs font-semibold text-gray-700 w-16 text-center tabular-nums">
+                            {a.quantite} {a.unite}
+                          </span>
+                          <button onClick={() => ajusterQuantitePanier(a.ingredient.id, stepPourUnite(a.unite))}
+                            aria-label={`Augmenter la quantité de ${a.nom}`}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-50 border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors">
+                            <Plus className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => retirerDuPanier(a.ingredient.id)}
+                            aria-label={`Retirer ${a.nom} de la sélection`}
+                            className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button onClick={ajouterPanier} disabled={saving}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 disabled:opacity-50 transition-colors">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Ajouter {panier.length} article{panier.length > 1 ? 's' : ''} au frigo
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

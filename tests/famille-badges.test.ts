@@ -53,14 +53,14 @@ function meal(): Meal {
       {
         ingredient: {
           id: 7, nom: 'Champignons', rayon: 'fruits_legumes', saison: 'toutes',
-          prix_estime: null, prix_unitaire: null, unite_prix: null, poids_unites: null,
+          prix_unitaire: null, unite_prix: null, poids_unites: null,
         },
         quantite: 200, unite: 'g', est_optionnel: false,
       },
       {
         ingredient: {
           id: 9, nom: 'Carottes', rayon: 'fruits_legumes', saison: 'toutes',
-          prix_estime: null, prix_unitaire: null, unite_prix: null, poids_unites: null,
+          prix_unitaire: null, unite_prix: null, poids_unites: null,
         },
         quantite: 3, unite: 'pcs', est_optionnel: false,
       },

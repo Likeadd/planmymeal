@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { BrandMark } from '@/components/BrandMark';
 
 export const metadata: Metadata = {
-  title: 'Confidentialité & RGPD — PlanMyMeal',
+  title: 'Confidentialité & RGPD',
   description:
     'Comment PlanMyMeal collecte, utilise et protège vos données personnelles. Vos droits RGPD : accès, rectification, portabilité et effacement.',
+  alternates: { canonical: '/confidentialite' },
 };
 
 export default function ConfidentialitePage() {

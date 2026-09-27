@@ -1,5 +1,6 @@
 export const metadata = {
-  title: 'Hors ligne — PlanMyMeal',
+  title: 'Hors ligne',
+  robots: { index: false },
 };
 
 export default function OfflinePage() {

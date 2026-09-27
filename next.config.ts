@@ -77,6 +77,12 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: securityHeaders,
       },
+      // Icônes et logos (public/) : servis sans cache par défaut → 7 jours,
+      // revalidables. sw.js reste volontairement hors de cette règle.
+      {
+        source: '/:dir(icons|brand)/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' }],
+      },
     ];
   },
 };

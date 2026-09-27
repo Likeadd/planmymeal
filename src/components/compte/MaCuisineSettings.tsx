@@ -35,6 +35,7 @@ export function MaCuisineSettings() {
   // quand le profil change → pas besoin de setState dans un effet)
   const [equipements, setEquipements] = useState<string[]>(profile?.equipements ?? []);
   const [autoRestes, setAutoRestes] = useState(profile?.auto_restes === true);
+  const [utiliserSaison, setUtiliserSaison] = useState(profile?.utiliser_saison !== false);
   // Rythme desserts : le binaire « actifs/désactivés » est devenu 4 paliers
   // (défaut équilibré = comportement historique, cf. migration 00022).
   const [rythmeDesserts, setRythmeDesserts] = useState<RythmeDesserts>(
@@ -54,7 +55,7 @@ export function MaCuisineSettings() {
     setSaving(true);
     try {
       const { error } = await supabase.from('profiles')
-        .update({ equipements, auto_restes: autoRestes, rythme_desserts: rythmeDesserts })
+        .update({ equipements, auto_restes: autoRestes, rythme_desserts: rythmeDesserts, utiliser_saison: utiliserSaison })
         .eq('id', user.id);
       if (error) throw error;
       await refreshProfile();
@@ -146,6 +147,23 @@ export function MaCuisineSettings() {
             Après chaque génération, les déjeuners de la semaine deviennent automatiquement
             les restes du dîner de la veille (cuisiner ×2 le soir, lunchbox le lendemain midi).
             Activable/désactivable par repas depuis le planning.
+          </span>
+        </span>
+      </label>
+
+      {/* Saison : à la carte (choisi à l'inscription, modifiable ici) */}
+      <label className="flex items-start gap-3 p-4 bg-sauge-50/60 border border-sauge-100 rounded-xl cursor-pointer mt-4">
+        <input type="checkbox" checked={utiliserSaison}
+          onChange={e => { setUtiliserSaison(e.target.checked); setDirty(true); }}
+          className="mt-0.5 w-4 h-4 accent-sauge-600" />
+        <span>
+          <span className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+            🌱 Se baser sur les fruits & légumes de saison
+          </span>
+          <span className="text-xs text-gray-500 mt-0.5 block">
+            Activé : le moteur favorise les recettes de la saison en cours et déconseille
+            un plat d&apos;hiver en plein été. Désactivé : le catalogue entier reste
+            proposé toute l&apos;année, sans ce favoritisme.
           </span>
         </span>
       </label>

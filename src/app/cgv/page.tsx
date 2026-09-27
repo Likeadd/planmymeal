@@ -118,6 +118,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
 export const metadata: Metadata = {
   title: 'Conditions générales de vente',
   description: 'Les conditions générales de vente et d’abonnement de PlanMyMeal.',
+  alternates: { canonical: '/cgv' },
 };
 
 export default function CgvPage() {
@@ -132,7 +133,9 @@ export default function CgvPage() {
             <span className="w-3.5 h-3.5 rounded-full bg-accent-300" />
             <span className="w-2 h-2 rounded-full bg-accent-400" />
           </div>
-          <div className="absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
+          {/* Décorative uniquement : sur un hero mobile court, elle finit
+              derrière le texte au lieu de rester dans un coin vide. */}
+          <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
             <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-brand-600 mb-5">

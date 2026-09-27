@@ -7,11 +7,16 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/recette/', '/recettes', '/vider-le-frigo', '/faq', '/contact'],
-        // Pages applicatives privées : rien à indexer
-        disallow: ['/dashboard', '/compte', '/planning', '/favoris', '/budget', '/onboarding', '/login', '/signup', '/api/'],
+        allow: '/',
+        // Espace connecté (redirige vers /login) et API : rien à explorer.
+        // /login et /signup restent explorables pour que leur `noindex` soit lu.
+        disallow: [
+          '/aujourdhui', '/dashboard', '/planning', '/frigo', '/vider-le-frigo',
+          '/favoris', '/budget', '/compte', '/onboarding', '/offline', '/auth/', '/api/',
+        ],
       },
     ],
     sitemap: `${base}/sitemap.xml`,
+    host: base,
   };
 }

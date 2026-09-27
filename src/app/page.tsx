@@ -16,19 +16,42 @@ import { Underlined } from '@/components/WavyUnderline';
 import { Reveal } from '@/components/Reveal';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
-import { STRIPE_ENABLED } from '@/lib/stripe';
+import { STRIPE_ENABLED, STRIPE_PLANS } from '@/lib/stripe';
+import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
+
+// SoftwareApplication schema.org : type d'app, plateforme et offres tarifaires
+const jsonLdApp = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'PlanMyMeal',
+  url: SITE_URL,
+  applicationCategory: 'LifestyleApplication',
+  operatingSystem: 'Web, iOS, Android',
+  inLanguage: 'fr-FR',
+  description: 'Planificateur de repas : menus de la semaine personnalisés, liste de courses automatique, anti-gaspillage et suivi du budget.',
+  offers: [
+    { '@type': 'Offer', name: 'Gratuit', price: '0', priceCurrency: 'EUR' },
+    ...Object.values(STRIPE_PLANS).map(p => ({
+      '@type': 'Offer', name: p.name, price: p.price.toFixed(2), priceCurrency: 'EUR',
+    })),
+  ],
+  publisher: { '@id': `${SITE_URL}/#organisation` },
+};
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdApp) }} />
       <LandingHeader />
-      <Hero />
-      <IconsBanner />
-      <Features />
-      <Collection />
-      <NouveautesMonde />
-      <Promo />
-      <Pricing />
+      <main>
+        <Hero />
+        <IconsBanner />
+        <Features />
+        <Collection />
+        <NouveautesMonde />
+        <Promo />
+        <Pricing />
+      </main>
       <LandingFooter />
     </div>
   );
@@ -113,8 +136,12 @@ function Hero() {
               <div className="absolute inset-0 translate-x-1.5 translate-y-2 rotate-1 bg-white/60 rounded-4xl shadow-sm" aria-hidden />
               <HeroMealCard />
             </Reveal>
-            {/* Badge circulaire */}
-            <div className="absolute bottom-10 right-6 sm:right-10 w-28 h-28 rounded-full bg-gray-50 border border-gray-200 shadow-lg flex flex-col items-center justify-center text-center">
+            {/* Badge circulaire : flotte dans l'espace à droite de la carte,
+                qui n'existe qu'à partir de lg (le calage lg:grid-cols-2 passe
+                cette colonne en pleine largeur en dessous) — en dessous, la
+                carte remplit tout l'espace et le badge se retrouvait à
+                cheval dessus, cachant « Optimisé pour vous ». */}
+            <div className="hidden lg:flex absolute bottom-10 right-10 w-28 h-28 rounded-full bg-gray-50 border border-gray-200 shadow-lg flex-col items-center justify-center text-center">
               <Heart className="w-5 h-5 text-brand-600" />
               <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-gray-700 mt-1.5 leading-tight px-2">
                 Fait maison avec amour
@@ -367,7 +394,7 @@ function NouveautesMonde() {
   return (
     <section id="nouveautes" className="pb-20 sm:pb-28 -mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="bg-white rounded-3xl border border-gray-200 shadow-xs p-8 sm:p-10">
+        <Reveal className="bg-white rounded-3xl border border-gray-200 shadow-xs p-5 sm:p-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               <span className="text-accent-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
@@ -388,7 +415,7 @@ function NouveautesMonde() {
             </Link>
           </div>
 
-          <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-4 gap-3">
             {NOUVEAUTES.map((c) => (
               <Link key={c.nom} href={`/recettes?cuisine=${encodeURIComponent(c.nom)}`}
                 title={`Voir les recettes ${c.nom.toLowerCase()}s`}

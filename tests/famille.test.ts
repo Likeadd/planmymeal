@@ -86,7 +86,7 @@ function profile(over: Partial<Profile> = {}): Profile {
     batch_cooking: false, batch_cooking_jour: 6, prix_max_portion: null,
     equipements: [], auto_restes: false, desserts_activees: true, rythme_desserts: 'equilibre',
     temps_max_par_jour: Array(7).fill(null), contexte_jours: Array(7).fill(null),
-    nouveaute: 50, poids_famille: 70, depense_reference_hebdo: null,
+    nouveaute: 50, utiliser_saison: true, poids_famille: 70, depense_reference_hebdo: null,
     depense_reference_saisie_le: null, emails_transactionnels: true,
     welcome_email_envoye_le: null, digest_envoye_le: null,
     ...over,
@@ -362,7 +362,7 @@ describe('raisonExclusion', () => {
       ingredients: [{
         ingredient: {
           id: 1, nom: 'Poulet', rayon: 'viande_poisson', saison: 'toutes',
-          prix_estime: null, prix_unitaire: 30, unite_prix: 'kg', poids_unites: null,
+          prix_unitaire: 30, unite_prix: 'kg', poids_unites: null,
         },
         quantite: 1000, unite: 'g', est_optionnel: false,
       }],
@@ -475,7 +475,7 @@ describe('expliquerChoix — le foyer', () => {
       ingredients: [{
         ingredient: {
           id: 7, nom: 'Champignons', rayon: 'fruits_legumes', saison: 'toutes',
-          prix_estime: null, prix_unitaire: null, unite_prix: null, poids_unites: null,
+          prix_unitaire: null, unite_prix: null, poids_unites: null,
         },
         quantite: 200, unite: 'g', est_optionnel: false,
       }],

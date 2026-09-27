@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { ScrollAncre } from '@/components/ScrollAncre';
+import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -13,8 +14,30 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://planmymeal.app').replace(/\/$/, '');
+const siteUrl = SITE_URL;
 const siteDescription = 'PlanMyMeal — L\'appli qui se souvient de ce que tu as mangé pour toi. Plans de repas personnalisés, liste de courses automatique et rotation intelligente.';
+
+// Identité du site pour les moteurs (panneau de marque, nom du site dans les résultats)
+const jsonLdSite = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}/#organisation`,
+      name: 'PlanMyMeal',
+      url: siteUrl,
+      logo: `${siteUrl}/icons/icon-512.png`,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#site`,
+      name: 'PlanMyMeal',
+      url: siteUrl,
+      inLanguage: 'fr-FR',
+      publisher: { '@id': `${siteUrl}/#organisation` },
+    },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -23,6 +46,9 @@ export const metadata: Metadata = {
     template: '%s — PlanMyMeal',
   },
   description: siteDescription,
+  applicationName: 'PlanMyMeal',
+  category: 'food',
+  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     locale: 'fr_FR',
@@ -66,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className={`${inter.variable} min-h-screen flex flex-col`}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdSite) }} />
         <AuthProvider>
           {children}
           {/* Repositionne les ancres /#section après stabilisation des polices

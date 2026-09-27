@@ -85,6 +85,7 @@ function profile(over: Partial<Profile> = {}): Profile {
     temps_max_par_jour: Array(7).fill(null),
     contexte_jours: Array(7).fill(null),
     nouveaute: 50,
+    utiliser_saison: true,
     poids_famille: 70,
     depense_reference_hebdo: null,
     depense_reference_saisie_le: null,
@@ -334,7 +335,7 @@ describe('expliquerChoix', () => {
   it('compte les ingrédients réellement présents au frigo', () => {
     const avec = meal({
       ingredients: [
-        { ingredient: { id: 7, nom: 'Carotte', rayon: 'fruits_legumes', saison: 'toutes', prix_estime: null, prix_unitaire: null, unite_prix: null, poids_unites: null }, quantite: 3, unite: 'pcs', est_optionnel: false },
+        { ingredient: { id: 7, nom: 'Carotte', rayon: 'fruits_legumes', saison: 'toutes', prix_unitaire: null, unite_prix: null, poids_unites: null }, quantite: 3, unite: 'pcs', est_optionnel: false },
       ],
     });
     const r = expliquerChoix(avec, { ...base, frigoIngredientIds: new Set([7]) });

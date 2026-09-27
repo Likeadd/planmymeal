@@ -19,7 +19,6 @@ const ingredient = (overrides: Partial<Ingredient>): Ingredient => ({
   rayon: 'epicerie_salee',
   saison: 'toutes',
   poids_unites: null,
-  prix_estime: null,
   prix_unitaire: 2,
   unite_prix: 'kg',
   ...overrides,

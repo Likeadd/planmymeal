@@ -6,9 +6,10 @@
 // @supabase/ssr évolue. Un email non confirmé est traité comme non connecté.
 // ============================================================================
 
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { NextRequest } from 'next/server';
-import type { User } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { Database } from '@/../supabase/database.types';
 
 /** Client Supabase lié aux cookies de la requête + utilisateur éventuel. */
 export async function getAuthUser(
@@ -29,4 +30,37 @@ export async function getAuthUser(
   // Email non confirmé → traité comme non authentifié
   if (user && !user.email_confirmed_at) return { user: null, error: 'Email non confirmé' };
   return { user: user ?? null, error: error?.message ?? null };
+}
+
+/**
+ * Client Supabase lié à la session de l'appelant (clé anon + cookies), PAS au
+ * rôle service. Nécessaire pour les RPC SECURITY DEFINER qui lisent
+ * `auth.uid()` (household_invite, household_join…) : appelées avec le client
+ * admin, `auth.uid()` y vaudrait toujours NULL. Le rate limiting et le contrôle
+ * d'auth restent à la charge de l'appelant, comme pour `getAuthUser`.
+ */
+export async function getAuthUserAndClient(
+  request: NextRequest
+): Promise<{ user: User | null; error: string | null; supabase: SupabaseClient<Database> }> {
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+          // Réponse déjà envoyée par le handler au moment où l'on écrit ici ;
+          // un rafraîchissement de token est best-effort et sans conséquence
+          // si perdu (le prochain appel re-rafraîchira).
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try { request.cookies.set(name, value); void options; } catch { /* no-op */ }
+          });
+        },
+      },
+    }
+  );
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (user && !user.email_confirmed_at) return { user: null, error: 'Email non confirmé', supabase };
+  return { user: user ?? null, error: error?.message ?? null, supabase };
 }

@@ -76,6 +76,19 @@ export async function POST(request: NextRequest) {
     //    Migrations 00016/00017 incluses : mémoire alimentaire, frigo et
     //    profils famille (les tables family_member_* sont en cascade sur
     //    family_members).
+    //
+    //    Foyer partagé (migration 00021) : `households.created_by` référence
+    //    profiles SANS cascade — sans cette purge, supprimer le compte d'un
+    //    créateur de foyer plantait la suppression (violation de clé étrangère).
+    const { data: foyersPossedes } = await admin
+      .from('households').select('id').eq('created_by', user.id);
+    for (const foyer of foyersPossedes ?? []) {
+      await admin.from('household_invitations').delete().eq('household_id', foyer.id);
+      await admin.from('household_members').delete().eq('household_id', foyer.id);
+      await admin.from('households').delete().eq('id', foyer.id);
+    }
+    await admin.from('household_members').delete().eq('user_id', user.id);
+
     await admin.from('user_prix_ingredients').delete().eq('user_id', user.id);
     await admin.from('weekly_budget_snapshots').delete().eq('user_id', user.id);
     await admin.from('user_allergies').delete().eq('user_id', user.id);

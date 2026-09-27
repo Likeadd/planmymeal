@@ -416,9 +416,10 @@ function DashboardInner() {
       </>)}
 
       {/* L'action CENTRALE, à portée de pouce sur mobile : fiche fixée au-dessus
-          de la bottom-nav (semaine courante avec planning uniquement — le vide
-          a déjà son propre CTA « Optimiser ma semaine », pas de doublon). */}
-      {!empty && estSemaineCourante && (
+          de la bottom-nav, sur toute semaine déjà planifiée (courante ou non —
+          sinon plus aucun moyen de relancer l'optimisation après avoir généré
+          une semaine future en mobile). Le vide a son propre CTA, pas de doublon. */}
+      {!empty && (
         <OptimiserBar onOptimiser={intention => regenererAvecRecap(intention)} loading={regenerating} />
       )}
 

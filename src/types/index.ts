@@ -170,6 +170,9 @@ export interface Profile {
   contexte_jours: (ContexteJour | null)[];
   /** Curseur Confort (0) ↔ Découverte (100) */
   nouveaute: number;
+  /** Choisi à l'inscription (modifiable ensuite) : le moteur favorise-t-il les
+   *  recettes de la saison en cours ? */
+  utiliser_saison: boolean;
   /** Part du compromis familial dans le score (0 = mes goûts seuls, 100 = compromis maximal) */
   poids_famille: number;
   /** Dépense hebdomadaire DÉCLARÉE par l'utilisateur avant PlanMyMeal (€).
@@ -202,7 +205,6 @@ export interface Ingredient {
   nom: string;
   rayon: Rayon;
   saison: Saison;
-  prix_estime: number | null;
   /** Prix de référence en € pour l'unité unite_prix (ex : 2.4 €/kg) */
   prix_unitaire: number | null;
   /** Unité de référence du prix : 'kg' | 'L' | 'pcs' | 'botte' | 'boite' | 'sachet' */
@@ -256,7 +258,7 @@ export interface Meal {
 /**
  * Forme minimale d'un ingrédient pour le chiffrage : ce dont `prixEffectif` et
  * `quantiteAchetee` ont réellement besoin. Permet de chiffrer une recette
- * partielle (sans `rayon`, `saison`, `prix_estime`) sans exiger un `Ingredient`
+ * partielle (sans `rayon` ni `saison`) sans exiger un `Ingredient`
  * complet — c'est le cas d'une ligne de catalogue.
  */
 export type IngredientChiffrable = Pick<Ingredient, 'id' | 'prix_unitaire' | 'unite_prix'> & {

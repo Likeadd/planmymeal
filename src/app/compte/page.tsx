@@ -15,6 +15,7 @@ import { PlanCard } from '@/components/compte/PlanCard';
 import { MaCuisineSettings } from '@/components/compte/MaCuisineSettings';
 import { MemoireSettings } from '@/components/compte/MemoireSettings';
 import { FamilleSettings } from '@/components/compte/FamilleSettings';
+import { FoyerSettings } from '@/components/compte/FoyerSettings';
 import { ProfileSettings } from '@/components/compte/ProfileSettings';
 import { PasswordSettings } from '@/components/compte/PasswordSettings';
 import { ActivitySettings } from '@/components/compte/ActivitySettings';
@@ -85,7 +86,21 @@ function AccountContent() {
     router.push('/');
   };
 
-  const currentPlan = STRIPE_PLANS[profile.plan as PlanType] || STRIPE_PLANS.pro;
+  // STRIPE_PLANS ne couvre que pro/famille (l'offre gratuite n'a pas de prix
+  // Stripe) : un `|| STRIPE_PLANS.pro` ici affichait « Plan Pro » et ses
+  // fonctionnalités à un compte gratuit — trompeur, corrigé par ce repli dédié.
+  const currentPlan = profile.plan === 'gratuit'
+    ? {
+        name: 'Gratuit',
+        price: 0,
+        features: [
+          '4 optimisations de semaine / 7 jours',
+          'Planning déjeuner + dîner complet',
+          'Liste de courses automatique',
+          'Budget & dépense de la semaine',
+        ],
+      }
+    : STRIPE_PLANS[profile.plan as PlanType] ?? STRIPE_PLANS.pro;
 
   return (
     <DashboardShell>
@@ -226,11 +241,12 @@ function AccountContent() {
 
           {/* Paramètres du compte : profil + mot de passe + activité */}
           {/* key = re-montage quand le profil change → champs resynchronisés sans setState dans un effet */}
-          <MaCuisineSettings key={JSON.stringify([profile.equipements, profile.auto_restes, profile.desserts_activees])} />
+          <MaCuisineSettings key={JSON.stringify([profile.equipements, profile.auto_restes, profile.desserts_activees, profile.utiliser_saison])} />
           {/* Mémoire alimentaire : temps par jour, contexte, nouveauté, recettes mémorisées */}
           <MemoireSettings key={JSON.stringify([profile.temps_max_par_jour, profile.contexte_jours, profile.nouveaute])} />
           {/* Profils famille : pour qui je cuisine, goûts et poids de chaque membre */}
           <FamilleSettings key={JSON.stringify([profile.poids_famille, profile.nb_personnes])} />
+          <FoyerSettings />
           <ProfileSettings key={JSON.stringify([profile.full_name, profile.email])} />
           <PasswordSettings />
           <ActivitySettings />

@@ -175,17 +175,132 @@ export type Database = {
           },
         ]
       }
+      households: {
+        Row: {
+          created_at: string
+          created_by: string
+          delai_recettes_aimees_jours: number
+          id: number
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          delai_recettes_aimees_jours?: number
+          id?: number
+          nom?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          delai_recettes_aimees_jours?: number
+          id?: number
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "households_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_members: {
+        Row: {
+          household_id: number
+          id: number
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          household_id: number
+          id?: number
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          household_id?: number
+          id?: number
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_invitations: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          household_id: number
+          id: number
+          code: string
+          revoked_at: string | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at: string
+          household_id: number
+          id?: number
+          code: string
+          revoked_at?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          household_id?: number
+          id?: number
+          code?: string
+          revoked_at?: string | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_invitations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
-          allergene_type: string | null
           calories_pour_100g: number | null
-          est_allergene: boolean
           glucides_pour_100g: number | null
           id: number
           lipides_pour_100g: number | null
           nom: string
           poids_unites: Json | null
-          prix_estime: number | null
           prix_unitaire: number | null
           proteines_pour_100g: number | null
           rayon: string
@@ -193,15 +308,12 @@ export type Database = {
           unite_prix: string | null
         }
         Insert: {
-          allergene_type?: string | null
           calories_pour_100g?: number | null
-          est_allergene?: boolean
           glucides_pour_100g?: number | null
           id?: number
           lipides_pour_100g?: number | null
           nom: string
           poids_unites?: Json | null
-          prix_estime?: number | null
           prix_unitaire?: number | null
           proteines_pour_100g?: number | null
           rayon: string
@@ -209,15 +321,12 @@ export type Database = {
           unite_prix?: string | null
         }
         Update: {
-          allergene_type?: string | null
           calories_pour_100g?: number | null
-          est_allergene?: boolean
           glucides_pour_100g?: number | null
           id?: number
           lipides_pour_100g?: number | null
           nom?: string
           poids_unites?: Json | null
-          prix_estime?: number | null
           prix_unitaire?: number | null
           proteines_pour_100g?: number | null
           rayon?: string
@@ -265,13 +374,6 @@ export type Database = {
             foreignKeyName: "meal_history_meal_id_fkey"
             columns: ["meal_id"]
             isOneToOne: false
-            referencedRelation: "meal_rotation_score"
-            referencedColumns: ["meal_id"]
-          },
-          {
-            foreignKeyName: "meal_history_meal_id_fkey"
-            columns: ["meal_id"]
-            isOneToOne: false
             referencedRelation: "meals"
             referencedColumns: ["id"]
           },
@@ -313,13 +415,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ingredients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meal_ingredients_meal_id_fkey"
-            columns: ["meal_id"]
-            isOneToOne: false
-            referencedRelation: "meal_rotation_score"
-            referencedColumns: ["meal_id"]
           },
           {
             foreignKeyName: "meal_ingredients_meal_id_fkey"
@@ -446,22 +541,8 @@ export type Database = {
             foreignKeyName: "plan_meals_est_reste_de_fkey"
             columns: ["est_reste_de"]
             isOneToOne: false
-            referencedRelation: "meal_rotation_score"
-            referencedColumns: ["meal_id"]
-          },
-          {
-            foreignKeyName: "plan_meals_est_reste_de_fkey"
-            columns: ["est_reste_de"]
-            isOneToOne: false
             referencedRelation: "meals"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "plan_meals_meal_id_fkey"
-            columns: ["meal_id"]
-            isOneToOne: false
-            referencedRelation: "meal_rotation_score"
-            referencedColumns: ["meal_id"]
           },
           {
             foreignKeyName: "plan_meals_meal_id_fkey"
@@ -502,6 +583,7 @@ export type Database = {
           nb_personnes: number
           niveau_cuisine: string
           nouveaute: number
+          utiliser_saison: boolean
           objectif: string
           onboarding_complete: boolean
           plan: string
@@ -537,6 +619,7 @@ export type Database = {
           nb_personnes?: number
           niveau_cuisine?: string
           nouveaute?: number
+          utiliser_saison?: boolean
           objectif?: string
           onboarding_complete?: boolean
           plan?: string
@@ -572,6 +655,7 @@ export type Database = {
           nb_personnes?: number
           niveau_cuisine?: string
           nouveaute?: number
+          utiliser_saison?: boolean
           objectif?: string
           onboarding_complete?: boolean
           plan?: string
@@ -922,32 +1006,7 @@ export type Database = {
       }
     }
     Views: {
-      meal_rotation_score: {
-        Row: {
-          calories_par_portion: number | null
-          conservation_jours: number | null
-          cuisine: string | null
-          derniere_planification: string | null
-          jours_depuis_derniere: number | null
-          meal_id: number | null
-          meal_saison: string | null
-          nb_dislikes: number | null
-          nb_likes: number | null
-          nb_total_apparitions: number | null
-          temps_preparation: number | null
-          titre: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meal_history_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       quantite_achat_liste: {
@@ -974,6 +1033,34 @@ export type Database = {
           p_preferences?: Json
         }
         Returns: number
+      }
+      ensure_household: {
+        Args: { p_nom?: string }
+        Returns: number
+      }
+      household_invite: {
+        Args: { p_days?: number }
+        Returns: string
+      }
+      household_join: {
+        Args: { p_code: string }
+        Returns: number
+      }
+      household_leave: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      household_remove_member: {
+        Args: { p_member_user_id: string }
+        Returns: undefined
+      }
+      household_annuler_invitation: {
+        Args: { p_invitation_id: number }
+        Returns: undefined
+      }
+      household_list_members: {
+        Args: Record<PropertyKey, never>
+        Returns: { user_id: string; role: string; joined_at: string; nom: string }[]
       }
       save_weekly_plan: {
         Args: {

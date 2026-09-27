@@ -90,6 +90,22 @@ export interface ShoppingListItemWithIngredient {
 }
 
 const MIN_DAYS_BEFORE_REUSE = 21;
+
+/**
+ * Délai (jours) réglé par le créateur du foyer pour reproposer une recette
+ * déjà aimée — réglage « Ma cuisine » (voir /api/foyer-partage). `null` si
+ * indisponible (RLS, foyer non résolu…) : le moteur retombe alors sur le
+ * minimum générique, comportement inchangé.
+ */
+async function chargerDelaiRecettesAimees(userId: string, supabase: Db): Promise<number | null> {
+  const { data } = await supabase
+    .from('household_members')
+    .select('households(delai_recettes_aimees_jours)')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const households = (data as { households: { delai_recettes_aimees_jours: number } | null } | null)?.households;
+  return households?.delai_recettes_aimees_jours ?? null;
+}
 const IDEAL_ROTATION_DAYS = 30;
 
 /** Appareils "spécifiques" : en posséder change la manière de cuisiner. */
@@ -113,26 +129,49 @@ interface ScoreInput {
   preference?: MealPreference | null;
   /** Facteur de compromis familial (1 = neutre ; voir lib/famille.ts) */
   facteurCompromis?: number;
+  /**
+   * Délai (en jours) réglé par le foyer pour reproposer une recette AIMÉE
+   * (au moins un « J'adore »/like en historique) — réglage « Ma cuisine »,
+   * modifiable uniquement par le créateur du foyer. Remplace le minimum de
+   * rotation générique (21 j) pour CES recettes précisément ; le reste du
+   * catalogue garde le minimum générique. Une fréquence explicite posée sur
+   * la recette elle-même (`preference.frequence_jours`) prime toujours.
+   */
+  delaiRecettesAimees?: number | null;
 }
 
 export function calculateMealScore(input: ScoreInput): number {
   const { joursDepuisDerniere, nbLikes, nbDislikes, nbApparitions, saisonActuelle, meal, profile, batchCooking, preference } = input;
 
+  // Cible de rotation effective pour CETTE recette : la fréquence explicite
+  // posée dessus prime, sinon le délai « recettes aimées » du foyer s'applique
+  // si elle a déjà été aimée, sinon le minimum générique inchangé.
+  const cibleExplicite = preference?.frequence_jours
+    ?? (nbLikes > 0 ? (input.delaiRecettesAimees ?? null) : null);
+  const minReprise = cibleExplicite ?? MIN_DAYS_BEFORE_REUSE;
+  // Le palier « pleinement éligible » suit la cible : un délai court réglé
+  // par le foyer (ex. 10 j) ne doit pas rester à 70 % de score jusqu'à 30 j.
+  const rotationIdeale = cibleExplicite != null
+    ? Math.max(minReprise + 1, Math.round(minReprise * 1.4))
+    : IDEAL_ROTATION_DAYS;
+
   // Facteur ancienneté (0 à 1)
   let facteurAnciennete = 0;
   if (joursDepuisDerniere === null) {
     facteurAnciennete = 0.85; // Jamais mangé → bonus découverte
-  } else if (joursDepuisDerniere < MIN_DAYS_BEFORE_REUSE) {
+  } else if (joursDepuisDerniere < minReprise) {
     facteurAnciennete = 0; // Trop récent → bloqué
-  } else if (joursDepuisDerniere < IDEAL_ROTATION_DAYS) {
-    facteurAnciennete = 0.3 + (0.7 * (joursDepuisDerniere - MIN_DAYS_BEFORE_REUSE)) / (IDEAL_ROTATION_DAYS - MIN_DAYS_BEFORE_REUSE);
+  } else if (joursDepuisDerniere < rotationIdeale) {
+    facteurAnciennete = 0.3 + (0.7 * (joursDepuisDerniere - minReprise)) / (rotationIdeale - minReprise);
   } else {
     facteurAnciennete = 1.0; // +30 jours → pleinement éligible
   }
 
-  // Facteur saison (0.4 à 1.0)
+  // Facteur saison (0.4 à 1.0) — désactivable : `profile.utiliser_saison`
+  // (choix fait à l'inscription, modifiable dans les préférences) coupe ce
+  // favoritisme pour qui préfère un catalogue non filtré par la saison.
   let facteurSaison = 1.0;
-  if (meal.saison !== 'toutes') {
+  if (profile.utiliser_saison !== false && meal.saison !== 'toutes') {
     const saisonsOpposees: Record<string, string> = { ete: 'hiver', hiver: 'ete', printemps: 'automne', automne: 'printemps' };
     facteurSaison = meal.saison === saisonActuelle ? 1.0 : (saisonsOpposees[meal.saison] === saisonActuelle ? 0.4 : 0.7);
   }
@@ -175,12 +214,11 @@ export function calculateMealScore(input: ScoreInput): number {
   }
 
   let facteurFrequence = 1.0;
-  const frequenceCible = preference?.frequence_jours ?? null;
-  if (frequenceCible != null) {
+  if (cibleExplicite != null) {
     if (joursDepuisDerniere == null) {
       facteurFrequence = 1.15; // jamais servie mais demandée souvent → on la place
     } else {
-      const ratio = joursDepuisDerniere / frequenceCible;
+      const ratio = joursDepuisDerniere / cibleExplicite;
       facteurFrequence = ratio >= 1
         ? Math.min(1.3, 1 + 0.3 * Math.min(1, ratio - 1))
         : Math.max(0.35, ratio); // trop tôt par rapport au rythme voulu
@@ -583,20 +621,47 @@ export function raisonExclusion(
  * l'appeler, pas d'en recopier une copie qui divergera.
  */
 export async function chargerPoolMoteur(supabase: Db): Promise<RecetteMoteurEmbed[]> {
-  const TAILLE_PAGE = 1000;
-  const lignes: RecetteMoteurEmbed[] = [];
-  for (let page = 0; ; page++) {
-    const { data, error } = await supabase
-      .from('meals').select(COLONNES_RECETTE_MOTEUR)
-      .eq('is_public', true)
-      .in('type_repas', ['plat', 'dessert'])
-      .order('id')
-      .range(page * TAILLE_PAGE, page * TAILLE_PAGE + TAILLE_PAGE - 1);
-    if (error) throw new Error('Erreur chargement repas');
+  if (poolCache && Date.now() - poolCache.at < POOL_TTL_MS) return poolCache.rows;
+  poolEnCours ??= chargerPoolDepuisBase(supabase)
+    .then(rows => {
+      poolCache = { at: Date.now(), rows };
+      return rows;
+    })
+    .finally(() => { poolEnCours = null; });
+  return poolEnCours;
+}
 
-    const page_ = (data ?? []) as unknown as RecetteMoteurEmbed[];
-    lignes.push(...page_);
-    if (page_.length < TAILLE_PAGE) break;
+// Le pool ne contient que des recettes PUBLIQUES, identiques pour tous les
+// utilisateurs : une instance serveur chaude le réutilise quelques minutes au
+// lieu de retélécharger ~2 500 recettes + ingrédients à chaque génération.
+const POOL_TTL_MS = 10 * 60_000;
+let poolCache: { at: number; rows: RecetteMoteurEmbed[] } | null = null;
+let poolEnCours: Promise<RecetteMoteurEmbed[]> | null = null;
+
+async function chargerPoolDepuisBase(supabase: Db): Promise<RecetteMoteurEmbed[]> {
+  const TAILLE_PAGE = 1000;
+  const requete = () => supabase
+    .from('meals').select(COLONNES_RECETTE_MOTEUR)
+    .eq('is_public', true)
+    .in('type_repas', ['plat', 'dessert']);
+
+  // Compte d'abord, puis toutes les pages EN PARALLÈLE (un aller-retour au
+  // lieu d'un par page).
+  const { count, error: erreurCompte } = await supabase
+    .from('meals').select('id', { count: 'exact', head: true })
+    .eq('is_public', true)
+    .in('type_repas', ['plat', 'dessert']);
+  if (erreurCompte || count == null) throw new Error('Erreur chargement repas');
+
+  const lots = await Promise.all(
+    Array.from({ length: Math.max(1, Math.ceil(count / TAILLE_PAGE)) }, (_, page) =>
+      requete().order('id').range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1)
+    )
+  );
+  const lignes: RecetteMoteurEmbed[] = [];
+  for (const { data, error } of lots) {
+    if (error) throw new Error('Erreur chargement repas');
+    lignes.push(...((data ?? []) as unknown as RecetteMoteurEmbed[]));
   }
   return lignes;
 }
@@ -607,28 +672,39 @@ export async function buildCandidates(
   /** Inclinaison volontaire du clic « Optimiser » (défaut : équilibré) */
   intention: IntentionOptimisation | undefined = undefined
 ): Promise<CandidatesResult> {
-  // 1. Profil
-  const { data: profileRow, error: profileError } = await supabase
-    .from('profiles').select('*').eq('id', userId).single();
-  if (profileError || !profileRow) throw new UserError('Profil introuvable');
-  const profile: Profile = toProfile(profileRow);
-
-  // 1bis. Mémoire alimentaire + famille + garde-manger. Chargés en parallèle du
-  // profil : quelques lectures, aucune requête supplémentaire par recette.
-  // `poids_famille` est déjà lu par le profil → pas de requête en plus.
-  const [memoire, famille, frigoRes] = await Promise.all([
+  // 1. Toutes les lectures indépendantes partent EN MÊME TEMPS : profil,
+  // mémoire, frigo, contraintes, pool de recettes et historique 60 jours.
+  // Seule la famille attend le profil (elle lit `poids_famille`).
+  const ilYa60Jours = new Date();
+  ilYa60Jours.setDate(ilYa60Jours.getDate() - 60);
+  const [
+    { data: profileRow, error: profileError },
+    memoire,
+    frigoRes,
+    { data: allergies },
+    { data: dislikes },
+    { data: regimesData },
+    allMealsRows,
+    { data: history },
+    delaiRecettesAimees,
+  ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', userId).single(),
     chargerMemoire(userId, supabase),
-    chargerFamille(userId, supabase, profile.poids_famille),
     supabase.from('fridge_items').select('ingredient_id').eq('user_id', userId),
-  ]);
-  const frigoIds = ingredientIdsFrigo(frigoRes.data ?? []);
-
-  // 2. Allergies + dislikes + régimes
-  const [{ data: allergies }, { data: dislikes }, { data: regimesData }] = await Promise.all([
     supabase.from('user_allergies').select('ingredient_id').eq('user_id', userId),
     supabase.from('user_dislikes').select('ingredient_id').eq('user_id', userId),
     supabase.from('user_diets').select('regime').eq('user_id', userId),
+    chargerPoolMoteur(supabase),
+    supabase.from('meal_history').select('meal_id, planned_date, status')
+      .eq('user_id', userId).gte('planned_date', ilYa60Jours.toISOString().split('T')[0]),
+    chargerDelaiRecettesAimees(userId, supabase),
   ]);
+  if (profileError || !profileRow) throw new UserError('Profil introuvable');
+  const profile: Profile = toProfile(profileRow);
+  const famille = await chargerFamille(userId, supabase, profile.poids_famille);
+  const frigoIds = ingredientIdsFrigo(frigoRes.data ?? []);
+
+  // 2. Allergies + dislikes + régimes
   const regimes: Regime[] = (regimesData || []).map(r => r.regime as Regime);
 
   const allergiesIds = new Set((allergies || []).map(a => a.ingredient_id));
@@ -647,24 +723,16 @@ export async function buildCandidates(
     ),
   };
 
-  // 3. Repas publics → uniquement les vrais PLATS pour déjeuner/dîner.
-  // (Les snacks et petit-déjeuners ne doivent jamais atterrir dans les créneaux
-  // déjeuner/dîner du planning ; les desserts sont chargés aussi mais ignorés
-  // par la sélection via isDessert.)
-  const allMealsRows = await chargerPoolMoteur(supabase);
+  // 3. Repas publics (chargés plus haut) → uniquement les vrais PLATS pour
+  // déjeuner/dîner. Les desserts sont chargés aussi mais ignorés par la
+  // sélection via isDessert.
 
   // Normalisation une seule fois : lignes brutes → Meal[] + index des ingrédients
   const mealIngredientsByMeal = new Map<number, MealIngredientMoteurEmbed[]>(
     allMealsRows.map(m => [m.id, m.meal_ingredients ?? []])
   );
 
-  // 4. Historique 60 jours
-  const ilYa60Jours = new Date();
-  ilYa60Jours.setDate(ilYa60Jours.getDate() - 60);
-  const { data: history } = await supabase
-    .from('meal_history').select('meal_id, planned_date, status')
-    .eq('user_id', userId).gte('planned_date', ilYa60Jours.toISOString().split('T')[0]);
-
+  // 4. Historique 60 jours (chargé plus haut)
   const historyByMeal: Record<number, { derniereDate: Date; likes: number; dislikes: number; total: number }> = {};
   (history || []).forEach(h => {
     if (h.meal_id == null) return;
@@ -721,6 +789,7 @@ export async function buildCandidates(
       partFrigo,
       preference,
       facteurCompromis: compromis ? facteurFamille(famille, compromis.compromis) : 1,
+      delaiRecettesAimees,
     });
 
     if (score > 0) {
@@ -774,6 +843,7 @@ export async function buildCandidates(
           partFrigo: partFrigoFallback,
           preference: prefFallback,
           facteurCompromis: compromisFallback ? facteurFamille(famille, compromisFallback.compromis) : 1,
+          delaiRecettesAimees,
         }),
         preference: prefFallback,
         partFrigo: partFrigoFallback,

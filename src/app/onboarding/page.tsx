@@ -69,6 +69,7 @@ interface OnboardingForm {
   equipements: string[];
   auto_restes: boolean;
   rythme_desserts: RythmeDesserts;
+  utiliser_saison: boolean;
 }
 
 const STEPS = [
@@ -94,7 +95,7 @@ export default function OnboardingPage() {
     nb_personnes: 2, objectif: 'maintien', allergies: [], dislikes: [],
     regimes: [], cuisines_preferees: [], temps_max_semaine: 30, temps_max_weekend: 60, niveau_cuisine: 'intermediaire',
     batch_cooking: false, batch_cooking_jour: 6,
-    equipements: [], auto_restes: false, rythme_desserts: 'equilibre',
+    equipements: [], auto_restes: false, rythme_desserts: 'equilibre', utiliser_saison: true,
   });
 
   // Rediriger si pas authentifié (double sécurité avec le middleware)
@@ -137,6 +138,7 @@ export default function OnboardingPage() {
           equipements: form.equipements,
           auto_restes: form.auto_restes,
           rythme_desserts: form.rythme_desserts,
+          utiliser_saison: form.utiliser_saison,
           onboarding_complete: true,
         })
         .eq('id', user.id);
@@ -363,6 +365,19 @@ export default function OnboardingPage() {
                     </span>
                   </span>
                 </label>
+
+                <label className="flex items-start gap-3 mt-3 p-4 bg-sauge-50/60 border border-sauge-100 rounded-xl cursor-pointer">
+                  <input type="checkbox" checked={form.utiliser_saison}
+                    onChange={e => setForm(f => ({ ...f, utiliser_saison: e.target.checked }))}
+                    className="mt-0.5 w-4 h-4 accent-sauge-600" />
+                  <span>
+                    <span className="text-sm font-medium text-gray-900">🌱 Se baser sur les fruits & légumes de saison</span>
+                    <span className="text-xs text-gray-500 mt-0.5 block">
+                      Le moteur favorise les recettes de la saison en cours (un plat d&apos;hiver
+                      n&apos;est pas proposé en plein été). Modifiable à tout moment dans les réglages.
+                    </span>
+                  </span>
+                </label>
               </div>
             )}
 
@@ -486,6 +501,7 @@ export default function OnboardingPage() {
                   ['👨‍🍳 Niveau', form.niveau_cuisine],
                   ['🍳 Équipements', form.equipements.length > 0 ? form.equipements.join(', ') : 'Les basiques'],
                   ['🍱 Restes du dîner', form.auto_restes ? 'Activé (Meal Prep Pro)' : 'Désactivé'],
+                  ['🌱 Recettes de saison', form.utiliser_saison ? 'Favorisées' : 'Désactivé'],
                   ['🍰 Rythme desserts', (RYTHME_LABELS as Record<string, string>)[form.rythme_desserts] ?? 'Équilibré'],
                   ['📦 Batch cooking', form.batch_cooking ? `Activé — le ${['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'][form.batch_cooking_jour || 6]}` : 'Désactivé'],
                 ].map(([label, val]) => (

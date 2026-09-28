@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Suspense } from 'react';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/components/AuthProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { ScrollAncre } from '@/components/ScrollAncre';
+import { CookieBanner } from '@/components/CookieBanner';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
 
 const inter = Inter({
@@ -102,7 +104,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
         </AuthProvider>
         <ServiceWorkerRegister />
+        <CookieBanner />
         <Toaster position="bottom-right" toastOptions={{ style: { background: '#332A1E', color: '#FBF8F1', border: 'none' } }} />
+        {/* Plausible : mesure d'audience sans cookie ni donnée personnelle
+            (CNIL : exempté de consentement). Production uniquement — le
+            trafic de dev/preview ne doit pas polluer les statistiques. */}
+        {process.env.NODE_ENV === 'production' && (
+          <Script
+            defer
+            data-domain="getplanmymeal.com"
+            src="https://plausible.io/js/script.js"
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );

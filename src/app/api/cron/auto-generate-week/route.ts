@@ -1,7 +1,9 @@
 // ============================================================================
-// CRON Vercel — auto-génération des plannings de la semaine qui arrive
+// CRON Vercel — auto-génération glissante des 4 semaines à venir
 // vercel.json : dimanche 19h00 UTC (20h en hiver, 21h en été à Paris) → les
-// foyers découvrent leur semaine prête avant le lundi matin.
+// foyers découvrent leur semaine prête avant le lundi matin, et le dashboard
+// (navigation jusqu'à WEEK_OFFSET_MAX = 4 semaines, useWeeklyPlan.ts) comme
+// le digest du vendredi trouvent toujours un planning déjà là.
 //
 // ⭐ Délègue au VRAI moteur de rotation (rotation-engine.ts) — même chemin que
 // le bouton « Générer ma semaine » : mémoire alimentaire, frigo, profils
@@ -21,7 +23,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { orchestrerAutoPlan, type AutoPlanDb } from '@/lib/auto-planner';
+import { orchestrerAutoPlanGlissant, type AutoPlanDb } from '@/lib/auto-planner';
 import { publicErrorMessage } from '@/lib/utils';
 import { logRequestSecurityEvent } from '@/lib/security-log';
 
@@ -55,21 +57,25 @@ export async function GET(request: NextRequest) {
       : undefined;
     const cursor = params.get('cursor');
 
-    const result = await orchestrerAutoPlan(
+    // Fenêtre glissante : maintient toujours les 4 semaines à venir prêtes
+    // (pas seulement la suivante), en 4 passes indépendantes idempotentes.
+    const resultats = await orchestrerAutoPlanGlissant(
       getSupabaseAdmin() as unknown as AutoPlanDb,
-      { dryRun, limit, cursor, offsetWeeks: 1, logger: m => console.log(`[auto-generate-week] ${m}`) }
+      { dryRun, limit, cursor, logger: m => console.log(`[auto-generate-week] ${m}`) }
     );
 
     return NextResponse.json({
       success: true,
       dry_run: dryRun,
-      semaine_debut: result.semaineDebut,
-      total: result.total,
-      generes: result.generes,
-      conserves: result.conserves,
-      erreurs: result.erreurs,
-      // Détail par utilisateur : utile en support, ~50 o/utilisateur
-      results: result.results,
+      semaines: resultats.map(result => ({
+        semaine_debut: result.semaineDebut,
+        total: result.total,
+        generes: result.generes,
+        conserves: result.conserves,
+        erreurs: result.erreurs,
+        // Détail par utilisateur : utile en support, ~50 o/utilisateur
+        results: result.results,
+      })),
     });
   } catch (error) {
     console.error('Erreur cron auto-generate-week:', error);

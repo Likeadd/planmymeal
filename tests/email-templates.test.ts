@@ -40,6 +40,23 @@ describe('weeklyDigestEmailHtml — aperçu Au menu', () => {
     expect(html).toContain('Ta semaine est prête');
   });
 
+  it('ajoute un lien direct vers la liste de courses quand semaineDebut est fourni', () => {
+    const html = weeklyDigestEmailHtml(
+      { prenom: '', nbRepas: 14, semaineLabel: 'x', economie: null, economieReference: null, semaineDebut: '2026-10-05' },
+      BASE
+    );
+    expect(html).toContain('/dashboard?semaine=2026-10-05&tab=courses');
+    expect(html).toContain('Liste de courses');
+  });
+
+  it('n’ajoute pas de lien liste de courses sans semaineDebut (rétro-compat)', () => {
+    const html = weeklyDigestEmailHtml(
+      { prenom: '', nbRepas: 14, semaineLabel: 'x', economie: null, economieReference: null },
+      BASE
+    );
+    expect(html).not.toContain('tab=courses');
+  });
+
   it('échappe les titres contenant du HTML', () => {
     const html = weeklyDigestEmailHtml(
       { prenom: '', nbRepas: 1, semaineLabel: 'x', economie: null, economieReference: null, plats: ['<b>attention</b> & fils'] },

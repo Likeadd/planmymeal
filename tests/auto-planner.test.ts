@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   orchestrerAutoPlan,
+  orchestrerAutoPlanGlissant,
   genererSemaineUtilisateur,
   TAILLE_PAGE,
   type AutoPlanDb,
@@ -214,5 +215,40 @@ describe('orchestrerAutoPlan — pagination', () => {
       .filter(r => r.table === 'profiles')
       .map(r => r.range);
     expect(pages).toEqual([[0, TAILLE_PAGE - 1]]); // 3 profils < 100 → une seule page
+  });
+});
+
+describe('orchestrerAutoPlanGlissant — fenêtre de 4 semaines', () => {
+  it('prépare les 4 semaines à venir (offsets 1 à 4), jamais la courante', async () => {
+    const db = dbStandard();
+    const generer = vi.fn(genererOk);
+    const resultats = await orchestrerAutoPlanGlissant(db, { generer });
+
+    expect(resultats.map(r => r.semaineDebut)).toEqual([
+      getMondayWithOffset(1), getMondayWithOffset(2), getMondayWithOffset(3), getMondayWithOffset(4),
+    ]);
+    // 2 éligibles (u1, u2) × 4 semaines
+    expect(generer).toHaveBeenCalledTimes(8);
+  });
+
+  it('respecte nbSemaines pour ne générer qu\'une fenêtre réduite', async () => {
+    const db = dbStandard();
+    const generer = vi.fn(genererOk);
+    const resultats = await orchestrerAutoPlanGlissant(db, { generer, nbSemaines: 2 });
+
+    expect(resultats).toHaveLength(2);
+    expect(resultats.map(r => r.semaineDebut)).toEqual([getMondayWithOffset(1), getMondayWithOffset(2)]);
+  });
+
+  it('le curseur de reprise ne s\'applique qu\'à la semaine la plus urgente (offset 1)', async () => {
+    const db = dbStandard();
+    const generer = vi.fn(genererOk);
+    const resultats = await orchestrerAutoPlanGlissant(db, { generer, cursor: 'u2', nbSemaines: 2 });
+
+    // Semaine 1 : reprend après u2 → u1 est sauté (avant le curseur), u2 est
+    // régénéré, u3 (opt-out) reste listé normalement une fois le curseur
+    // atteint. Semaine 2 : curseur non réappliqué → les 3 profils repassent.
+    expect(resultats[0].results.map(r => r.userId)).toEqual(['u2', 'u3']);
+    expect(resultats[1].results.map(r => r.userId)).toEqual(['u1', 'u2', 'u3']);
   });
 });

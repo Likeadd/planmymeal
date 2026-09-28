@@ -13,7 +13,7 @@
 import type { Db } from '@/lib/rotation-engine';
 import { sendEmail } from '@/lib/email';
 import { welcomeEmailHtml, weeklyDigestEmailHtml, weeklyDigestSubject } from '@/lib/email-templates';
-import { formatWeekRange, getMonday } from '@/lib/dates';
+import { formatWeekRange, getMondayWithOffset } from '@/lib/dates';
 
 const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://planmymeal.app').replace(/\/$/, '');
 
@@ -82,11 +82,15 @@ export async function envoyerDigestsHebdomadaires(
   supabase: Db,
   { send = false, emailFilter = null }: DigestOptions = {}
 ): Promise<DigestResult> {
-  const semaineDebut = getMonday();
+  // La semaine QUI ARRIVE (lundi prochain), pas la semaine courante : le
+  // digest part le vendredi pour que le foyer fasse les courses du week-end
+  // avec le planning et la liste de la semaine suivante déjà prêts — le cron
+  // auto-generate-week (dimanche, 4 semaines glissantes) l'a déjà générée.
+  const semaineDebut = getMondayWithOffset(1);
   const result: DigestResult = { cibles: [], envoyes: 0, echecs: 0, ignores: [] };
 
-  // 1. Foyers avec un planning actif sur la semaine courante (généré par le
-  // cron Supabase du dimanche ou manuellement)
+  // 1. Foyers avec un planning actif sur la semaine qui arrive (généré par le
+  // cron du dimanche ou manuellement)
   const { data: plans, error: plansError } = await supabase
     .from('weekly_plans')
     .select('user_id, id')
@@ -177,6 +181,7 @@ export async function envoyerDigestsHebdomadaires(
         economie: economie != null && prof.budget_hebdo != null ? economie : null,
         economieReference,
         plats: cible.plats ?? [],
+        semaineDebut: cible.semaineDebut,
       };
       const r = await sendEmail({
         to: email,

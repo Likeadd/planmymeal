@@ -24,6 +24,16 @@ import { getMondayWithOffset } from '@/lib/dates';
 
 export const TAILLE_PAGE = 100;
 
+/**
+ * Fenêtre glissante : le cron du dimanche maintient toujours les
+ * `NB_SEMAINES_GLISSANTES` semaines à venir déjà planifiées (pas seulement la
+ * suivante), pour que le digest du vendredi ait toujours une semaine prête à
+ * annoncer et que la navigation dashboard (WEEK_OFFSET_MAX dans
+ * useWeeklyPlan.ts, qui autorise déjà 4 semaines en avant) trouve un planning
+ * à chaque fois plutôt qu'un état vide.
+ */
+export const NB_SEMAINES_GLISSANTES = 4;
+
 export type StatutUtilisateur = 'genere' | 'existant' | 'erreur';
 
 export interface ResultatUtilisateur {
@@ -200,4 +210,37 @@ export async function orchestrerAutoPlan(
 
   result.total = profils.length;
   return result;
+}
+
+/**
+ * Fenêtre glissante : répète `orchestrerAutoPlan` pour chacune des
+ * `NB_SEMAINES_GLISSANTES` semaines à venir (1 = la suivante). Chaque semaine
+ * reste protégée par la même garde anti-écrasement — rejouer ce cron un jour
+ * sans nouvel utilisateur ne génère donc rien de plus.
+ * `limit`/`cursor` ne s'appliquent qu'à la PREMIÈRE semaine (offset 1, la
+ * plus urgente) : au-delà, une reprise se refait via un nouvel appel plutôt
+ * que de complexifier un curseur à deux dimensions (semaine × utilisateur).
+ */
+export async function orchestrerAutoPlanGlissant(
+  supabase: AutoPlanDb,
+  options: {
+    dryRun?: boolean;
+    limit?: number;
+    cursor?: string | null;
+    logger?: (message: string) => void;
+    generer?: typeof genererSemaineUtilisateur;
+    nbSemaines?: number;
+  } = {}
+): Promise<ResultatAutoPlan[]> {
+  const { nbSemaines = NB_SEMAINES_GLISSANTES, ...rest } = options;
+  const resultats: ResultatAutoPlan[] = [];
+  for (let offsetWeeks = 1; offsetWeeks <= nbSemaines; offsetWeeks++) {
+    resultats.push(await orchestrerAutoPlan(supabase, {
+      ...rest,
+      offsetWeeks,
+      // Le curseur de reprise ne s'applique qu'à la semaine la plus urgente.
+      cursor: offsetWeeks === 1 ? rest.cursor : null,
+    }));
+  }
+  return resultats;
 }

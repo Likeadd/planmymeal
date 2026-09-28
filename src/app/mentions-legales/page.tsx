@@ -11,14 +11,12 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          Le site <strong>getplanmymeal.com</strong> est édité par <strong>PlanMyMeal</strong> :
+          Le site <strong>getplanmymeal.com</strong> est édité par <strong>PlanMyMeal</strong>,
+          exploité à titre individuel (immatriculation en cours) :
         </p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Raison sociale : [À compléter]</li>
-          <li>Forme juridique et capital social : [À compléter]</li>
-          <li>Siège social : [À compléter]</li>
-          <li>Numéro SIRET : [À compléter]</li>
-          <li>Directeur de la publication : [À compléter]</li>
+          <li>Numéro SIRET : en cours d’attribution — publié ici dès son obtention.</li>
+          <li>Directeur de la publication : [Nom complet à compléter]</li>
           <li>Contact : <a href="mailto:contact@getplanmymeal.com" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">contact@getplanmymeal.com</a></li>
         </ul>
       </>
@@ -28,7 +26,11 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     title: 'Hébergement',
     body: (
       <>
-        <p>Le site est hébergé par : [À compléter — nom et adresse de l’hébergeur].</p>
+        <p>
+          Le site est hébergé par <strong>Vercel Inc.</strong> (
+          <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">vercel.com</a>
+          ).
+        </p>
         <p>
           Les données applicatives sont stockées sur une infrastructure sécurisée
           (Supabase), située dans l’Union européenne.
@@ -78,8 +80,14 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
       <>
         <p>
           Le site utilise uniquement des cookies techniques nécessaires au
-          fonctionnement du service (session de connexion, préférences). Aucun
-          cookie publicitaire ou de suivi n’est déposé sans votre consentement.
+          fonctionnement du service (session de connexion, préférences).
+        </p>
+        <p>
+          La mesure d’audience est assurée par <strong>Plausible</strong>, un
+          outil respectueux de la vie privée qui ne dépose aucun cookie et ne
+          collecte aucune donnée personnelle — aucun consentement n’est donc
+          requis pour son utilisation. Aucun cookie publicitaire ou de suivi
+          n’est déposé.
         </p>
       </>
     ),
@@ -171,7 +179,7 @@ export default function MentionsLegalesPage() {
                 modification du texte, pas « aujourd'hui ». `new Date()` au
                 rendu affichait la date du build côté serveur et celle de la
                 visite côté client → mismatch (et date trompeuse). */}
-            Dernière mise à jour : 15 septembre 2026.
+            Dernière mise à jour : 27 septembre 2026.
           </p>
 
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-center">

@@ -324,7 +324,10 @@ function DashboardInner() {
                   sous-titre « Semaine du … · N repas » est masqué < sm — la
                   semaine est déjà lisible dans la nav compacte à droite, le
                   décompte de repas rejoint la barre de jours mobile. */}
-              <h1 className="font-display font-bold text-2xl sm:text-4xl text-gray-900 tracking-tight leading-[1.1]">
+              {/* pb-2 : le soulignement de <Underlined> est peint via un padding-bottom
+                  sur un span inline, qui n'agrandit pas la boîte de ligne — sans cette
+                  marge sur le h1 (bloc), le trait passait par-dessus le sous-titre. */}
+              <h1 className="font-display font-bold text-2xl sm:text-4xl text-gray-900 tracking-tight leading-[1.1] pb-2">
                 <Underlined color="#7C5FBF">{prenom ? `Bonjour ${prenom}` : 'Bonjour'}</Underlined>{' '}👋
               </h1>
               <p className="hidden sm:block text-sm text-gray-500 mt-1">

@@ -916,10 +916,23 @@ export async function buildCandidates(
   if (budgetHebdo && budgetHebdo > 0) {
     const prixMoyen = prixMoyenPortions(candidats);
     if (prixMoyen > 0) {
+      // Le budget par repas était calculé sur les 14 déjeuners/dîners
+      // uniquement (NB_REPAS_PRINCIPAUX) : les desserts du rythme choisi
+      // (jusqu'à 6 soirs + 3 midis en « gourmand ») piochent dans le même
+      // budget hebdo mais n'étaient jamais comptés au dénominateur — le
+      // seuil de tolérance par repas était donc surestimé et laissait
+      // passer trop de plats chers, d'où le dépassement de budget observé
+      // en fin de semaine.
+      let rythme = validerRythmeDesserts(
+        (profile as unknown as { rythme_desserts?: unknown }).rythme_desserts
+      );
+      if (rythme === 'gourmand' && profile.plan === 'gratuit') rythme = 'equilibre';
+      const cibleDesserts = RYTHME_DESSERTS[rythme];
+      const nbRepasReel = NB_REPAS_PRINCIPAUX + (cibleDesserts.soirs ?? 0) + (cibleDesserts.midis ?? 0);
       for (const c of candidats) {
         const pp = prixParPortion(c.meal);
         c.score *= Math.pow(
-          facteurBudget(pp, budgetHebdo, profile.nb_personnes || 2, prixMoyen),
+          facteurBudget(pp, budgetHebdo, profile.nb_personnes || 2, prixMoyen, nbRepasReel),
           poidsIntention.budget
         );
       }

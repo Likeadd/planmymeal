@@ -76,7 +76,7 @@ export default async function MenuPartagePage({ params }: { params: Promise<{ to
           ].filter(Boolean);
           if (repas.length === 0) return null;
           return (
-            <div key={i}>
+            <div key={i} data-reveal style={{ '--i': i % 4 } as React.CSSProperties}>
               <h2 className="font-display font-bold text-gray-900 text-sm mb-2">{JOURS_NOMS[i]}</h2>
               <div className="space-y-2">{repas}</div>
             </div>

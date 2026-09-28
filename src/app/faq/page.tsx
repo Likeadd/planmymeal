@@ -100,7 +100,7 @@ function FaqContent() {
   return (
     <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 space-y-12">
       {FAQ_CATEGORIES.map(cat => (
-        <div key={cat.label}>
+        <div key={cat.label} data-reveal>
           <div className="flex items-center gap-3 mb-5">
             <span className="w-2 h-2 rounded-full bg-brand-500" aria-hidden />
             <h2 className="text-[11px] font-semibold tracking-[0.22em] uppercase text-gray-800">

@@ -54,6 +54,10 @@ function LoginForm() {
           ? '📬 Lien invalide ou email non confirmé. Utilisez le lien ou le code reçu par email.'
           : '';
 
+  // Précharge la destination habituelle pendant que l'utilisateur saisit ses
+  // identifiants : la page suivante s'ouvre alors quasi instantanément.
+  useEffect(() => { router.prefetch('/aujourdhui'); }, [router]);
+
   // Rediriger si déjà connecté — même logique stricte que handleLogin :
   // false explicite → /onboarding, toute autre réponse (true ou requête
   // échouée) → /dashboard. Le proxy corrige si nécessaire.
@@ -67,9 +71,9 @@ function LoginForm() {
           .maybeSingle()
           .then(({ data: profile }) => {
             if (profile?.onboarding_complete !== false) {
-              router.push('/aujourdhui');
+              router.replace('/aujourdhui');
             } else {
-              router.push('/onboarding');
+              router.replace('/onboarding');
             }
           });
       }
@@ -101,29 +105,20 @@ function LoginForm() {
       return;
     }
 
-    // Cookies posés par l'API → le client navigateur relit la session
+    // Cookies posés par l'API → le client navigateur relit la session (lecture
+    // locale, sans réseau). L'onboarding vient de la réponse : plus de requête
+    // profil avant la redirection. false EXPLICITE → onboarding ; null/true
+    // → /aujourdhui (le proxy renvoie vers /onboarding si vraiment incomplet).
     const { data } = await supabase.auth.getSession();
     if (data.session) {
-      // Vérifier si l'onboarding est terminé. `maybeSingle` + test STRICT :
-      // une requête perdue (erreur réseau, ligne absente) ne doit PAS renvoyer
-      // un compte déjà onboardé vers /onboarding (course observée en E2E).
-      // Le proxy serveur, source de vérité, corrige de toute façon les deux
-      // directions à la navigation suivante.
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('onboarding_complete')
-        .eq('id', data.session.user.id)
-        .maybeSingle();
-
+      const cible = (json as { onboardingComplete?: boolean | null }).onboardingComplete === false
+        ? '/onboarding' : '/aujourdhui';
       toast.success('Connexion réussie ! 👋');
-
-      // false EXPLICITE → onboarding ; null/true (requête échouée ou complète)
-      // → dashboard (le proxy renverra vers /onboarding si vraiment incomplet).
-      if (profile?.onboarding_complete !== false) {
-        router.push('/aujourdhui');
-      } else {
-        router.push('/onboarding');
-      }
+      // replace : le retour arrière ne ramène pas sur le formulaire de login.
+      router.replace(cible);
+      // On garde le bouton en état « chargement » pendant la navigation :
+      // pas de flash du formulaire entre le clic et la page suivante.
+      return;
     }
 
     setLoading(false);

@@ -19,7 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Clock, Flame, AlertTriangle, ShoppingCart, Wallet, ArrowRight,
-  ChefHat, Loader2, CalendarDays,
+  ChefHat, CalendarDays,
 } from 'lucide-react';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { useAuth } from '@/components/AuthProvider';
@@ -78,85 +78,87 @@ export default function AujourdhuiPage() {
 
     (async () => {
       try {
-        // ── Prochain repas : le 1er créneau non passé du jour ────────────
-        const { data: plan } = await supabase
-          .from('weekly_plans')
-          .select(`id, plan_meals(jour_semaine, repas_type, est_reste_de, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .eq('semaine_debut', semaineDuProchain)
-          .maybeSingle();
-
-        if (!alive) return;
-        const planEmbed = plan as unknown as WeeklyPlanEmbed | null;
-        const slots = (planEmbed?.plan_meals ?? [])
-          .filter(pm => pm.jour_semaine === todayIndex)
-          .map(pm => ({
-            ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
-            repas_type: pm.repas_type,
-            est_reste_de: pm.est_reste_de,
-            meal: pm.meals ? toRecettePlanning(pm.meals) : null,
-          }))
-          .sort((a, b) => a.ordre - b.ordre);        const prochains = slots.filter(s => s.meal);
-        setNbRepasRestants(prochains.length);
-        const premier = prochains[0];
-        if (premier?.meal) {
-          setProchain({
-            label: premier.repas_type === 'dejeuner' ? 'Déjeuner'
-              : premier.repas_type === 'diner' ? 'Dîner'
-              : premier.repas_type === 'dessert_midi' ? 'Dessert de midi' : 'Dessert',
-            meal: premier.meal,
-          });
-          setPlanningVide(false);
-        } else {
-          setProchain(null);
-          setPlanningVide(true);
-        }
-
-        // ── Frigo : produits proches de péremption (≤ 3 jours) ───────────
-        const { data: frigo } = await supabase
-          .from('fridge_items')
-          .select('expiration, ingredients(nom)')
-          .not('expiration', 'is', null)
-          .lte('expiration', dans3JoursISO());
-
-        if (!alive) return;
-        const aujISO = aujourdhuiISO();
-        const items: AUtiliser[] = (frigo ?? []).map(r => ({
-          nom: r.ingredients?.nom ?? '',
-          expiration: r.expiration as string,
-          joursRestants: Math.round((new Date(`${r.expiration}T12:00:00`).getTime() - new Date(`${aujISO}T12:00:00`).getTime()) / 86_400_000),
-        })).sort((a, b) => a.expiration.localeCompare(b.expiration));
-        setAUtiliser(items);
-
-        // ── Courses : items non cochés de la liste de la semaine ────────
-        // La liste est liée au PLAN (pas de colonne semaine sur shopping_lists) :
-        // on retrouve le plan de la semaine courante puis sa liste active.
-        const { data: listRow } = await supabase
-          .from('weekly_plans')
-          .select('id, shopping_lists(id)')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .eq('semaine_debut', semaineCourante)
-          .maybeSingle();
-        if (!alive) return;
-        const listId = (listRow as { shopping_lists: { id: number }[] | null } | null)?.shopping_lists?.[0]?.id ?? null;
-        if (listId) {
-          const { data: items } = await supabase
-            .from('shopping_list_items')
-            .select('ingredient_id, checked')
-            .eq('list_id', listId);
+        // Les 4 lectures sont indépendantes : lancées EN PARALLÈLE (avant :
+        // 6 allers-retours réseau à la suite = écran de chargement long).
+        const lirePlan = async () => {
+          const { data: plan } = await supabase
+            .from('weekly_plans')
+            .select(`id, plan_meals(jour_semaine, repas_type, est_reste_de, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .eq('semaine_debut', semaineDuProchain)
+            .maybeSingle();
           if (!alive) return;
-          setNbCourses((items ?? []).filter(i => !i.checked).length);
-        } else {
-          setNbCourses(0);
-        }
+          const planEmbed = plan as unknown as WeeklyPlanEmbed | null;
+          const slots = (planEmbed?.plan_meals ?? [])
+            .filter(pm => pm.jour_semaine === todayIndex)
+            .map(pm => ({
+              ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
+              repas_type: pm.repas_type,
+              est_reste_de: pm.est_reste_de,
+              meal: pm.meals ? toRecettePlanning(pm.meals) : null,
+            }))
+            .sort((a, b) => a.ordre - b.ordre);
+          const prochains = slots.filter(s => s.meal);
+          setNbRepasRestants(prochains.length);
+          const premier = prochains[0];
+          if (premier?.meal) {
+            setProchain({
+              label: premier.repas_type === 'dejeuner' ? 'Déjeuner'
+                : premier.repas_type === 'diner' ? 'Dîner'
+                : premier.repas_type === 'dessert_midi' ? 'Dessert de midi' : 'Dessert',
+              meal: premier.meal,
+            });
+            setPlanningVide(false);
+          } else {
+            setProchain(null);
+            setPlanningVide(true);
+          }
+        };
 
-        // ── Budget : snapshot réel de la semaine ─────────────────────────
-        const res = await fetch(`/api/budget?semaine_debut=${semaineCourante}`);
-        const json = res.ok ? await res.json() : null;
-        if (!alive) return;
-        if (json) setRecap({ budget: json.budget ?? null, depense: json.depense ?? 0 });
+        // Frigo : produits proches de péremption (≤ 3 jours)
+        const lireFrigo = async () => {
+          const { data: frigo } = await supabase
+            .from('fridge_items')
+            .select('expiration, ingredients(nom)')
+            .not('expiration', 'is', null)
+            .lte('expiration', dans3JoursISO());
+          if (!alive) return;
+          const aujISO = aujourdhuiISO();
+          const items: AUtiliser[] = (frigo ?? []).map(r => ({
+            nom: r.ingredients?.nom ?? '',
+            expiration: r.expiration as string,
+            joursRestants: Math.round((new Date(`${r.expiration}T12:00:00`).getTime() - new Date(`${aujISO}T12:00:00`).getTime()) / 86_400_000),
+          })).sort((a, b) => a.expiration.localeCompare(b.expiration));
+          setAUtiliser(items);
+        };
+
+        // Courses : la liste est liée au PLAN (pas de colonne semaine sur
+        // shopping_lists) — plan, liste et items en UNE requête imbriquée.
+        const lireCourses = async () => {
+          const { data: listRow } = await supabase
+            .from('weekly_plans')
+            .select('id, shopping_lists(id, shopping_list_items(checked))')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .eq('semaine_debut', semaineCourante)
+            .maybeSingle();
+          if (!alive) return;
+          const listes = (listRow as { shopping_lists: { id: number; shopping_list_items: { checked: boolean }[] | null }[] | null } | null)?.shopping_lists;
+          const items = listes?.[0]?.shopping_list_items;
+          setNbCourses(items ? items.filter(i => !i.checked).length : 0);
+        };
+
+        // Budget : snapshot réel de la semaine
+        const lireBudget = async () => {
+          const res = await fetch(`/api/budget?semaine_debut=${semaineCourante}`);
+          const json = res.ok ? await res.json() : null;
+          if (!alive) return;
+          if (json) setRecap({ budget: json.budget ?? null, depense: json.depense ?? 0 });
+        };
+
+        // allSettled : une lecture en échec n'empêche pas d'afficher les autres.
+        await Promise.allSettled([lirePlan(), lireFrigo(), lireCourses(), lireBudget()]);
       } catch {
         // Requête perdue : les KPI restent à leur état neutre (loading → vide),
         // aucun chiffre inventé n'est affiché.
@@ -183,11 +185,13 @@ export default function AujourdhuiPage() {
         </p>
 
         {loading ? (
-          <div className="mt-10 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+          <div className="mt-6 space-y-4" aria-busy="true" aria-label="Chargement">
+            <div className="animate-shimmer h-32 rounded-3xl" />
+            <div className="animate-shimmer h-24 rounded-3xl" />
+            <div className="animate-shimmer h-20 rounded-3xl" />
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-4 [&>*]:animate-card-in">
             {/* ── Prochain repas ─────────────────────────────────────────── */}
             {prochain ? (
               <Link href={recetteHref(prochain.meal)}

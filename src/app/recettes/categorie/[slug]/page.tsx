@@ -66,11 +66,11 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
         <p className="mt-10 text-gray-500">Aucune recette ne correspond pour le moment.</p>
       ) : (
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {recettes.map(meal => {
+          {recettes.map((meal, idx) => {
             const prix = prixParPortion(meal);
             return (
-              <Link key={meal.id} href={recetteHref(meal)}
-                className="block rounded-2xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-4">
+              <Link key={meal.id} href={recetteHref(meal)} data-reveal style={{ '--i': idx % 3 } as React.CSSProperties}
+                className="press block rounded-2xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-4">
                 <h2 className="font-display font-bold text-gray-900 leading-snug">{titreMajuscules(meal.titre)}</h2>
                 <div className="flex items-center gap-3 text-[13px] text-gray-500 mt-2">
                   <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}</span>

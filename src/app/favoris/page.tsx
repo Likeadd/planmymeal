@@ -210,8 +210,8 @@ export default function FavorisPage() {
         {/* Grille de favoris */}
         {!error && filteredFavorites.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFavorites.map(meal => (
-              <div key={meal.id}
+            {filteredFavorites.map((meal, idx) => (
+              <div key={meal.id} data-reveal style={{ '--i': idx % 4 } as React.CSSProperties}
                 className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all group">
                 {/* Image placeholder */}
                 <div className="bg-brand-50 h-32 flex items-center justify-center">

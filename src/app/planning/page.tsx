@@ -245,14 +245,14 @@ function PlanningInner() {
               Toutes les semaines
             </h2>
             <div className="space-y-3">
-              {timeline.map(t => {
+              {timeline.map((t, idx) => {
                 const isThisCurrent = t.semaineDebut === lundiCourant;
                 const isSelected = displayed?.semaineDebut === t.semaineDebut;
                 const week = t.plan;
                 const isRowRegenerating = regeneratingWeek === t.semaineDebut;
 
                 return (
-                  <div key={t.semaineDebut} onClick={() => selectWeek(t.semaineDebut)}
+                  <div key={t.semaineDebut} data-reveal style={{ '--i': idx % 4 } as React.CSSProperties} onClick={() => selectWeek(t.semaineDebut)}
                     className={`bg-white rounded-2xl border p-4 transition-all cursor-pointer ${
                       isSelected ? 'border-brand-400 shadow-md ring-1 ring-brand-200' :
                       isThisCurrent ? 'border-sauge-300 bg-sauge-50/30' :

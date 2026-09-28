@@ -49,7 +49,17 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({ error: MESSAGE_ECHEC }, { status: 401 });
     }
-    return response;
+    // Onboarding lu ICI (session déjà active côté serveur) : le navigateur n'a
+    // plus à refaire une requête avant de rediriger. `null` si la lecture
+    // échoue → le client part vers /aujourdhui, le proxy corrige au besoin.
+    const { data: profil } = await supabase
+      .from('profiles')
+      .select('onboarding_complete')
+      .eq('id', data.session.user.id)
+      .maybeSingle();
+    const final = NextResponse.json({ success: true, onboardingComplete: profil?.onboarding_complete ?? null });
+    response.cookies.getAll().forEach(c => final.cookies.set(c));
+    return final;
   } catch (error) {
     console.error('Erreur POST /api/auth/login:', error);
     return NextResponse.json({ error: 'Connexion impossible pour le moment.' }, { status: 500 });

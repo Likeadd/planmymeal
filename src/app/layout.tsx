@@ -8,6 +8,8 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { ScrollAncre } from '@/components/ScrollAncre';
 import { CookieBanner } from '@/components/CookieBanner';
+import { GlobalLoadingBar } from '@/components/GlobalLoadingBar';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
 
 const inter = Inter({
@@ -105,6 +107,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </AuthProvider>
         <ServiceWorkerRegister />
         <CookieBanner />
+        <GlobalLoadingBar />
+        <ScrollReveal />
         <Toaster position="bottom-right" toastOptions={{ style: { background: '#332A1E', color: '#FBF8F1', border: 'none' } }} />
         {/* Plausible : mesure d'audience sans cookie ni donnée personnelle
             (CNIL : exempté de consentement). Production uniquement — le

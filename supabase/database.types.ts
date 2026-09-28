@@ -514,6 +514,30 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          id: string
+          email: string
+          token: string
+          created_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          token?: string
+          created_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          token?: string
+          created_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       plan_meals: {
         Row: {
           est_reste_de: number | null
@@ -974,6 +998,7 @@ export type Database = {
           id: number
           is_active: boolean
           semaine_debut: string
+          share_token: string | null
           user_id: string | null
         }
         Insert: {
@@ -983,6 +1008,7 @@ export type Database = {
           id?: number
           is_active?: boolean
           semaine_debut: string
+          share_token?: string | null
           user_id?: string | null
         }
         Update: {
@@ -992,6 +1018,7 @@ export type Database = {
           id?: number
           is_active?: boolean
           semaine_debut?: string
+          share_token?: string | null
           user_id?: string | null
         }
         Relationships: [

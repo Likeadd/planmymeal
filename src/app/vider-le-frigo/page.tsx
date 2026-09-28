@@ -12,6 +12,7 @@ import type { Ingredient } from '@/types';
 import { createBrowserClient } from '@/lib/supabase';
 import { formatMinutes } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
+import { recetteHref } from '@/lib/seo';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
 interface RecetteFrigo {
@@ -195,7 +196,7 @@ export default function ViderLeFrigoPage() {
             </h2>
             <div className="grid sm:grid-cols-3 gap-4">
               {resultats.map((r, idx) => (
-                <Link key={r.id} href={`/recette/${r.id}`}
+                <Link key={r.id} href={recetteHref(r)}
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all group">
                   <div className="relative bg-brand-50 h-28 flex items-center justify-center overflow-hidden">
                     <span className="text-4xl transition-transform duration-300 group-hover:scale-110" aria-hidden>🧑‍🍳</span>

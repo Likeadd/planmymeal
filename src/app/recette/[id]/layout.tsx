@@ -5,7 +5,7 @@
 // ============================================================================
 
 import type { Metadata } from 'next';
-import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
+import { SITE_URL, serialiserJsonLd, parseRecetteId, recetteHref } from '@/lib/seo';
 import { getRecettePublique } from './data';
 
 export const revalidate = 86400; // ISR : revalide 1× par jour
@@ -20,10 +20,11 @@ const CATEGORIES: Record<string, string> = {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const meal = await getRecettePublique(Number(id));
+  const mealId = parseRecetteId(id);
+  const meal = mealId ? await getRecettePublique(mealId) : null;
   if (!meal) return { title: 'Recette introuvable', robots: { index: false } };
 
-  const url = `${SITE_URL}/recette/${meal.id}`;
+  const url = `${SITE_URL}${recetteHref(meal)}`;
   const description = meal.description
     || `Recette ${meal.titre} : ${meal.temps_preparation + (meal.temps_cuisson || 0)} min, ${meal.calories_par_portion || '—'} kcal/portion. Planifiez-la avec PlanMyMeal.`;
 
@@ -49,7 +50,8 @@ export default async function RecetteLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const meal = await getRecettePublique(Number(id));
+  const mealId = parseRecetteId(id);
+  const meal = mealId ? await getRecettePublique(mealId) : null;
 
   const jsonLd = meal
     ? {
@@ -58,7 +60,7 @@ export default async function RecetteLayout({
         name: meal.titre,
         description: meal.description || undefined,
         image: meal.image_url || undefined,
-        url: `${SITE_URL}/recette/${meal.id}`,
+        url: `${SITE_URL}${recetteHref(meal)}`,
         inLanguage: 'fr-FR',
         author: { '@type': 'Organization', name: 'PlanMyMeal', url: SITE_URL },
         prepTime: `PT${meal.temps_preparation || 0}M`,

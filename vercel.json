@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/auto-generate-week",
       "schedule": "0 19 * * 0"
+    },
+    {
+      "path": "/api/cron/newsletter-hebdo",
+      "schedule": "0 8 * * 0"
     }
   ]
 }

@@ -42,6 +42,7 @@ import { recetteServable, normaliserNom, type IngredientPourRegime } from '@/lib
 import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
+import { recetteHref } from '@/lib/seo';
 
 const TYPE_FILTERS: { value: TypeRepas | 'tous'; label: string }[] = [
   { value: 'tous', label: 'Tout' },
@@ -223,21 +224,30 @@ export default function RecettesPage() {
   const [tri, setTri] = useState<TriChamp>('nom');
   const [difficulteFilter, setDifficulteFilter] = useState<'toutes' | 'facile' | 'moyen' | 'difficile'>('toutes');
   const [saisonFilter, setSaisonFilter] = useState<Saison | 'toutes'>('toutes');
-  const [tempsMax, setTempsMax] = useState<number | null>(null);
+  // Liens directs depuis la landing et les pages catégories SEO (/recettes/categorie/*) :
+  // /recettes?cuisine=X&prixMax=2&tempsMax=30&batch=1&proteines=1&regime=vegetarien
+  // Lecture paresseuse (une seule fois) — sans risque d'hydration mismatch :
+  // les filtres avancés ne se rendent qu'après chargement des données côté client.
+  const paramsInitiaux = (): URLSearchParams =>
+    typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
+  const [tempsMax, setTempsMax] = useState<number | null>(() => {
+    const v = Number(paramsInitiaux().get('tempsMax'));
+    return v > 0 ? v : null;
+  });
   const [kcalMax, setKcalMax] = useState<number | null>(null);
-  const [prixMax, setPrixMax] = useState<number | null>(null);
-  const [batchOnly, setBatchOnly] = useState(false);
-  const [proteinesOnly, setProteinesOnly] = useState(false);
-  const [regimes, setRegimes] = useState<Regime[]>([]);
+  const [prixMax, setPrixMax] = useState<number | null>(() => {
+    const v = Number(paramsInitiaux().get('prixMax'));
+    return v > 0 ? v : null;
+  });
+  const [batchOnly, setBatchOnly] = useState(() => paramsInitiaux().get('batch') === '1');
+  const [proteinesOnly, setProteinesOnly] = useState(() => paramsInitiaux().get('proteines') === '1');
+  const [regimes, setRegimes] = useState<Regime[]>(() => {
+    const r = paramsInitiaux().get('regime');
+    return r ? [r as Regime] : [];
+  });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [nbAffichees, setNbAffichees] = useState(TRANCHE_GRILLE);
-  // Lien direct depuis la landing (tuile « Nouveautés du monde ») : /recettes?cuisine=X
-  // Lecture paresseuse (une seule fois) — sans risque d'hydration mismatch :
-  // le select de cuisine ne se rend qu'après chargement des données côté client.
-  const [cuisineFilter, setCuisineFilter] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'toutes';
-    return new URLSearchParams(window.location.search).get('cuisine') ?? 'toutes';
-  });
+  const [cuisineFilter, setCuisineFilter] = useState<string>(() => paramsInitiaux().get('cuisine') ?? 'toutes');
 
   const supabase = createBrowserClient();
 
@@ -639,7 +649,7 @@ export default function RecettesPage() {
                   </div>
 
                   <div className="p-4">
-                    <Link href={`/recette/${meal.id}`}>
+                    <Link href={recetteHref(meal)}>
                     <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-10">
                       {titreMajuscules(meal.titre)}
                     </h3>
@@ -679,7 +689,7 @@ export default function RecettesPage() {
                       <FamilleBadges meal={meal} libelle="Foyer" />
                     </div>
 
-                    <Link href={`/recette/${meal.id}`}
+                    <Link href={recetteHref(meal)}
                       className="block w-full text-center px-4 py-2.5 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
                       Voir la recette
                     </Link>

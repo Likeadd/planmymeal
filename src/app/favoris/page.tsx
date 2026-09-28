@@ -15,6 +15,7 @@ import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from 
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { JOURS_NOMS } from '@/lib/dates';
+import { recetteHref } from '@/lib/seo';
 
 
 const TYPE_FILTERS: { value: TypeRepas | 'tous'; label: string }[] = [
@@ -220,7 +221,7 @@ export default function FavorisPage() {
                 </div>
 
                 <div className="p-4">
-                  <Link href={`/recette/${meal.id}`}>
+                  <Link href={recetteHref(meal)}>
                     <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
                       {titreMajuscules(meal.titre)}
                     </h3>

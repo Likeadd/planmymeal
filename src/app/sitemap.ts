@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { recetteHref } from '@/lib/seo';
+import { CATEGORIES_SEO } from '@/lib/categories-seo';
 
 /**
  * Sitemap dynamique : pages publiques + TOUTES les recettes publiques.
@@ -15,6 +17,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const statiques: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${base}/recettes`, changeFrequency: 'weekly', priority: 0.9 },
+    ...CATEGORIES_SEO.map(c => ({
+      url: `${base}/recettes/categorie/${c.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
     { url: `${base}/faq`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/cgv`, changeFrequency: 'yearly', priority: 0.2 },
@@ -38,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       Array.from({ length: Math.ceil((count ?? 0) / PAGE) }, (_, i) =>
         supabase
           .from('meals')
-          .select('id, updated_at')
+          .select('id, titre, updated_at')
           .eq('is_public', true)
           .order('id')
           .range(i * PAGE, (i + 1) * PAGE - 1)
@@ -46,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
 
     const recettes: MetadataRoute.Sitemap = lots.flatMap(({ data }) => data ?? []).map(m => ({
-      url: `${base}/recette/${m.id}`,
+      url: `${base}${recetteHref(m)}`,
       lastModified: m.updated_at ? new Date(m.updated_at) : undefined,
       changeFrequency: 'monthly' as const,
       priority: 0.7,

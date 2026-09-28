@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   Calendar, ChevronLeft, ChevronRight, RefreshCw,
   Clock, Flame, Loader2, AlertTriangle, Sparkles,
-  UtensilsCrossed, Hash, Copy,
+  UtensilsCrossed, Hash, Copy, Share2,
 } from 'lucide-react';
 import type { RecetteResume } from '@/types';
 import { usePlanningHistory, type WeekSummary } from '@/lib/usePlanningHistory';
@@ -18,6 +18,7 @@ import {
 import { pushSemaine, replaceSemaine, useSemainePopstate } from '@/lib/useSemaineHistory';
 import { formatMinutes, formatCalories, copyToClipboard, titreMajuscules } from '@/lib/utils';
 import { toast } from 'sonner';
+import { recetteHref } from '@/lib/seo';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
 export default function PlanningPage() {
@@ -92,7 +93,8 @@ function PlanningInner() {
     setSelected(semaine);
   }, []));
 
-  // Copie le deep-link de la semaine affichée (?semaine=...)
+  // Copie le deep-link de la semaine affichée (?semaine=...) — utile entre
+  // membres d'un même foyer (compte requis pour l'ouvrir).
   const copyWeekLink = async () => {
     if (!displayed) return;
     const url = new URL(window.location.href);
@@ -100,6 +102,30 @@ function PlanningInner() {
     const ok = await copyToClipboard(url.toString());
     if (ok) toast.success('Lien copié — semaine partageable 📋');
     else toast.error('Copie impossible dans ce navigateur');
+  };
+
+  const [sharing, setSharing] = useState(false);
+
+  // Partage public (lecture seule, sans compte) : /menu/[token]
+  const sharePublicLink = async () => {
+    if (!displayed?.plan || sharing) return;
+    setSharing(true);
+    try {
+      const res = await fetch('/api/planning/partager', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semaine_debut: displayed.semaineDebut }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erreur');
+      const ok = await copyToClipboard(json.url);
+      if (ok) toast.success('Lien public copié — à partager sans compte 🔗');
+      else toast.error('Copie impossible dans ce navigateur');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Partage impossible');
+    } finally {
+      setSharing(false);
+    }
   };
 
   const handleRegenConfirm = async (semaineDebut: string) => {
@@ -168,6 +194,15 @@ function PlanningInner() {
               title="Copier le lien de cette semaine" aria-label="Copier le lien de cette semaine">
               <Copy className="w-5 h-5" />
             </button>
+
+            {/* Partage public (lecture seule, sans compte) : /menu/[token] */}
+            {displayed?.plan && (
+              <button onClick={() => void sharePublicLink()} disabled={sharing}
+                className="p-2 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-all text-gray-500 disabled:opacity-50"
+                title="Partager ce menu publiquement" aria-label="Partager ce menu publiquement">
+                <Share2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -444,7 +479,7 @@ function MealMini({ label, meal }: { label: string; meal: RecetteResume | null }
   return (
     <div className="group">
       <div className="flex items-center justify-between">
-        <Link href={`/recette/${meal.id}`}
+        <Link href={recetteHref(meal)}
           className="flex-1 text-xs font-medium text-gray-800 hover:text-brand-600 transition-colors truncate leading-snug"
           title={titreMajuscules(meal.titre)}>
           {titreMajuscules(meal.titre)}

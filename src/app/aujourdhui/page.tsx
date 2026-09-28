@@ -28,6 +28,7 @@ import { useTodayIndex, JOUR_INCONNU } from '@/lib/useTodayIndex';
 import { getMondayWithOffset, getMonday } from '@/lib/dates';
 import { formatMinutes, formatCalories, cn, titreMajuscules } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
+import { recetteHref } from '@/lib/seo';
 import { COLONNES_RECETTE_PLANNING, toRecettePlanning, type WeeklyPlanEmbed } from '@/lib/db-rows';
 import type { RecettePlanning } from '@/types';
 
@@ -189,7 +190,7 @@ export default function AujourdhuiPage() {
           <div className="mt-6 space-y-4">
             {/* ── Prochain repas ─────────────────────────────────────────── */}
             {prochain ? (
-              <Link href={`/recette/${prochain.meal.id}`}
+              <Link href={recetteHref(prochain.meal)}
                 className="block group rounded-3xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-5">
                 <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-2 flex items-center gap-1.5">
                   <ChefHat className="w-3.5 h-3.5" /> Prochain repas · {prochain.label}

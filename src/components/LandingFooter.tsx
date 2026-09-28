@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Heart, Instagram } from 'lucide-react';
+import { ArrowRight, Heart, Mail } from 'lucide-react';
 import { anneeParis } from '@/lib/dates';
 import { BrandMark } from '@/components/BrandMark';
 
@@ -15,7 +15,23 @@ const FOOTER_LINKS = [
 
 export default function LandingFooter() {
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [statut, setStatut] = useState<'idle' | 'envoi' | 'ok' | 'erreur'>('idle');
+
+  async function inscrire(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim() || statut === 'envoi') return;
+    setStatut('envoi');
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setStatut(res.ok ? 'ok' : 'erreur');
+    } catch {
+      setStatut('erreur');
+    }
+  }
 
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
@@ -27,33 +43,36 @@ export default function LandingFooter() {
               Rejoignez PlanMyMeal
             </h3>
             <p className="mt-3 text-gray-600 text-sm leading-relaxed">
-              Des notes bienveillantes sur les menus, les ingrédients et le
-              bien-manger.
+              Recevez gratuitement le menu de la semaine et sa liste de
+              courses, chaque dimanche — sans créer de compte.
             </p>
           </div>
 
           {/* Newsletter */}
           <div>
-            {subscribed ? (
+            {statut === 'ok' ? (
               <p className="text-brand-600 font-medium text-sm pt-2">
-                🎉 Merci ! Vous recevrez nos prochaines recettes.
+                🎉 Merci ! Votre premier menu arrive dimanche.
               </p>
             ) : (
-              <form
-                onSubmit={e => { e.preventDefault(); if (email.trim()) setSubscribed(true); }}
+              <form onSubmit={inscrire}
                 className="flex items-center gap-2 border-b border-gray-400 pb-2 focus-within:border-brand-500 transition-colors">
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="ADRESSE EMAIL"
                   className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-hidden uppercase"
                 />
-                <button type="submit" aria-label="S’inscrire"
-                  className="text-brand-600 hover:text-brand-700 transition-colors">
+                <button type="submit" aria-label="S’inscrire" disabled={statut === 'envoi'}
+                  className="text-brand-600 hover:text-brand-700 transition-colors disabled:opacity-50">
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </form>
+            )}
+            {statut === 'erreur' && (
+              <p className="text-red-600 text-xs mt-2">Une erreur est survenue, réessayez.</p>
             )}
           </div>
 
@@ -69,13 +88,10 @@ export default function LandingFooter() {
               ))}
             </ul>
             <div className="flex items-center gap-3">
-              <a href="#" aria-label="Instagram"
+              {/* Pas de compte Instagram actif pour l'instant — pas de lien mort ("#") */}
+              <a href="mailto:contact@getplanmymeal.com" aria-label="Nous contacter par email"
                 className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:text-brand-600 hover:border-brand-400 transition-colors">
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a href="#" aria-label="Nous contacter"
-                className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:text-brand-600 hover:border-brand-400 transition-colors">
-                <Heart className="w-4 h-4" />
+                <Mail className="w-4 h-4" />
               </a>
             </div>
           </div>

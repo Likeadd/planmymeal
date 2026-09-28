@@ -30,6 +30,17 @@ const VIANDE = ['porc', 'lardon', 'bacon', 'jambon', 'chorizo', 'boeuf', 'veau',
 const POISSON = ['saumon', 'cabillaud', 'merlu', 'colin', 'thon', 'truite', 'bar ', 'dorade', 'sole', 'moules', 'crevettes', 'gambas', 'calamar', 'encornet', 'sardine', 'maquereau', 'lieu', 'cabri', 'saumon fume', 'surimi', 'bulot'];
 const PRODUITS_ANIMAUX = ['oeuf', 'jaune d', 'lait', 'creme', 'beurre', 'yaourt', 'fromage', 'parmesan', 'mozzarella', 'gruyere', 'cheddar', 'reblochon', 'mascarpone', 'feta', 'ricotta', 'chevre', 'roquefort', 'comte', 'emmental', 'miel'];
 const PORC = ['porc', 'lardon', 'bacon', 'jambon', 'chorizo', 'saucisse de toulouse', 'echine', 'roti de porc', 'cote de porc', 'filet mignon', 'paupiette', 'gelatine', 'saindoux'];
+/** Céréales et dérivés (pain, pâtes, riz, farines…) */
+const FECULENTS_CEREALES = ['farine', 'pain', 'pates', 'spaghetti', 'tagliatelle', 'macaroni', 'lasagne', 'gnocchi', 'semoule', 'boulgour', 'couscous', 'riz', 'quinoa', 'millet', 'sarrasin', 'epeautre', 'orzo', 'coquillettes', 'crozets', 'nouilles', 'flocons d', 'granola', 'biscotte', 'tortilla', 'chapelure', 'pate brisee', 'pate feuilletee', 'pate filo', 'feuilles de brick', 'mais', 'polenta', 'fecule', 'biscuit', 'speculoos', 'injera', 'galette de sarrasin'];
+/** Féculents = céréales + tubercules */
+const FECULENTS = [...FECULENTS_CEREALES, 'pomme de terre', 'patate douce', 'frites', 'igname', 'manioc', 'topinambour'];
+const LEGUMINEUSES = ['lentille', 'pois chiche', 'haricots rouges', 'haricots blancs', 'haricots noirs', 'pois casses', 'petits pois', 'petit pois', 'edamame', 'farine de pois'];
+const SUCRES_RAFFINES = ['sucre', 'sirop', 'confiture', 'pate a tartiner', 'chocolat', 'pepites de chocolat', 'speculoos', 'biscuit', 'glace', 'sorbet', 'chantilly', 'ketchup', 'sauce barbecue', 'sauce hoisin', 'granola'];
+const SUCRES = [...SUCRES_RAFFINES, 'miel', 'datte', 'raisins secs', 'pruneau', 'jus d'];
+const FRUITS_SUCRES = ['banane', 'mangue', 'ananas', 'raisin', 'pomme', 'poire', 'figue', 'cerise', 'peche', 'nectarine', 'abricot', 'papaye', 'melon', 'pasteque', 'orange', 'clementine', 'kiwi', 'grenade', 'coing'];
+const TRANSFORMES = ['nuggets', 'frites surgelees', 'mayonnaise', 'ketchup', 'sauce barbecue', 'surimi', 'jambon blanc', 'jambon de dinde', 'margarine', 'huile de palme'];
+const PRODUITS_LAITIERS = ['lait', 'creme', 'beurre', 'yaourt', 'fromage', 'parmesan', 'mozzarella', 'gruyere', 'cheddar', 'reblochon', 'mascarpone', 'feta', 'ricotta', 'chevre', 'comte', 'emmental', 'brie', 'camembert', 'halloumi', 'labneh', 'skyr', 'chantilly'];
+const LAITS_VEGETAUX = ["lait de coco", "lait d’amande", "lait d'amande", "lait d’avoine", "lait d'avoine", "lait de soja", "creme vegetale", "beurre de cacahuete", "coco"];
 const ALCOOL = ['vin blanc', 'vin rouge', 'vin cuit', 'biere', 'rhum', 'whisky', 'cognac', 'armagnac', 'porto', 'madeira', 'marsala', 'cidre', 'liqueur', 'grand marnier', 'cointreau', 'kir'];
 
 export interface IngredientPourRegime {
@@ -86,6 +97,22 @@ export function ingredientsInterdits(
     if (regles.has('sans_alcool')) {
       if (match(n, ALCOOL)) return true;
     }
+    // Keto : ni féculents, ni céréales, ni légumineuses, ni sucres, ni fruits sucrés.
+    if (regles.has('keto')) {
+      if (match(n, FECULENTS) || match(n, LEGUMINEUSES) || match(n, SUCRES) || match(n, FRUITS_SUCRES)) return true;
+    }
+    // Low carb (souple) : féculents et sucres exclus, légumineuses et fruits tolérés.
+    if (regles.has('low_carb')) {
+      if (match(n, FECULENTS) || match(n, SUCRES)) return true;
+    }
+    // Paléo : ni céréales, ni légumineuses, ni laitages, ni sucres raffinés, ni produits transformés.
+    if (regles.has('paleo')) {
+      if (match(n, FECULENTS_CEREALES) || match(n, LEGUMINEUSES) || match(n, SUCRES_RAFFINES) || match(n, TRANSFORMES)) return true;
+      if (PRODUITS_LAITIERS.some(m => n.includes(m)) && !match(n, LAITS_VEGETAUX)) return true;
+    }
+    if (regles.has('sans_sucre_ajoute')) {
+      if (match(n, SUCRES_RAFFINES)) return true;
+    }
     return false;
   };
 
@@ -101,3 +128,20 @@ export function recetteServable(
   return ingredientsInterdits(ingredients, regimes)
     .every(i => i.est_optionnel === true);
 }
+
+/** Régimes proposés à l'inscription et dans « Mon compte » (libellés partagés). */
+export const REGIMES_CHOIX: { value: Regime; label: string }[] = [
+  { value: 'vegan', label: 'Vegan 🌱' },
+  { value: 'vegetarien', label: 'Végétarien 🥬' },
+  { value: 'pesco_vegetarien', label: 'Pesco-végétarien 🐟' },
+  { value: 'sans_gluten', label: 'Sans gluten 🌾' },
+  { value: 'sans_lactose', label: 'Sans lactose 🥛' },
+  { value: 'keto', label: 'Keto 🥑 (très pauvre en glucides)' },
+  { value: 'low_carb', label: 'Low carb 🥩 (pauvre en glucides)' },
+  { value: 'paleo', label: 'Paléo 🍖 (sans céréales ni laitages)' },
+  { value: 'sans_sucre_ajoute', label: 'Sans sucre ajouté 🍬' },
+  { value: 'halal', label: 'Halal 🕌' },
+  { value: 'cacher', label: 'Casher ✡️' },
+  { value: 'sans_porc', label: 'Sans porc 🐷' },
+  { value: 'sans_alcool', label: 'Sans alcool 🚫' },
+];

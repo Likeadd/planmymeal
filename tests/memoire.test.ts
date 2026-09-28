@@ -63,6 +63,7 @@ function meal(over: Partial<Meal> = {}): Meal {
 function profile(over: Partial<Profile> = {}): Profile {
   return {
     id: 'u1',
+    sexe: null, age: null, taille_cm: null, poids_kg: null,
     email: 'test@example.com',
     full_name: 'Test',
     nb_personnes: 2,

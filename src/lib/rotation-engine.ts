@@ -24,6 +24,7 @@ import {
   type RecetteMoteurEmbed, type MealIngredientMoteurEmbed,
 } from '@/lib/db-rows';
 import { UserError } from '@/lib/utils';
+import { cibleCaloriqueJour, facteurCalories } from '@/lib/nutrition';
 
 /** Client Supabase typé (browser ou admin) */
 export type Db = SupabaseClient<Database>;
@@ -244,9 +245,17 @@ export function calculateMealScore(input: ScoreInput): number {
   // recalculer. 1 = neutre (foyer seul, ou poids_famille à 0).
   const facteurCompromis = input.facteurCompromis ?? 1;
 
+  // ⭐ Objectif calorique : les repas principaux proches de la part attendue de
+  // la cible journalière (calories_par_jour, choisie à l'inscription) sont
+  // favorisés. Uniquement si les calories de la recette sont vérifiées — même
+  // règle que le jour « léger » : on ne juge pas sur une donnée invérifiable.
+  const facteurObjectifCalories = !isDessert(meal) && meal.macros_verifiables
+    ? facteurCalories(meal.calories_par_portion, cibleCaloriqueJour(profile))
+    : 1;
+
   return facteurAnciennete * facteurSaison * facteurPreference * facteurVariete
     * facteurConservation * facteurMemoire * facteurFrequence * facteurNouveaute
-    * facteurFrigo * facteurCompromis;
+    * facteurFrigo * facteurCompromis * facteurObjectifCalories;
 }
 
 // Déplacée dans lib/dates.ts (module neutre) pour que la mémoire alimentaire

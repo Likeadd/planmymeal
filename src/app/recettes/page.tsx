@@ -102,11 +102,7 @@ const PRIX_MAX_OPTIONS: { value: number; label: string }[] = [
   { value: 5, label: '≤ 5 €' },
 ];
 
-/**
- * Régimes filtrables — libellés de l'onboarding. SANS `keto` : aucune règle
- * ingrédient ne le porte (voir tests/regimes.test.ts), la puce serait un
- * filtre fantôme.
- */
+/** Régimes filtrables — mêmes règles ingrédient que le moteur (lib/regimes.ts). */
 const REGIMES_FILTRES: { value: Regime; label: string }[] = [
   { value: 'vegetarien', label: 'Végétarien 🥬' },
   { value: 'vegan', label: 'Vegan 🌱' },
@@ -116,6 +112,10 @@ const REGIMES_FILTRES: { value: Regime; label: string }[] = [
   { value: 'sans_porc', label: 'Sans porc 🐷' },
   { value: 'halal', label: 'Halal 🕌' },
   { value: 'sans_alcool', label: 'Sans alcool 🚫' },
+  { value: 'keto', label: 'Keto 🥑' },
+  { value: 'low_carb', label: 'Low carb 🥩' },
+  { value: 'paleo', label: 'Paléo 🍖' },
+  { value: 'sans_sucre_ajoute', label: 'Sans sucre ajouté 🍬' },
 ];
 
 /** Taille d'une tranche de grille rendue (« Afficher plus ») */
@@ -638,8 +638,8 @@ export default function RecettesPage() {
         {!error && !loading && visibles.length > 0 && (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {visibles.map(meal => (
-                <div key={meal.id}
+              {visibles.map((meal, idx) => (
+                <div key={meal.id} data-reveal style={{ '--i': idx % 4 } as React.CSSProperties}
                   className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all group">
                   {/* Illustration : emoji selon le type de recette (plus de photos) */}
                   <div className="bg-brand-50 h-32 flex items-center justify-center overflow-hidden">

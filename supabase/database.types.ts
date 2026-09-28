@@ -591,6 +591,10 @@ export type Database = {
           batch_cooking_jour: number
           budget_hebdo: number | null
           calories_par_jour: number | null
+          sexe: string | null
+          age: number | null
+          taille_cm: number | null
+          poids_kg: number | null
           contexte_jours: Json
           created_at: string
           cuisines_preferees: string[] | null
@@ -629,6 +633,10 @@ export type Database = {
           batch_cooking_jour?: number
           budget_hebdo?: number | null
           calories_par_jour?: number | null
+          sexe?: string | null
+          age?: number | null
+          taille_cm?: number | null
+          poids_kg?: number | null
           created_at?: string
           contexte_jours?: Json
           cuisines_preferees?: string[] | null
@@ -665,6 +673,10 @@ export type Database = {
           batch_cooking_jour?: number
           budget_hebdo?: number | null
           calories_par_jour?: number | null
+          sexe?: string | null
+          age?: number | null
+          taille_cm?: number | null
+          poids_kg?: number | null
           created_at?: string
           contexte_jours?: Json
           cuisines_preferees?: string[] | null

@@ -135,8 +135,26 @@ describe('recetteServable — pas de régime', () => {
     expect(recetteServable([ing(50, 'Lardons', 'viande_poisson'), ing(51, 'Vin blanc', 'boissons')], [])).toBe(true);
   });
 
-  it('keto ne bloque rien au niveau ingrédient', () => {
-    expect(recetteServable([ing(70, 'Pâtes', 'epicerie_salee')], ['keto'])).toBe(true);
+  it('keto exclut féculents et sucres, garde viande et légumes verts', () => {
+    expect(recetteServable([ing(70, 'Pâtes', 'epicerie_salee')], ['keto'])).toBe(false);
+    expect(recetteServable([ing(71, 'Sucre', 'epicerie_sucree')], ['keto'])).toBe(false);
+    expect(recetteServable([ing(72, 'Saumon frais', 'viande_poisson'), ing(73, 'Brocoli', 'fruits_legumes')], ['keto'])).toBe(true);
+  });
+
+  it('low carb tolère les légumineuses mais pas le riz', () => {
+    expect(recetteServable([ing(74, 'Lentilles corail', 'epicerie_salee')], ['low_carb'])).toBe(true);
+    expect(recetteServable([ing(75, 'Riz basmati', 'epicerie_salee')], ['low_carb'])).toBe(false);
+  });
+
+  it('paléo exclut laitages et céréales mais garde le lait de coco', () => {
+    expect(recetteServable([ing(76, 'Yaourt nature', 'frais')], ['paleo'])).toBe(false);
+    expect(recetteServable([ing(77, 'Quinoa', 'epicerie_salee')], ['paleo'])).toBe(false);
+    expect(recetteServable([ing(78, 'Lait de coco', 'epicerie_salee'), ing(79, 'Pomme de terre', 'fruits_legumes')], ['paleo'])).toBe(true);
+  });
+
+  it('sans sucre ajouté garde le miel et les fruits', () => {
+    expect(recetteServable([ing(80, 'Sucre vanillé', 'epicerie_sucree')], ['sans_sucre_ajoute'])).toBe(false);
+    expect(recetteServable([ing(81, 'Banane', 'fruits_legumes')], ['sans_sucre_ajoute'])).toBe(true);
   });
 });
 

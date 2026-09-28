@@ -416,6 +416,11 @@ export function toProfile(row: ProfileRow, emailFallback = ''): Profile {
     budget_hebdo: row.budget_hebdo,
     objectif: row.objectif as Profile['objectif'],
     calories_par_jour: row.calories_par_jour,
+    // Colonnes 00030 : absentes tant que la migration n'a pas tourné → null.
+    sexe: row.sexe === 'homme' || row.sexe === 'femme' ? row.sexe : null,
+    age: row.age ?? null,
+    taille_cm: row.taille_cm ?? null,
+    poids_kg: row.poids_kg ?? null,
     niveau_cuisine: row.niveau_cuisine as Profile['niveau_cuisine'],
     temps_max_semaine: row.temps_max_semaine,
     temps_max_weekend: row.temps_max_weekend,

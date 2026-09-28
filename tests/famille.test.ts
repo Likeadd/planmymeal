@@ -81,6 +81,7 @@ function profile(over: Partial<Profile> = {}): Profile {
   return {
     id: 'u1', email: 'test@example.com', full_name: 'Test', nb_personnes: 2,
     budget_hebdo: null, objectif: 'maintien', calories_par_jour: null,
+    sexe: null, age: null, taille_cm: null, poids_kg: null,
     niveau_cuisine: 'intermediaire', temps_max_semaine: 30, temps_max_weekend: 60,
     cuisines_preferees: [], plan: 'gratuit', onboarding_complete: true,
     batch_cooking: false, batch_cooking_jour: 6, prix_max_portion: null,

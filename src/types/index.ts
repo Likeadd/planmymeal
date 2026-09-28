@@ -135,7 +135,8 @@ export type Equipement = (typeof EQUIPEMENTS)[number];
 export type Regime =
   | 'vegan' | 'vegetarien' | 'pesco_vegetarien'
   | 'keto' | 'sans_gluten' | 'sans_lactose'
-  | 'halal' | 'cacher' | 'sans_porc' | 'sans_alcool';
+  | 'halal' | 'cacher' | 'sans_porc' | 'sans_alcool'
+  | 'low_carb' | 'paleo' | 'sans_sucre_ajoute';
 
 export interface Profile {
   id: string;
@@ -146,6 +147,11 @@ export interface Profile {
   budget_hebdo: number | null;
   objectif: Objectif;
   calories_par_jour: number | null;
+  /** Profil corporel facultatif (00030) — base du calcul de calories_par_jour */
+  sexe: 'homme' | 'femme' | null;
+  age: number | null;
+  taille_cm: number | null;
+  poids_kg: number | null;
   niveau_cuisine: NiveauCuisine;
   temps_max_semaine: number;
   temps_max_weekend: number;

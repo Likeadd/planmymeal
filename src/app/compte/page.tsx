@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
 import { PlanCard } from '@/components/compte/PlanCard';
 import { MaCuisineSettings } from '@/components/compte/MaCuisineSettings';
+import { NutritionSettings } from '@/components/compte/NutritionSettings';
 import { MemoireSettings } from '@/components/compte/MemoireSettings';
 import { FamilleSettings } from '@/components/compte/FamilleSettings';
 import { FoyerSettings } from '@/components/compte/FoyerSettings';
@@ -232,7 +233,7 @@ function AccountContent() {
           {/* Lien profil */}
           <div className="pt-4 border-t border-gray-100">
             <Link
-              href="/onboarding"
+              href="#nutrition"
               className="text-sm text-brand-600 hover:text-brand-700 font-medium"
             >
               ⚙️ Modifier mes préférences alimentaires
@@ -241,6 +242,7 @@ function AccountContent() {
 
           {/* Paramètres du compte : profil + mot de passe + activité */}
           {/* key = re-montage quand le profil change → champs resynchronisés sans setState dans un effet */}
+          <NutritionSettings key={JSON.stringify([profile.objectif, profile.calories_par_jour, profile.sexe, profile.age, profile.taille_cm, profile.poids_kg])} />
           <MaCuisineSettings key={JSON.stringify([profile.equipements, profile.auto_restes, profile.desserts_activees, profile.utiliser_saison])} />
           {/* Mémoire alimentaire : temps par jour, contexte, nouveauté, recettes mémorisées */}
           <MemoireSettings key={JSON.stringify([profile.temps_max_par_jour, profile.contexte_jours, profile.nouveaute])} />

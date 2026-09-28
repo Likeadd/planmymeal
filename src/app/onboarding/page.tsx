@@ -11,6 +11,9 @@ import { createBrowserClient } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
 import type { Objectif, NiveauCuisine, Regime } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
+import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
+import { REGIMES_CHOIX } from '@/lib/regimes';
+import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, resoudreExclusions } from '@/lib/exclusions-alimentaires';
 
 /** Libellés du récapitulatif (étape 9) */
 const RYTHME_LABELS: Partial<Record<RythmeDesserts, string>> = {
@@ -19,46 +22,23 @@ const RYTHME_LABELS: Partial<Record<RythmeDesserts, string>> = {
 };
 import { EQUIPEMENTS } from '@/types';
 
-const REGIMES: { value: Regime; label: string }[] = [
-  { value: 'vegan', label: 'Vegan 🌱' },
-  { value: 'vegetarien', label: 'Végétarien 🥬' },
-  { value: 'pesco_vegetarien', label: 'Pesco-végétarien 🐟' },
-  { value: 'sans_gluten', label: 'Sans gluten 🌾' },
-  { value: 'sans_lactose', label: 'Sans lactose 🥛' },
-  { value: 'keto', label: 'Keto 🥑' },
-  { value: 'halal', label: 'Halal 🕌' },
-  { value: 'sans_porc', label: 'Sans porc 🐷' },
-];
+const REGIMES = REGIMES_CHOIX;
 
 const CUISINES = ['Française', 'Italienne', 'Asiatique', 'Indienne', 'Méditerranéenne', 'Orientale', 'Américaine', 'Créole', 'Japonaise', 'Mexicaine'];
-
-const ALLERGENES = [
-  { id: 1, nom: 'Arachides', emoji: '🥜' },
-  { id: 2, nom: 'Fruits à coque', emoji: '🌰' },
-  { id: 3, nom: 'Lactose', emoji: '🥛' },
-  { id: 4, nom: 'Gluten', emoji: '🌾' },
-  { id: 5, nom: 'Œufs', emoji: '🥚' },
-  { id: 6, nom: 'Crustacés', emoji: '🦐' },
-  { id: 7, nom: 'Poisson', emoji: '🐟' },
-  { id: 8, nom: 'Soja', emoji: '🫘' },
-];
-
-const DETESTES = [
-  { id: 10, nom: 'Champignons', emoji: '🍄' },
-  { id: 11, nom: 'Chou-fleur', emoji: '🥦' },
-  { id: 12, nom: 'Coriandre', emoji: '🌿' },
-  { id: 13, nom: 'Poivrons', emoji: '🫑' },
-  { id: 14, nom: 'Aubergine', emoji: '🍆' },
-  { id: 15, nom: 'Olives', emoji: '🫒' },
-  { id: 16, nom: 'Choux de Bruxelles', emoji: '🥬' },
-  { id: 17, nom: 'Abats', emoji: '🫀' },
-];
 
 interface OnboardingForm {
   nb_personnes: number;
   objectif: Objectif;
-  allergies: number[];
-  dislikes: number[];
+  /** Codes de familles (exclusions-alimentaires.ts), résolus en ingrédients à l'enregistrement */
+  allergies: string[];
+  dislikes: string[];
+  sexe: Sexe | null;
+  /** Saisies texte : vide = non renseigné (valeur de référence) */
+  age: string;
+  taille_cm: string;
+  poids_kg: string;
+  /** Saisie manuelle des kcal ; null = valeur calculée automatiquement */
+  calories_manuelles: number | null;
   regimes: Regime[];
   cuisines_preferees: string[];
   temps_max_semaine: number;
@@ -75,6 +55,7 @@ interface OnboardingForm {
 const STEPS = [
   { title: 'Bienvenue !', subtitle: 'Votre planificateur de repas personnel' },
   { title: 'Votre objectif', subtitle: 'Ce que votre semaine doit optimiser' },
+  { title: 'Vos besoins caloriques', subtitle: 'Calculés selon votre objectif — modifiables' },
   { title: 'Allergies & intolérances', subtitle: 'On évitera ces aliments' },
   { title: 'Régime alimentaire', subtitle: 'Un régime particulier ?' },
   { title: 'Vos goûts', subtitle: 'Ce que vous aimez... et détestez' },
@@ -96,7 +77,20 @@ export default function OnboardingPage() {
     regimes: [], cuisines_preferees: [], temps_max_semaine: 30, temps_max_weekend: 60, niveau_cuisine: 'intermediaire',
     batch_cooking: false, batch_cooking_jour: 6,
     equipements: [], auto_restes: false, rythme_desserts: 'equilibre', utiliser_saison: true,
+    sexe: null, age: '', taille_cm: '', poids_kg: '', calories_manuelles: null,
   });
+
+  // Profil corporel saisi (vide → valeur de référence) et kcal proposées
+  const nombre = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')));
+  const profilCorporel = {
+    sexe: form.sexe,
+    age: nombre(form.age),
+    taille_cm: nombre(form.taille_cm),
+    poids_kg: nombre(form.poids_kg),
+  };
+  const kcalCalculees = caloriesRecommandees(form.objectif, profilCorporel);
+  const kcalFinales = kcalValide(form.calories_manuelles) ?? kcalCalculees;
+  const estimation = profilEffectif(profilCorporel).estimation;
 
   // Rediriger si pas authentifié (double sécurité avec le middleware)
   useEffect(() => {
@@ -139,24 +133,53 @@ export default function OnboardingPage() {
           auto_restes: form.auto_restes,
           rythme_desserts: form.rythme_desserts,
           utiliser_saison: form.utiliser_saison,
+          calories_par_jour: kcalFinales,
           onboarding_complete: true,
         })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
 
+      // Profil corporel (colonnes 00030) : enregistrement séparé et non
+      // bloquant — si la migration n'est pas encore appliquée, l'inscription
+      // aboutit quand même (les kcal sont déjà enregistrées ci-dessus).
+      // Une saisie hors bornes n'est pas enregistrée (null = référence).
+      const pe = profilEffectif(profilCorporel);
+      const saisi = (v: number | null, effectif: number) => (v != null && v === effectif ? effectif : null);
+      const { error: corpsError } = await supabase
+        .from('profiles')
+        .update({
+          sexe: form.sexe,
+          age: saisi(profilCorporel.age, pe.age),
+          taille_cm: saisi(profilCorporel.taille_cm, pe.taille_cm),
+          poids_kg: saisi(profilCorporel.poids_kg, pe.poids_kg),
+        })
+        .eq('id', user.id);
+      if (corpsError) console.warn('Profil corporel non enregistré :', corpsError.message);
+
+      // Allergies et détestés : familles → ingrédients réels du catalogue
+      const besoinCatalogue = form.allergies.length > 0 || form.dislikes.length > 0;
+      const { data: ingredients } = besoinCatalogue
+        ? await supabase.from('ingredients').select('id, nom')
+        : { data: [] as { id: number; nom: string }[] };
+      const allergieIds = resoudreExclusions(form.allergies, TOUTES_ALLERGIES, ingredients ?? []);
+      const dislikeIds = resoudreExclusions(form.dislikes, DETESTES, ingredients ?? [])
+        .filter(id => !allergieIds.includes(id));
+
       // 2. Sauvegarder les allergies
-      if (form.allergies.length > 0) {
-        await supabase.from('user_allergies').upsert(
-          form.allergies.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
+      if (allergieIds.length > 0) {
+        const { error: allergiesError } = await supabase.from('user_allergies').upsert(
+          allergieIds.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
           { onConflict: 'user_id,ingredient_id' }
         );
+        // Une allergie non enregistrée est un risque santé : on bloque.
+        if (allergiesError) throw allergiesError;
       }
 
       // 3. Sauvegarder les dislikes
-      if (form.dislikes.length > 0) {
+      if (dislikeIds.length > 0) {
         await supabase.from('user_dislikes').upsert(
-          form.dislikes.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
+          dislikeIds.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
           { onConflict: 'user_id,ingredient_id' }
         );
       }
@@ -239,15 +262,84 @@ export default function OnboardingPage() {
             )}
 
             {step === 2 && (
+              <div className="space-y-6">
+                <div className="rounded-2xl bg-brand-50 border border-brand-100 p-5 text-center">
+                  <p className="text-xs font-semibold tracking-[0.14em] uppercase text-brand-600">Apport conseillé</p>
+                  <div className="mt-2 flex items-center justify-center gap-2">
+                    <input
+                      type="number" inputMode="numeric" min={BORNES.kcal.min} max={BORNES.kcal.max} step={50}
+                      value={form.calories_manuelles ?? kcalCalculees}
+                      onChange={e => setForm(f => ({ ...f, calories_manuelles: e.target.value === '' ? null : Number(e.target.value) }))}
+                      aria-label="Kilocalories par jour"
+                      className="w-32 text-center text-4xl font-bold font-display text-gray-900 bg-transparent border-b-2 border-brand-200 focus:border-brand-500 outline-hidden"
+                    />
+                    <span className="text-gray-500 font-medium">kcal / jour</span>
+                  </div>
+                  {form.calories_manuelles != null && kcalValide(form.calories_manuelles) == null && (
+                    <p className="text-xs text-red-600 mt-2">Entre {BORNES.kcal.min} et {BORNES.kcal.max} kcal — la valeur calculée ({kcalCalculees}) sera utilisée.</p>
+                  )}
+                  {form.calories_manuelles != null ? (
+                    <button type="button" onClick={() => setForm(f => ({ ...f, calories_manuelles: null }))}
+                      className="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700 underline">
+                      Revenir au calcul automatique ({kcalCalculees} kcal)
+                    </button>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {estimation
+                        ? 'Estimation à partir de valeurs de référence — précisez votre profil ci-dessous pour affiner.'
+                        : 'Calculé à partir de votre profil et de votre objectif. Vous pouvez modifier cette valeur.'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-1">Votre profil <span className="text-gray-400 font-normal text-sm">(facultatif)</span></h3>
+                  <p className="text-sm text-gray-500 mb-4">Ces informations servent uniquement à calculer vos besoins.</p>
+                  <div className="flex gap-2 mb-4">
+                    {([['femme', 'Femme'], ['homme', 'Homme'], [null, 'Non précisé']] as [Sexe | null, string][]).map(([val, label]) => (
+                      <Chip key={label} active={form.sexe === val} onClick={() => setForm(f => ({ ...f, sexe: val }))}>{label}</Chip>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {([['age', 'Âge', 'ans', BORNES.age], ['taille_cm', 'Taille', 'cm', BORNES.taille_cm], ['poids_kg', 'Poids', 'kg', BORNES.poids_kg]] as const).map(([champ, label, unite, b]) => {
+                      const v = form[champ];
+                      const n = nombre(v);
+                      const invalide = n != null && (Number.isNaN(n) || n < b.min || n > b.max);
+                      return (
+                        <label key={champ} className="block">
+                          <span className="text-xs font-medium text-gray-600">{label}</span>
+                          <div className={`mt-1 flex items-center rounded-xl border bg-white px-3 py-2 ${invalide ? 'border-red-300' : 'border-gray-200 focus-within:border-brand-400'}`}>
+                            <input type="text" inputMode="decimal" value={v} placeholder="—"
+                              onChange={e => setForm(f => ({ ...f, [champ]: e.target.value }))}
+                              className="w-full min-w-0 bg-transparent outline-hidden text-gray-900" />
+                            <span className="text-xs text-gray-400 ml-1">{unite}</span>
+                          </div>
+                          {invalide && <span className="text-[11px] text-red-600">{b.min}–{b.max} {unite}</span>}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
               <div className="space-y-8">
                 <div>
                   <h3 className="font-semibold mb-3">⚠️ Allergies & intolérances</h3>
                   <p className="text-sm text-gray-500 mb-4">Ces aliments seront <strong>exclus</strong> de vos repas.</p>
-                  <div className="flex flex-wrap gap-2">
-                    {ALLERGENES.map(a => (
-                      <Chip key={a.id} active={form.allergies.includes(a.id)} onClick={() => toggle('allergies', a.id)} danger>
-                        {a.emoji} {a.nom}
-                      </Chip>
+                  <div className="space-y-5">
+                    {GROUPES_ALLERGIES.map(g => (
+                      <div key={g.titre}>
+                        <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-gray-500 mb-2">{g.titre}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {g.familles.map(a => (
+                            <Chip key={a.code} active={form.allergies.includes(a.code)} onClick={() => toggle('allergies', a.code)} danger>
+                              {a.emoji} {a.nom}
+                            </Chip>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -256,7 +348,7 @@ export default function OnboardingPage() {
                   <p className="text-sm text-gray-500 mb-4">On évitera de vous les proposer.</p>
                   <div className="flex flex-wrap gap-2">
                     {DETESTES.map(a => (
-                      <Chip key={a.id} active={form.dislikes.includes(a.id)} onClick={() => toggle('dislikes', a.id)} warning>
+                      <Chip key={a.code} active={form.dislikes.includes(a.code)} onClick={() => toggle('dislikes', a.code)} warning>
                         {a.emoji} {a.nom}
                       </Chip>
                     ))}
@@ -265,7 +357,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500 mb-4">Sélectionnez votre régime (plusieurs possibles).</p>
                 {REGIMES.map(r => (
@@ -280,7 +372,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <div>
                 <p className="text-sm text-gray-500 mb-4">Quelles cuisines aimez-vous ? <strong>Choisissez au moins 3.</strong></p>
                 <div className="flex flex-wrap gap-2">
@@ -291,7 +383,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <div className="space-y-6">
                 <div>
                   <label className="font-semibold block mb-2"><ChefHat className="w-4 h-4 inline mr-2" />Niveau en cuisine</label>
@@ -324,7 +416,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 6 && (
+            {step === 7 && (
               <div>
                 <div className="text-center mb-8">
                   <div className="text-5xl mb-4">🍳</div>
@@ -381,7 +473,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 7 && (
+            {step === 8 && (
               <div>
                 <div className="text-center mb-8">
                   <div className="text-5xl mb-4">👨‍🍳</div>
@@ -488,14 +580,15 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {step === 8 && (
+            {step === 9 && (
               <div className="space-y-4">
                 {[
                   ['👥 Personnes', `${form.nb_personnes}`],
                   ['🎯 Objectif', form.objectif.replace('_', ' ')],
-                  ['⚠️ Allergies', form.allergies.length > 0 ? form.allergies.map(id => ALLERGENES.find(a => a.id === id)?.nom).join(', ') : 'Aucune'],
-                  ['🤢 Détestés', form.dislikes.length > 0 ? form.dislikes.map(id => DETESTES.find(a => a.id === id)?.nom).join(', ') : 'Aucun'],
-                  ['🍽️ Régimes', form.regimes.length > 0 ? form.regimes.join(', ') : 'Aucun'],
+                  ['🔥 Calories', `${kcalFinales} kcal / jour${kcalValide(form.calories_manuelles) != null ? ' (personnalisé)' : ''}`],
+                  ['⚠️ Allergies', form.allergies.length > 0 ? form.allergies.map(code => TOUTES_ALLERGIES.find(a => a.code === code)?.nom).join(', ') : 'Aucune'],
+                  ['🤢 Détestés', form.dislikes.length > 0 ? form.dislikes.map(code => DETESTES.find(a => a.code === code)?.nom).join(', ') : 'Aucun'],
+                  ['🍽️ Régimes', form.regimes.length > 0 ? form.regimes.map(v => REGIMES.find(x => x.value === v)?.label ?? v).join(', ') : 'Aucun'],
                   ['🌍 Cuisines', form.cuisines_preferees.length > 0 ? form.cuisines_preferees.join(', ') : 'Pas de préférence'],
                   ['⏱️ Temps semaine', `${form.temps_max_semaine} min`],
                   ['👨‍🍳 Niveau', form.niveau_cuisine],

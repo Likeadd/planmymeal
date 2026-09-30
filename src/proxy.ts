@@ -18,11 +18,18 @@ function gardeApi(request: NextRequest): NextResponse | null {
   if (METHODES_SURES.includes(request.method)) return null;
 
   const origin = request.headers.get('origin');
-  if (origin && origin !== request.nextUrl.origin) {
-    console.warn('[security]', JSON.stringify({ type: 'csrf', origin, route: request.nextUrl.pathname }));
+  // Sec-Fetch-Site : envoyé par tous les navigateurs récents, même quand
+  // Origin est absent — « cross-site » = requête forgée depuis un autre site.
+  const site = request.headers.get('sec-fetch-site');
+  if ((origin && origin !== request.nextUrl.origin) || site === 'cross-site') {
+    console.warn('[security]', JSON.stringify({ type: 'csrf', origin, site, route: request.nextUrl.pathname }));
     return NextResponse.json({ error: 'Origine non autorisée' }, { status: 403 });
   }
 
+  // Corps sans Content-Length (chunked) : taille invérifiable → refusé.
+  if (!request.headers.get('content-length') && request.headers.get('transfer-encoding')) {
+    return NextResponse.json({ error: 'Longueur de requête requise' }, { status: 411 });
+  }
   const taille = Number(request.headers.get('content-length') ?? 0);
   if (taille > TAILLE_MAX_API) {
     console.warn('[security]', JSON.stringify({ type: 'payload_too_large', taille, route: request.nextUrl.pathname }));

@@ -1,0 +1,355 @@
+// Entrées rédigées à la main (le catalogue n'en comptait que 12). Noms
+// d'ingrédients = ceux de la table `ingredients`. Insérées par
+// scripts/ajouter-recettes-proteinees.ts --entrees (macros calculées).
+
+import type { RecetteSaisie } from './recettes-proteinees';
+
+const E = (r: Omit<RecetteSaisie, 'type'>): RecetteSaisie => ({ ...r, type: 'entree' });
+
+export const RECETTES_ENTREES: RecetteSaisie[] = [
+  E({
+    titre: 'Gaspacho andalou',
+    cuisine: 'Espagnole', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Mixeur', 'Couteau de chef'],
+    ingredients: [['Tomate', 6, 'pcs'], ['Concombre', 1, 'pcs'], ['Poivron rouge', 1, 'pcs'], ['Oignon rouge', 0.5, 'pcs'], ['Ail', 1, 'pcs'], ['Huile d’olive', 3, 'cas'], ['Vinaigre de Xérès', 1, 'cas'], ['Pain', 40, 'g', true]],
+    etapes: [
+      'Lavez les légumes. Coupez les tomates en quartiers, pelez le concombre et coupez-le en tronçons, épépinez le poivron.',
+      'Mettez les légumes dans le mixeur avec l’oignon, l’ail, l’huile d’olive, le vinaigre et le pain (il donne du corps). Salez et poivrez.',
+      'Mixez 2 min jusqu’à obtenir une soupe très lisse. Allongez avec un peu d’eau froide si elle est trop épaisse.',
+      'Réservez au moins 1 h au réfrigérateur et servez bien frais, avec un filet d’huile d’olive.',
+    ],
+  }),
+  E({
+    titre: 'Velouté de carottes au cumin',
+    cuisine: 'Française', prep: 10, cuisson: 25, difficulte: 'facile', portions: 4, conservation: 3,
+    ustensiles: ['Faitout', 'Mixeur plongeant'],
+    ingredients: [['Carotte', 8, 'pcs'], ['Oignon', 1, 'pcs'], ['Bouillon de légumes', 800, 'ml'], ['Cumin', 1, 'cac'], ['Crème fraîche', 2, 'cas'], ['Huile d’olive', 1, 'cas']],
+    etapes: [
+      'Épluchez les carottes et l’oignon, puis coupez-les en rondelles.',
+      'Faites revenir l’oignon 3 min dans l’huile d’olive, ajoutez le cumin et remuez 30 s pour libérer ses arômes.',
+      'Ajoutez les carottes et le bouillon. Laissez cuire 20 min à frémissement : les carottes doivent s’écraser à la fourchette.',
+      'Mixez finement, incorporez la crème, rectifiez l’assaisonnement et servez bien chaud.',
+    ],
+  }),
+  E({
+    titre: 'Salade de chèvre chaud',
+    cuisine: 'Française', prep: 10, cuisson: 8, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Four', 'Saladier'],
+    ingredients: [['Salade verte', 1, 'pcs'], ['Chèvre frais', 200, 'g'], ['Pain de campagne', 120, 'g'], ['Noix', 40, 'g'], ['Miel', 1, 'cas'], ['Huile d’olive', 3, 'cas'], ['Vinaigre balsamique', 1, 'cas'], ['Moutarde', 1, 'cac']],
+    etapes: [
+      'Préchauffez le four en position gril. Lavez et essorez la salade.',
+      'Coupez le pain en 8 tranches fines, posez dessus des rondelles de chèvre et un filet de miel.',
+      'Passez sous le gril 5 à 8 min, jusqu’à ce que le chèvre soit doré.',
+      'Préparez la vinaigrette avec la moutarde, le vinaigre et l’huile. Assaisonnez la salade, ajoutez les noix et posez les toasts chauds dessus.',
+    ],
+  }),
+  E({
+    titre: 'Houmous et bâtonnets de légumes',
+    cuisine: 'Libanaise', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 4,
+    ustensiles: ['Mixeur'],
+    ingredients: [['Pois chiches (bte)', 400, 'g'], ['Tahini', 2, 'cas'], ['Citron', 1, 'pcs'], ['Ail', 1, 'pcs'], ['Huile d’olive', 3, 'cas'], ['Cumin', 0.5, 'cac'], ['Carotte', 2, 'pcs'], ['Concombre', 1, 'pcs'], ['Paprika', 0.5, 'cac', true]],
+    etapes: [
+      'Égouttez les pois chiches en gardant un peu de leur liquide.',
+      'Mixez-les avec le tahini, le jus du citron, l’ail, le cumin et 2 cas d’huile d’olive. Ajoutez 2 à 4 cas du liquide réservé pour obtenir une texture crémeuse. Salez.',
+      'Épluchez les carottes, coupez carottes et concombre en bâtonnets.',
+      'Versez le houmous dans un bol, creusez un puits, arrosez du reste d’huile et saupoudrez de paprika. Servez avec les bâtonnets.',
+    ],
+  }),
+  E({
+    titre: 'Carottes râpées au citron',
+    cuisine: 'Française', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Râpe', 'Saladier'],
+    ingredients: [['Carotte', 6, 'pcs'], ['Citron', 1, 'pcs'], ['Huile d’olive', 3, 'cas'], ['Persil', 3, 'g'], ['Raisins secs', 30, 'g', true]],
+    etapes: [
+      'Épluchez et râpez finement les carottes.',
+      'Mélangez le jus du citron avec l’huile d’olive, du sel et du poivre.',
+      'Versez sur les carottes avec les raisins secs et le persil ciselé. Laissez mariner 10 min avant de servir.',
+    ],
+  }),
+  E({
+    titre: 'Céleri rémoulade',
+    cuisine: 'Française', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Râpe', 'Saladier'],
+    ingredients: [['Céleri branche', 4, 'pcs'], ['Mayonnaise', 4, 'cas'], ['Moutarde', 1, 'cac'], ['Citron', 0.5, 'pcs'], ['Persil', 3, 'g']],
+    etapes: [
+      'Lavez le céleri et taillez-le en très fins bâtonnets (julienne).',
+      'Arrosez-le de jus de citron pour qu’il garde sa couleur.',
+      'Mélangez la mayonnaise et la moutarde, puis enrobez-en le céleri. Salez, poivrez, parsemez de persil et servez frais.',
+    ],
+  }),
+  E({
+    titre: 'Tomates mozzarella au basilic',
+    cuisine: 'Italienne', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Couteau de chef'],
+    ingredients: [['Tomate', 4, 'pcs'], ['Mozzarella', 250, 'g'], ['Basilic', 3, 'g'], ['Huile d’olive', 3, 'cas'], ['Vinaigre balsamique', 1, 'cas', true]],
+    etapes: [
+      'Coupez les tomates et la mozzarella en tranches régulières.',
+      'Alternez-les sur un plat, en les faisant se chevaucher.',
+      'Parsemez de feuilles de basilic, arrosez d’huile d’olive et de quelques gouttes de vinaigre balsamique. Salez, poivrez et servez aussitôt.',
+    ],
+  }),
+  E({
+    titre: 'Rillettes de thon au fromage frais',
+    cuisine: 'Française', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Saladier'],
+    ingredients: [['Thon au naturel', 280, 'g'], ['Fromage frais', 150, 'g'], ['Citron', 0.5, 'pcs'], ['Ciboulette', 3, 'g'], ['Pain de campagne', 160, 'g']],
+    etapes: [
+      'Égouttez soigneusement le thon et émiettez-le à la fourchette.',
+      'Mélangez-le avec le fromage frais, le jus de citron et la ciboulette ciselée. Poivrez.',
+      'Réservez 30 min au frais et servez sur des tranches de pain grillé.',
+    ],
+  }),
+  E({
+    titre: 'Soupe miso au tofu et wakame',
+    cuisine: 'Japonaise', prep: 10, cuisson: 10, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Casserole'],
+    ingredients: [['Miso', 3, 'cas'], ['Tofu soyeux', 200, 'g'], ['Algue wakame séchée', 1, 'cas'], ['Oignon nouveau', 2, 'pcs'], ['Champignons shiitakés', 80, 'g']],
+    etapes: [
+      'Réhydratez la wakame 5 min dans un bol d’eau froide, puis égouttez.',
+      'Portez 1 L d’eau à frémissement avec les champignons émincés et laissez cuire 5 min.',
+      'Hors du feu, délayez le miso dans une louche de bouillon puis reversez-le dans la casserole : le miso ne doit pas bouillir.',
+      'Ajoutez le tofu en petits dés, la wakame et l’oignon nouveau ciselé. Servez aussitôt.',
+    ],
+  }),
+  E({
+    titre: 'Rouleaux de printemps aux crevettes',
+    cuisine: 'Vietnamienne', prep: 30, cuisson: 5, difficulte: 'moyen', portions: 4, conservation: 1,
+    ustensiles: ['Casserole', 'Grand bol d’eau tiède'],
+    ingredients: [['Pain de riz', 8, 'pcs'], ['Crevettes', 200, 'g'], ['Nouilles de riz', 80, 'g'], ['Salade verte', 0.5, 'pcs'], ['Carotte', 1, 'pcs'], ['Menthe fraîche', 6, 'g'], ['Coriandre fraîche', 6, 'g'], ['Sauce hoisin', 3, 'cas'], ['Cacahuètes', 20, 'g']],
+    etapes: [
+      'Faites tremper les nouilles de riz 5 min dans l’eau bouillante, puis rincez-les à l’eau froide et égouttez.',
+      'Décortiquez les crevettes et coupez-les en deux dans l’épaisseur. Râpez la carotte, lavez la salade et les herbes.',
+      'Trempez une galette de riz 10 s dans l’eau tiède et posez-la sur un torchon humide. Disposez crevettes, salade, nouilles, carotte et herbes au centre.',
+      'Rabattez les côtés puis roulez bien serré. Recommencez avec les autres galettes.',
+      'Servez avec la sauce hoisin parsemée de cacahuètes concassées.',
+    ],
+  }),
+  E({
+    titre: 'Tzatziki et pain pita grillé',
+    cuisine: 'Grecque', prep: 15, cuisson: 3, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Râpe', 'Poêle'],
+    ingredients: [['Yaourt grec', 400, 'g'], ['Concombre', 1, 'pcs'], ['Ail', 1, 'pcs'], ['Menthe fraîche', 3, 'g'], ['Aneth frais', 3, 'g', true], ['Huile d’olive', 1, 'cas'], ['Pains pita', 2, 'pcs']],
+    etapes: [
+      'Râpez le concombre avec la peau, salez-le légèrement et laissez-le dégorger 10 min, puis pressez-le entre vos mains pour retirer l’eau.',
+      'Mélangez le yaourt, le concombre, l’ail râpé, la menthe et l’aneth ciselés. Poivrez et arrosez d’huile d’olive.',
+      'Faites griller les pains pita 1 min par face à la poêle, puis coupez-les en triangles. Servez avec le tzatziki bien frais.',
+    ],
+  }),
+  E({
+    titre: 'Salade de lentilles à l’échalote',
+    cuisine: 'Française', prep: 10, cuisson: 20, difficulte: 'facile', portions: 4, conservation: 3,
+    ustensiles: ['Casserole', 'Saladier'],
+    ingredients: [['Lentilles vertes', 160, 'g'], ['Échalote', 2, 'pcs'], ['Carotte', 1, 'pcs'], ['Moutarde', 1, 'cac'], ['Vinaigre de Xérès', 2, 'cas'], ['Huile d’olive', 3, 'cas'], ['Persil', 6, 'g'], ['Feuille de laurier', 1, 'pcs']],
+    etapes: [
+      'Rincez les lentilles et faites-les cuire 20 min dans une grande casserole d’eau froide non salée avec le laurier et la carotte coupée en petits dés. Salez en fin de cuisson.',
+      'Pendant ce temps, ciselez les échalotes et préparez la vinaigrette avec la moutarde, le vinaigre et l’huile.',
+      'Égouttez les lentilles encore tièdes et mélangez-les aussitôt avec la vinaigrette et les échalotes : elles absorbent mieux l’assaisonnement.',
+      'Parsemez de persil et servez tiède ou froid.',
+    ],
+  }),
+  E({
+    titre: 'Poireaux vinaigrette',
+    cuisine: 'Française', prep: 10, cuisson: 15, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Faitout', 'Passoire'],
+    ingredients: [['Poireau', 6, 'pcs'], ['Œuf', 2, 'pcs'], ['Moutarde', 1, 'cac'], ['Vinaigre de cidre', 20, 'ml'], ['Huile de tournesol', 45, 'ml'], ['Ciboulette', 3, 'g']],
+    etapes: [
+      'Retirez le vert des poireaux, fendez les blancs en deux et rincez-les soigneusement sous l’eau.',
+      'Faites-les cuire 12 à 15 min à l’eau bouillante salée, en même temps que les œufs (10 min pour des œufs durs). Égouttez les poireaux en les pressant délicatement.',
+      'Préparez la vinaigrette avec la moutarde, le vinaigre et l’huile.',
+      'Nappez les poireaux tièdes de vinaigrette, parsemez d’œuf dur haché et de ciboulette.',
+    ],
+  }),
+  E({
+    titre: 'Velouté de petits pois à la menthe',
+    cuisine: 'Française', prep: 5, cuisson: 15, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Faitout', 'Mixeur plongeant'],
+    ingredients: [['Petit pois (surg.)', 500, 'g'], ['Oignon', 1, 'pcs'], ['Bouillon de légumes', 700, 'ml'], ['Menthe fraîche', 6, 'g'], ['Crème fraîche', 2, 'cas'], ['Huile d’olive', 1, 'cas']],
+    etapes: [
+      'Faites fondre l’oignon émincé 3 min dans l’huile d’olive.',
+      'Ajoutez les petits pois et le bouillon, portez à ébullition et laissez cuire 10 min.',
+      'Ajoutez la menthe et mixez très finement. Incorporez la crème, salez, poivrez. Servez chaud ou bien frais.',
+    ],
+  }),
+  E({
+    titre: 'Taboulé libanais au persil',
+    cuisine: 'Libanaise', prep: 25, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Couteau de chef', 'Saladier'],
+    ingredients: [['Persil', 18, 'g'], ['Menthe fraîche', 6, 'g'], ['Boulgour', 60, 'g'], ['Tomate', 3, 'pcs'], ['Oignon nouveau', 2, 'pcs'], ['Citron', 2, 'pcs'], ['Huile d’olive', 4, 'cas']],
+    etapes: [
+      'Rincez le boulgour et laissez-le gonfler 15 min dans le jus des citrons.',
+      'Pendant ce temps, ciselez très finement le persil et la menthe, coupez les tomates en petits dés et émincez l’oignon nouveau.',
+      'Mélangez le tout avec le boulgour et l’huile d’olive. Salez, poivrez. Le persil doit dominer : c’est une salade d’herbes, pas de semoule.',
+    ],
+  }),
+  E({
+    titre: 'Œufs cocotte aux épinards',
+    cuisine: 'Française', prep: 10, cuisson: 12, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Four', 'Ramequins', 'Plat à bain-marie'],
+    ingredients: [['Œuf', 4, 'pcs'], ['Épinards frais', 150, 'g'], ['Crème fraîche', 4, 'cas'], ['Fromage râpé', 30, 'g'], ['Beurre', 10, 'g']],
+    etapes: [
+      'Préchauffez le four à 180 °C. Faites tomber les épinards 2 min à la poêle avec le beurre, salez.',
+      'Répartissez les épinards et 1 cas de crème dans 4 ramequins. Cassez un œuf dans chacun et parsemez de fromage râpé.',
+      'Placez les ramequins dans un plat rempli d’eau chaude à mi-hauteur et enfournez 10 à 12 min : le blanc doit être pris, le jaune encore coulant.',
+    ],
+  }),
+  E({
+    titre: 'Salade de betteraves à la feta',
+    cuisine: 'Healthy', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 1,
+    ustensiles: ['Saladier'],
+    ingredients: [['Betterave cuite', 4, 'pcs'], ['Feta', 120, 'g'], ['Noix', 30, 'g'], ['Roquette', 60, 'g'], ['Huile d’olive', 3, 'cas'], ['Vinaigre balsamique', 1, 'cas']],
+    etapes: [
+      'Coupez les betteraves en cubes et émiettez la feta.',
+      'Concassez grossièrement les noix et faites-les dorer 2 min à sec dans une poêle.',
+      'Disposez la roquette, ajoutez betteraves, feta et noix. Arrosez d’huile d’olive et de vinaigre balsamique, poivrez et servez.',
+    ],
+  }),
+  E({
+    titre: 'Crevettes sautées ail et persil',
+    cuisine: 'Espagnole', prep: 10, cuisson: 5, difficulte: 'facile', portions: 4, conservation: 1,
+    ustensiles: ['Poêle'],
+    ingredients: [['Gambas', 400, 'g'], ['Ail', 4, 'pcs'], ['Persil', 6, 'g'], ['Piment frais', 0.5, 'pcs', true], ['Huile d’olive', 3, 'cas'], ['Citron', 1, 'pcs']],
+    etapes: [
+      'Décortiquez les gambas en gardant la queue. Émincez l’ail et le piment.',
+      'Faites chauffer l’huile d’olive à feu moyen, ajoutez l’ail et le piment 30 s sans les laisser brunir.',
+      'Montez le feu, ajoutez les gambas et faites-les sauter 2 min par face, jusqu’à ce qu’elles soient roses.',
+      'Parsemez de persil, arrosez de jus de citron et servez aussitôt, avec du pain pour saucer.',
+    ],
+  }),
+  E({
+    titre: 'Verrines avocat et saumon fumé',
+    cuisine: 'Française', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Verrines', 'Fourchette'],
+    ingredients: [['Avocat', 2, 'pcs'], ['Saumon fumé', 120, 'g'], ['Fromage frais', 100, 'g'], ['Citron vert', 1, 'pcs'], ['Aneth frais', 3, 'g']],
+    etapes: [
+      'Écrasez la chair des avocats avec le jus du citron vert, salez et poivrez.',
+      'Détendez le fromage frais avec 1 cas d’eau et l’aneth ciselé.',
+      'Montez les verrines : avocat au fond, fromage frais, puis saumon fumé en lanières. Réservez au frais jusqu’au service.',
+    ],
+  }),
+  E({
+    titre: 'Soupe à l’oignon gratinée',
+    cuisine: 'Française', prep: 15, cuisson: 45, difficulte: 'moyen', portions: 4, conservation: 2,
+    ustensiles: ['Faitout', 'Bols allant au four', 'Four'],
+    ingredients: [['Oignon', 6, 'pcs'], ['Beurre', 40, 'g'], ['Farine', 15, 'g'], ['Bouillon de bœuf', 1000, 'ml'], ['Vin blanc', 100, 'ml'], ['Pain de campagne', 120, 'g'], ['Gruyère râpé', 100, 'g']],
+    etapes: [
+      'Émincez finement les oignons. Faites-les fondre 25 min à feu doux dans le beurre, en remuant souvent, jusqu’à ce qu’ils soient bien dorés.',
+      'Saupoudrez de farine, remuez 1 min, puis versez le vin blanc et le bouillon. Laissez mijoter 15 min. Salez, poivrez.',
+      'Préchauffez le four en position gril. Versez la soupe dans des bols, posez dessus une tranche de pain grillé et couvrez de gruyère.',
+      'Faites gratiner 5 min sous le gril, jusqu’à ce que le fromage soit bien doré. Servez brûlant.',
+    ],
+  }),
+  E({
+    titre: 'Salade de concombre à la menthe et au yaourt',
+    cuisine: 'Grecque', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 1,
+    ustensiles: ['Saladier'],
+    ingredients: [['Concombre', 2, 'pcs'], ['Yaourt nature', 1, 'pcs'], ['Menthe fraîche', 6, 'g'], ['Citron', 0.5, 'pcs'], ['Oignon rouge', 0.5, 'pcs']],
+    etapes: [
+      'Coupez les concombres en fines rondelles et l’oignon rouge en lamelles très fines.',
+      'Mélangez le yaourt avec le jus de citron et la menthe ciselée. Salez, poivrez.',
+      'Enrobez le concombre et l’oignon de sauce juste avant de servir, pour qu’ils restent croquants.',
+    ],
+  }),
+  E({
+    titre: 'Mini brochettes tomates cerises, mozzarella et pesto',
+    cuisine: 'Italienne', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Piques en bois'],
+    ingredients: [['Tomates cerises', 250, 'g'], ['Mozzarella', 200, 'g'], ['Basilic', 3, 'g'], ['Pesto', 30, 'g'], ['Huile d’olive', 1, 'cas']],
+    etapes: [
+      'Coupez la mozzarella en dés de la taille des tomates cerises.',
+      'Enfilez sur des piques une tomate, une feuille de basilic et un dé de mozzarella.',
+      'Détendez le pesto avec l’huile d’olive et nappez-en les brochettes au moment de servir.',
+    ],
+  }),
+  E({
+    titre: 'Velouté de butternut au lait de coco',
+    cuisine: 'Healthy', prep: 15, cuisson: 25, difficulte: 'facile', portions: 4, conservation: 3,
+    ustensiles: ['Faitout', 'Mixeur plongeant'],
+    ingredients: [['Courge butternut', 900, 'g'], ['Oignon', 1, 'pcs'], ['Gingembre', 10, 'g'], ['Lait de coco', 200, 'ml'], ['Bouillon de légumes', 600, 'ml'], ['Curry en poudre', 1, 'cac'], ['Huile d’olive', 1, 'cas']],
+    etapes: [
+      'Épluchez la butternut, retirez les graines et coupez la chair en cubes.',
+      'Faites revenir l’oignon émincé et le gingembre râpé 3 min dans l’huile, puis ajoutez le curry.',
+      'Ajoutez la courge et le bouillon, laissez cuire 20 min à couvert.',
+      'Versez le lait de coco (gardez-en un peu pour le décor) et mixez finement. Servez avec un trait de lait de coco.',
+    ],
+  }),
+  E({
+    titre: 'Caviar d’aubergine',
+    cuisine: 'Libanaise', prep: 10, cuisson: 40, difficulte: 'facile', portions: 4, conservation: 3,
+    ustensiles: ['Four', 'Mixeur'],
+    ingredients: [['Aubergine', 2, 'pcs'], ['Ail', 1, 'pcs'], ['Tahini', 1, 'cas'], ['Citron', 0.5, 'pcs'], ['Huile d’olive', 2, 'cas'], ['Persil', 3, 'g'], ['Pains pita', 2, 'pcs']],
+    etapes: [
+      'Préchauffez le four à 200 °C. Piquez les aubergines et enfournez-les entières 40 min : la peau doit être fripée et la chair fondante.',
+      'Laissez tiédir, ouvrez-les et récupérez la chair à la cuillère.',
+      'Mixez ou écrasez-la avec l’ail, le tahini, le jus de citron et l’huile d’olive. Salez, poivrez.',
+      'Parsemez de persil et servez avec les pains pita grillés.',
+    ],
+  }),
+  E({
+    titre: 'Salade d’endives, pomme, noix et brie',
+    cuisine: 'Française', prep: 10, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Saladier'],
+    ingredients: [['Endive', 4, 'pcs'], ['Pomme', 1, 'pcs'], ['Noix', 40, 'g'], ['Brie', 100, 'g'], ['Huile de tournesol', 30, 'ml'], ['Vinaigre de cidre', 10, 'ml'], ['Moutarde', 1, 'cac']],
+    etapes: [
+      'Retirez le cœur amer des endives et émincez-les. Coupez la pomme en fins bâtonnets et le brie en dés.',
+      'Préparez la vinaigrette avec la moutarde, le vinaigre et l’huile.',
+      'Mélangez endives, pomme, brie et noix concassées, assaisonnez au dernier moment.',
+    ],
+  }),
+  E({
+    titre: 'Tartare de saumon à l’avocat',
+    cuisine: 'Française', prep: 20, cuisson: 0, difficulte: 'moyen', portions: 4, conservation: 0,
+    ustensiles: ['Couteau de chef', 'Cercle de dressage'],
+    ingredients: [['Saumon frais', 300, 'g'], ['Avocat', 1, 'pcs'], ['Citron vert', 2, 'pcs'], ['Échalote', 1, 'pcs'], ['Ciboulette', 3, 'g'], ['Huile d’olive', 2, 'cas']],
+    etapes: [
+      'Retirez la peau du saumon et taillez-le en petits dés au couteau bien aiguisé. Gardez-le au frais.',
+      'Coupez l’avocat en dés, ciselez l’échalote et la ciboulette.',
+      'Juste avant de servir, mélangez le saumon avec l’échalote, la ciboulette, l’huile d’olive et le jus d’un citron vert. Salez, poivrez.',
+      'Dressez dans un cercle : avocat arrosé du second citron vert au fond, saumon par-dessus. Servez aussitôt.',
+    ],
+  }),
+  E({
+    titre: 'Bouillon thaï citronnelle et crevettes',
+    cuisine: 'Thaïlandaise', prep: 15, cuisson: 15, difficulte: 'facile', portions: 4, conservation: 1,
+    ustensiles: ['Casserole'],
+    ingredients: [['Crevettes', 250, 'g'], ['Citronnelle', 2, 'pcs'], ['Gingembre', 20, 'g'], ['Champignons de Paris', 150, 'g'], ['Sauce nuoc mam', 2, 'cas'], ['Citron vert', 2, 'pcs'], ['Coriandre fraîche', 6, 'g'], ['Piment frais', 1, 'pcs', true], ['Bouillon de volaille', 1000, 'ml']],
+    etapes: [
+      'Écrasez la citronnelle avec le plat du couteau et coupez-la en tronçons. Tranchez finement le gingembre.',
+      'Portez le bouillon à frémissement avec la citronnelle, le gingembre et le piment, et laissez infuser 10 min.',
+      'Ajoutez les champignons émincés et les crevettes décortiquées, laissez cuire 3 min.',
+      'Hors du feu, ajoutez le nuoc-mâm et le jus des citrons verts. Retirez la citronnelle et servez parsemé de coriandre.',
+    ],
+  }),
+  E({
+    titre: 'Salade de pois chiches à la grecque',
+    cuisine: 'Grecque', prep: 15, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 2,
+    ustensiles: ['Saladier'],
+    ingredients: [['Pois chiches (bte)', 400, 'g'], ['Tomates cerises', 200, 'g'], ['Concombre', 1, 'pcs'], ['Feta', 100, 'g'], ['Olives Kalamata', 50, 'g'], ['Oignon rouge', 0.5, 'pcs'], ['Origan', 1, 'cac'], ['Huile d’olive', 3, 'cas'], ['Citron', 1, 'pcs']],
+    etapes: [
+      'Rincez et égouttez les pois chiches.',
+      'Coupez les tomates cerises en deux, le concombre en dés et l’oignon rouge en fines lamelles.',
+      'Mélangez le tout avec les olives et la feta émiettée. Assaisonnez avec l’huile, le jus de citron et l’origan, salez peu (la feta l’est déjà) et servez frais.',
+    ],
+  }),
+  E({
+    titre: 'Asperges vertes rôties et œuf mollet',
+    cuisine: 'Française', prep: 10, cuisson: 12, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Four', 'Casserole'],
+    ingredients: [['Asperge verte', 500, 'g'], ['Œuf', 4, 'pcs'], ['Parmesan', 30, 'g'], ['Huile d’olive', 2, 'cas'], ['Citron', 0.5, 'pcs']],
+    etapes: [
+      'Préchauffez le four à 210 °C. Cassez la base dure des asperges, étalez-les sur une plaque, arrosez d’huile, salez et enfournez 10 à 12 min.',
+      'Plongez les œufs 6 min dans l’eau bouillante, puis rafraîchissez-les dans l’eau glacée et écalez-les délicatement.',
+      'Dressez les asperges, posez un œuf mollet ouvert sur chaque assiette, ajoutez des copeaux de parmesan et un filet de citron.',
+    ],
+  }),
+  E({
+    titre: 'Radis, beurre demi-sel et pain de campagne',
+    cuisine: 'Française', prep: 5, cuisson: 0, difficulte: 'facile', portions: 4, conservation: 0,
+    ustensiles: ['Couteau d’office'],
+    ingredients: [['Radis', 300, 'g'], ['Beurre demi-sel', 60, 'g'], ['Pain de campagne', 160, 'g'], ['Ciboulette', 3, 'g', true]],
+    etapes: [
+      'Lavez les radis, gardez quelques feuilles et coupez la racine.',
+      'Tranchez le pain et tartinez-le de beurre demi-sel à température ambiante.',
+      'Servez les radis entiers ou en fines rondelles sur les tartines, parsemés de ciboulette.',
+    ],
+  }),
+];

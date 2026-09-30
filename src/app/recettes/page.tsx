@@ -39,7 +39,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { chargerCatalogueCached } from '@/lib/catalogue-cache';
 import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
 import { recetteServable, normaliserNom, type IngredientPourRegime } from '@/lib/regimes';
-import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules, emojiRecette } from '@/lib/utils';
+import { formatMinutes, formatCalories, formatTypeRepas, titreRecette, emojiRecette } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { recetteHref } from '@/lib/seo';
@@ -670,7 +670,7 @@ export default function RecettesPage() {
                   <div className="p-4">
                     <Link href={recetteHref(meal)}>
                     <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-10">
-                      {titreMajuscules(meal.titre)}
+                      {titreRecette(meal.titre)}
                     </h3>
                   </Link>
 

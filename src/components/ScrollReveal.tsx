@@ -33,9 +33,13 @@ export function ScrollReveal() {
       { rootMargin: '0px 0px -6% 0px', threshold: 0.05 }
     );
 
+    // Suivi en mémoire (pas d'attribut DOM) : ce composant, monté dans le
+    // layout, s'exécute avant l'hydratation des pages streamées — un attribut
+    // ajouté ici provoquait un « hydration mismatch » sur ces pages.
+    const vus = new WeakSet<Element>();
     const observer = (el: Element) => {
-      if (el.hasAttribute('data-reveal-seen')) return;
-      el.setAttribute('data-reveal-seen', '');
+      if (vus.has(el)) return;
+      vus.add(el);
       io.observe(el);
     };
     const scan = (root: ParentNode) => root.querySelectorAll('[data-reveal]').forEach(observer);

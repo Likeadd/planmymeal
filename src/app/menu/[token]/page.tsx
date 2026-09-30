@@ -7,7 +7,7 @@ import { Clock, Flame, ShoppingBasket } from 'lucide-react';
 import { getPlanPartage, type RepasJour } from './data';
 import { recetteHref } from '@/lib/seo';
 import { JOURS_NOMS, formatWeekRange } from '@/lib/dates';
-import { formatMinutes, formatCalories, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, titreRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 import type { RecettePlanning } from '@/types';
 
@@ -48,7 +48,7 @@ function CarteRepas({ label, recette }: { label: string; recette?: RecettePlanni
     <Link href={recetteHref(recette)}
       className="block rounded-xl border border-gray-100 bg-white shadow-card hover:shadow-pop transition-all p-3">
       <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-1">{label}</p>
-      <p className="font-display font-bold text-sm text-gray-900 leading-snug">{titreMajuscules(recette.titre)}</p>
+      <p className="font-display font-bold text-sm text-gray-900 leading-snug">{titreRecette(recette.titre)}</p>
       <div className="flex items-center gap-2.5 text-[11px] text-gray-500 mt-1.5">
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatMinutes(recette.temps_preparation + (recette.temps_cuisson || 0))}</span>
         {recette.calories_par_portion != null && (

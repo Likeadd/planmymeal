@@ -10,7 +10,7 @@ import {
 import type { Meal, IngredientQuantity } from '@/types';
 import { toMeal, type MealWithIngredients } from '@/lib/db-rows';
 import { createBrowserClient } from '@/lib/supabase';
-import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules, emojiRecette } from '@/lib/utils';
+import { formatMinutes, formatCalories, formatTypeRepas, titreRecette, emojiRecette } from '@/lib/utils';
 import { prixParPortion, prixRecette, prixLigne, formatPrix } from '@/lib/budget';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { USTENSILE_ICONS, detecterUstensile } from '@/lib/ustensiles';
@@ -187,7 +187,7 @@ export default function RecetteClient({
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{titreMajuscules(meal.titre)}</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">{titreRecette(meal.titre)}</h1>
               {meal.description && (
                 <p className="text-gray-500 mt-2">{meal.description}</p>
               )}

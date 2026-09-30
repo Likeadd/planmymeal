@@ -15,11 +15,16 @@
 
 import { useEffect, useState } from 'react';
 import { FAMILLE_VIDE, indexerFamille, type Famille } from '@/lib/famille';
+import { createBrowserClient } from '@/lib/supabase';
 
 /** Promesse partagée : un seul aller-retour par chargement de page */
 let promesse: Promise<Famille> | null = null;
 
 async function charger(): Promise<Famille> {
+  // Visiteur non connecté (fiche recette publique) : pas d'appel voué au 401.
+  // getSession lit le stockage local, sans requête réseau.
+  const { data: { session } } = await createBrowserClient().auth.getSession();
+  if (!session) return FAMILLE_VIDE;
   const res = await fetch('/api/famille');
   if (!res.ok) throw new Error(`Erreur ${res.status}`);
   const json = await res.json();

@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { DayPlan, RecettePlanning, RepasSlot } from '@/types';
-import { titreMajuscules, errorMessage } from '@/lib/utils';
+import { titreRecette, errorMessage } from '@/lib/utils';
 import { useAuth } from '@/components/AuthProvider';
 import { ChangerSheet } from '@/components/dashboard/ChangerSheet';
 import { MealNotation } from '@/components/dashboard/MealNotation';
@@ -70,7 +70,7 @@ export function useChangerCreneau(days: DayPlan[], a: ActionsCreneau) {
     sheet = (
       <ChangerSheet
         libelleCreneau={LIBELLES[slot]}
-        titreActuel={meal ? (estReste ? 'Restes de la veille' : meal.personnalise ? meal.titre : titreMajuscules(meal.titre)) : null}
+        titreActuel={meal ? (estReste ? 'Restes de la veille' : meal.personnalise ? meal.titre : titreRecette(meal.titre)) : null}
         onClose={() => setCible(null)}
         onHasard={avecToast(() => a.onRegenerate(jour, slot), 'Nouveau repas ✓')}
         onChoisir={() => a.onSwap(jour, slot)}

@@ -40,3 +40,29 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  # Parcours navigateur (Playwright). Les secrets E2E_EMAIL / E2E_PASSWORD et
+  # les clés Supabase de test sont à ajouter dans Settings → Secrets du dépôt :
+  # sans eux, le parcours connecté est ignoré (skip) et seules les pages
+  # publiques sont vérifiées. Non bloquant tant que les secrets manquent.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://exemple.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'cle-factice-ci' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'cle-factice-ci' }}
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

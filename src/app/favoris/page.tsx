@@ -12,7 +12,7 @@ import {
 import type { RecetteFavori, RepasSlot, TypeRepas } from '@/types';
 import { toast } from 'sonner';
 import { useFavorites } from '@/lib/useFavorites';
-import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, formatTypeRepas, titreRecette } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { JOURS_NOMS } from '@/lib/dates';
@@ -91,7 +91,7 @@ export default function FavorisPage() {
     try {
       await addToPlanning(addModal.id, selectedDay, selectedRepas);
       setAddModal(null);
-      setFeedback(`✅ « ${titreMajuscules(addModal.titre)} » ajouté : ${JOURS_NOMS[selectedDay].toLowerCase()}, ${LIBELLE_CRENEAU[selectedRepas].toLowerCase()}`);
+      setFeedback(`✅ « ${titreRecette(addModal.titre)} » ajouté : ${JOURS_NOMS[selectedDay].toLowerCase()}, ${LIBELLE_CRENEAU[selectedRepas].toLowerCase()}`);
       setTimeout(() => setFeedback(null), 3000);
     } catch (err) {
       setFeedback(`❌ Erreur : ${errorMessage(err)}`);
@@ -228,7 +228,7 @@ export default function FavorisPage() {
                 <div className="p-4">
                   <Link href={recetteHref(meal)}>
                     <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
-                      {titreMajuscules(meal.titre)}
+                      {titreRecette(meal.titre)}
                     </h3>
                   </Link>
 

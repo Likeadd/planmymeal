@@ -3,6 +3,7 @@
 //
 //   npx tsx scripts/ajouter-recettes-proteinees.ts               (aperçu)
 //   npx tsx scripts/ajouter-recettes-proteinees.ts --appliquer   (insère)
+//   … --entrees : même chose avec scripts/data/recettes-entrees.ts
 //
 // Les macros sont CALCULÉES depuis la composition (lib/macros) ; une recette
 // déjà présente (même titre) n'est pas réinsérée.
@@ -15,8 +16,10 @@ import { calculerMacros } from '../src/lib/macros';
 import type { PoidsUnites } from '../src/lib/unites';
 import { deduireSaison, genererDescription } from '../src/lib/nettoyage-recettes';
 import { RECETTES_PROTEINEES } from './data/recettes-proteinees';
+import { RECETTES_ENTREES } from './data/recettes-entrees';
 
 const APPLIQUER = process.argv.includes('--appliquer');
+const ENTREES = process.argv.includes('--entrees');
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 interface Ing {
@@ -34,7 +37,7 @@ interface Ing {
   const titres = new Set((existants ?? []).map(m => m.titre.toLowerCase()));
 
   let ok = 0;
-  for (const r of RECETTES_PROTEINEES) {
+  for (const r of ENTREES ? RECETTES_ENTREES : RECETTES_PROTEINEES) {
     const manquants = r.ingredients.filter(([nom]) => !parNom.has(nom.toLowerCase())).map(([nom]) => nom);
     if (manquants.length) { console.error(`✗ ${r.titre} : ingrédients inconnus ${manquants.join(', ')}`); continue; }
 
@@ -48,7 +51,8 @@ interface Ing {
     const res = calculerMacros(lignes, r.portions);
     if (!res.ok) { console.error(`✗ ${r.titre} : macros incalculables (${res.raison} — ${res.detail})`); continue; }
     const m = res.macros;
-    const seuil = r.type === 'plat' ? 30 : 20;
+    // Seuil protéines : seulement pour la série protéinée
+    const seuil = ENTREES ? 0 : r.type === 'plat' ? 30 : 20;
     const statut = m.p >= seuil ? '✓' : '⚠';
     console.log(`${statut} ${r.titre} — ${Math.round(m.cal)} kcal, ${m.p.toFixed(1)} g protéines / portion`);
     if (m.p < seuil || titres.has(r.titre.toLowerCase()) || !APPLIQUER) continue;

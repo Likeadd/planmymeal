@@ -26,7 +26,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { createBrowserClient } from '@/lib/supabase';
 import { useTodayIndex, JOUR_INCONNU } from '@/lib/useTodayIndex';
 import { getMondayWithOffset, getMonday } from '@/lib/dates';
-import { formatMinutes, formatCalories, cn, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, cn, titreRecette } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
 import { recetteHref } from '@/lib/seo';
 import { COLONNES_RECETTE_PLANNING, toRecettePlanning, repasPersonnalise, type WeeklyPlanEmbed } from '@/lib/db-rows';
@@ -200,7 +200,7 @@ export default function AujourdhuiPage() {
                   <ChefHat className="w-3.5 h-3.5" /> Prochain repas · {prochain.label}
                 </p>
                 <h2 className="font-display font-bold text-xl text-gray-900 group-hover:text-brand-600 transition-colors">
-                  {prochain.meal.personnalise ? `✏️ ${prochain.meal.titre}` : titreMajuscules(prochain.meal.titre)}
+                  {prochain.meal.personnalise ? `✏️ ${prochain.meal.titre}` : titreRecette(prochain.meal.titre)}
                 </h2>
                 <div className="flex items-center gap-3.5 text-[13px] text-gray-500 mt-2.5">
                   {!prochain.meal.personnalise && (

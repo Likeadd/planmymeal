@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { wordmarkSvg, WORDMARK_RATIO } from '@/lib/brand';
 import { parseRecetteId } from '@/lib/seo';
 import { formatPrix, prixParPortion } from '@/lib/budget';
-import { titreMajuscules } from '@/lib/utils';
+import { titreRecette } from '@/lib/utils';
 import { toMeal } from '@/lib/db-rows';
 import { getRecettePublique } from './data';
 
@@ -22,7 +22,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const mealId = parseRecetteId(id);
   const row = mealId ? await getRecettePublique(mealId) : null;
 
-  const titre = row ? titreMajuscules(row.titre) : 'Recette PlanMyMeal';
+  const titre = row ? titreRecette(row.titre) : 'Recette PlanMyMeal';
   const details: string[] = [];
   if (row) {
     details.push(`${(row.temps_preparation || 0) + (row.temps_cuisson || 0)} min`);

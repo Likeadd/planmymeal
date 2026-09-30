@@ -147,34 +147,16 @@ export function emojiRecette(titre: string, type?: string | null): string {
  * courtes restent en minuscule EN MILIEU de titre (mais prennent la majuscule
  * en tête), sigles courts (BBQ) préservés, tirets gérés (grand-mère).
  */
-/** Sigle court tout-caps (BBQ, USA) : préservé tel quel par titreMajuscules */
-function estSigle(mot: string): boolean {
-  const noyau = mot.replace(/[’'’-]/g, '');
-  return noyau.length > 0 && noyau.length <= 4 && noyau === noyau.toUpperCase() && /\p{L}/u.test(noyau);
-}
-
-export function titreMajuscules(titre: string): string {
+/**
+ * Titre de recette à la française (casse de phrase) : seule la 1re lettre
+ * prend la majuscule, le reste est gardé tel quel (noms propres : Provence,
+ * Madras…). Un titre tapé EN MAJUSCULES est ramené en minuscules.
+ */
+export function titreRecette(titre: string): string {
   if (!titre) return titre;
-  const mots = titre.split(/(\s+|-)/); // garde les espaces et tirets comme séparateurs
-  let premiere = true;
-  return mots
-    .map((mot) => {
-      if (!mot || /^[\s-]+$/.test(mot)) return mot; // séparateur inchangé
-      // Sigle court → intact ; sinon : 1re lettre en majuscule, reste en
-      // minuscules (normalise aussi un titre tapé EN MAJUSCULES).
-      const base = estSigle(mot)
-        ? mot
-        : premiere
-          ? mot.charAt(0).toUpperCase() + mot.slice(1).toLowerCase()
-          : mot.toLowerCase();
-      const maj = base.charAt(0).toUpperCase() + base.slice(1);
-      premiere = false;
-      return maj;
-    })
-    .join('')
-    // Deuxième passe : articles courts re-basculés en minuscule EN MILIEU de titre
-    .replace(/(?<=\S)\s+(À|Au|Aux|Avec|Chez|Dans|De|Des|Du|En|Et|La|Le|Les|Par|Pour|Sans|Sur|Un|Une)(?=\s)/g,
-      (_m, art: string) => ' ' + art.toLowerCase());
+  const lettres = titre.replace(/[^\p{L}]/gu, '');
+  const base = lettres.length > 4 && lettres === lettres.toUpperCase() ? titre.toLowerCase() : titre;
+  return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
 /**

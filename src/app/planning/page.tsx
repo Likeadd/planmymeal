@@ -16,7 +16,7 @@ import {
   estAujourdhuiParis, formatDateHeureParis,
 } from '@/lib/dates';
 import { pushSemaine, replaceSemaine, useSemainePopstate } from '@/lib/useSemaineHistory';
-import { formatMinutes, formatCalories, copyToClipboard, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, copyToClipboard, titreRecette } from '@/lib/utils';
 import { toast } from 'sonner';
 import { recetteHref } from '@/lib/seo';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -481,8 +481,8 @@ function MealMini({ label, meal }: { label: string; meal: RecetteResume | null }
       <div className="flex items-center justify-between">
         <Link href={recetteHref(meal)}
           className="flex-1 text-xs font-medium text-gray-800 hover:text-brand-600 transition-colors truncate leading-snug"
-          title={titreMajuscules(meal.titre)}>
-          {titreMajuscules(meal.titre)}
+          title={titreRecette(meal.titre)}>
+          {titreRecette(meal.titre)}
         </Link>
       </div>
       <div className="flex items-center gap-3 text-[11px] text-gray-500 mt-1">

@@ -56,7 +56,14 @@ export async function GET(request: NextRequest) {
     // désinscription change d'un abonné à l'autre.
     const messages = abonnes.flatMap(abonne => {
       const data = construireNewsletterHebdo(catalogue, baseUrl, abonne.token);
-      return data ? [{ to: abonne.email, subject: newsletterSubject(data), html: newsletterEmailHtml(data, baseUrl) }] : [];
+      return data ? [{
+        to: abonne.email, subject: newsletterSubject(data), html: newsletterEmailHtml(data, baseUrl),
+        // Désinscription en un clic depuis Gmail/Outlook (RFC 8058)
+        headers: {
+          'List-Unsubscribe': `<${data.unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      }] : [];
     });
 
     let envoyes = 0;

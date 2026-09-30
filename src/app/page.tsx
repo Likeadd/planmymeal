@@ -294,15 +294,17 @@ function Features() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Mobile : cartes compactes (icône + titre, description repliée) —
+            la grille complète doublait la hauteur de la page sur téléphone. */}
+        <div className="mt-10 sm:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 4) * 0.08} y={16}
-              className="group bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:border-brand-200 hover:shadow-pop transition-all">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${f.accent} group-hover:scale-105 transition-transform`}>
-                <f.icon className="w-6 h-6" />
+              className="group bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-100 hover:border-brand-200 hover:shadow-pop transition-all">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${f.accent} group-hover:scale-105 transition-transform`}>
+                <f.icon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h3 className="mt-5 font-display text-lg font-bold text-gray-900">{f.title}</h3>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">{f.desc}</p>
+              <h3 className="mt-3 sm:mt-5 font-display text-base sm:text-lg font-bold text-gray-900 leading-snug">{f.title}</h3>
+              <p className="hidden sm:block mt-2 text-sm text-gray-600 leading-relaxed">{f.desc}</p>
             </Reveal>
           ))}
         </div>
@@ -422,7 +424,7 @@ function NouveautesMonde() {
             </Link>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {NOUVEAUTES.map((c) => (
               <Link key={c.nom} href={`/recettes?cuisine=${encodeURIComponent(c.nom)}`}
                 title={`Voir les recettes ${c.nom.toLowerCase()}s`}
@@ -432,7 +434,7 @@ function NouveautesMonde() {
                   <span className="block text-sm font-semibold text-gray-900 truncate">{c.nom}</span>
                   <span className="block text-[11px] text-gray-500">{c.n} recettes</span>
                 </span>
-                <ArrowRight className="w-4 h-4 ml-auto text-gray-300 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="hidden sm:block w-4 h-4 ml-auto shrink-0 text-gray-300 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
               </Link>
             ))}
           </div>
@@ -584,7 +586,7 @@ const PLANS = [
       'Prix max par portion',
       'Imports de recettes illimités',
     ],
-    cta: STRIPE_ENABLED ? 'Passer à Pro' : 'Pro bientôt — commencer gratuitement', highlighted: true,
+    cta: STRIPE_ENABLED ? 'Passer à Pro' : 'Commencer gratuitement', highlighted: true,
   },
   {
     name: 'Famille', price: '9,99', emoji: '👨‍👩‍👧‍👦',
@@ -594,7 +596,7 @@ const PLANS = [
       '5 profils avec allergies & dégoûts',
       'Menus de compromis négociés par le moteur',
     ],
-    cta: STRIPE_ENABLED ? 'Passer à Famille' : 'Famille bientôt — commencer gratuitement', highlighted: false,
+    cta: STRIPE_ENABLED ? 'Passer à Famille' : 'Commencer gratuitement', highlighted: false,
   },
 ];
 
@@ -808,6 +810,11 @@ function Pricing() {
                 ))}
               </ul>
 
+              {!STRIPE_ENABLED && plan.name !== 'Gratuit' && (
+                <p className={`mb-3 text-center text-xs font-semibold ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
+                  Abonnement disponible très bientôt
+                </p>
+              )}
               <Link href="/signup"
                 className={`block text-center py-3 rounded-full font-semibold text-sm transition-all ${
                   plan.highlighted

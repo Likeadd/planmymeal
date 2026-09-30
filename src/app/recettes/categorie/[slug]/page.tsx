@@ -7,7 +7,7 @@ import { Clock, Flame } from 'lucide-react';
 import { CATEGORIES_SEO, getCategorieSeo } from '@/lib/categories-seo';
 import { getCatalogueSeo } from './data';
 import { recetteHref, SITE_URL } from '@/lib/seo';
-import { formatMinutes, formatCalories, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, titreRecette } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
 import { prixParPortion } from '@/lib/budget';
 
@@ -75,7 +75,7 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
             return (
               <Link key={meal.id} href={recetteHref(meal)} data-reveal style={{ '--i': idx % 3 } as React.CSSProperties}
                 className="press block rounded-2xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-4">
-                <h2 className="font-display font-bold text-gray-900 leading-snug">{titreMajuscules(meal.titre)}</h2>
+                <h2 className="font-display font-bold text-gray-900 leading-snug">{titreRecette(meal.titre)}</h2>
                 <div className="flex items-center gap-3 text-[13px] text-gray-500 mt-2">
                   <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}</span>
                   {meal.calories_par_portion != null && (

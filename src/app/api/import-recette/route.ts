@@ -20,6 +20,8 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { isIP } from 'node:net';
+import { lookup } from 'node:dns/promises';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { UserError, publicErrorMessage } from '@/lib/utils';
@@ -40,6 +42,27 @@ Règles : en français. Les quantités doivent être des nombres (grammes, milli
 
 // ─── Garde-fous SSRF ────────────────────────────────────────────────────────
 
+/** true si l'IP (v4 ou v6) n'est pas routable publiquement. */
+function ipNonPublique(ip: string): boolean {
+  const v = isIP(ip);
+  if (v === 4) {
+    const [a, b] = ip.split('.').map(Number);
+    return a === 0 || a === 10 || a === 127 || a >= 224 ||
+      (a === 100 && b >= 64 && b <= 127) ||      // CGNAT
+      (a === 169 && b === 254) ||                // link-local / métadonnées cloud
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19));
+  }
+  if (v === 6) {
+    const x = ip.toLowerCase();
+    const mappe = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mappe) return ipNonPublique(mappe[1]);
+    return x === '::' || x === '::1' || /^f[cd]/.test(x) || /^fe[89ab]/.test(x) || x.startsWith('ff');
+  }
+  return true;
+}
+
 /** URL publique https uniquement — rejette localhost, IP privées, autres protocoles */
 export function urlPubliqueAutorisee(raw: string): URL | null {
   let url: URL;
@@ -48,29 +71,35 @@ export function urlPubliqueAutorisee(raw: string): URL | null {
   } catch {
     return null;
   }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+  if (url.protocol !== 'https:') return null;
+  if (url.username || url.password) return null;
+  if (url.port && url.port !== '443') return null;
 
-  const hote = url.hostname.toLowerCase();
-  if (hote === 'localhost' || hote === '0.0.0.0' || hote.endsWith('.local')) return null;
+  const hote = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (hote === 'localhost' || hote.endsWith('.localhost') || hote.endsWith('.local')) return null;
   if (hote.endsWith('.internal') || hote.endsWith('.localdomain')) return null;
-
-  // IP littérale : seule une IP publique passe (pas de 127.x, 10.x, 192.168.x…)
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hote)) {
-    const octets = hote.split('.').map(Number);
-    if (
-      octets[0] === 127 || octets[0] === 10 || octets[0] === 0 ||
-      (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
-      (octets[0] === 192 && octets[1] === 168) ||
-      (octets[0] === 169 && octets[1] === 254)
-    ) {
-      return null;
-    }
-  }
+  // IP littérale (v4 ou v6) : seule une IP publique passe
+  if (isIP(hote) && ipNonPublique(hote)) return null;
   return url;
+}
+
+/** Résout le nom d'hôte : refuse si UNE des adresses est interne (ex. 127.0.0.1.nip.io). */
+async function hoteResoutVersPublic(url: URL): Promise<boolean> {
+  const hote = url.hostname.replace(/^\[|\]$/g, '');
+  if (isIP(hote)) return !ipNonPublique(hote);
+  try {
+    const adresses = await lookup(hote, { all: true, verbatim: true });
+    return adresses.length > 0 && adresses.every(a => !ipNonPublique(a.address));
+  } catch {
+    return false;
+  }
 }
 
 /** Télécharge la page, taille plafonnée, sans suivre les redirections. */
 async function telechargerPage(url: URL): Promise<string> {
+  if (!(await hoteResoutVersPublic(url))) {
+    throw new UserError('Cette adresse n’est pas autorisée.');
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_FETCH_MS);
   try {

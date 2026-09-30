@@ -11,7 +11,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Clock, Loader2, Pencil, Plus, Shuffle, Utensils, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { RecetteSwap, RepasSlot, TypeRepas } from '@/types';
-import { formatMinutes, formatCalories, familleDessert, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, familleDessert, titreRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 
 const SWAP_FILTERS: { value: TypeRepas | 'tous'; label: string }[] = [
@@ -208,7 +208,7 @@ export function SwapModal({
                     <div className="min-w-0">
                       <div className="font-medium text-gray-900 text-sm flex items-center gap-1.5">
                         {famille && <span aria-hidden>{famille.emoji}</span>}
-                        <span className="truncate">{titreMajuscules(meal.titre)}</span>
+                        <span className="truncate">{titreRecette(meal.titre)}</span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
                         {famille && (

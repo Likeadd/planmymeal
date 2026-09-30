@@ -25,9 +25,11 @@ export interface SendEmailInput {
   html: string;
   /** Adresse reply-to optionnelle (ex : support) */
   replyTo?: string;
+  /** En-têtes SMTP additionnels (ex : List-Unsubscribe) */
+  headers?: Record<string, string>;
 }
 
-export async function sendEmail({ to, subject, html, replyTo }: SendEmailInput): Promise<SendEmailResult> {
+export async function sendEmail({ to, subject, html, replyTo, headers }: SendEmailInput): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return { ok: false, error: 'RESEND_API_KEY manquant' };
@@ -46,6 +48,7 @@ export async function sendEmail({ to, subject, html, replyTo }: SendEmailInput):
         subject,
         html,
         ...(replyTo ? { reply_to: replyTo } : {}),
+        ...(headers ? { headers } : {}),
       }),
     });
     const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
@@ -74,8 +77,9 @@ export async function sendEmailsBatch(emails: SendEmailInput[]): Promise<SendEma
       const res = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(lot.map(({ to, subject, html, replyTo }) => ({
+        body: JSON.stringify(lot.map(({ to, subject, html, replyTo, headers }) => ({
           from: EMAIL_FROM, to: [to], subject, html, ...(replyTo ? { reply_to: replyTo } : {}),
+          ...(headers ? { headers } : {}),
         }))),
       });
       const json = (await res.json().catch(() => ({}))) as { data?: { id: string }[]; message?: string };

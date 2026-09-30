@@ -11,7 +11,7 @@
 import Link from 'next/link';
 import { CalendarDays, Loader2, Check } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
-import { formatMinutes, cn, titreMajuscules, emojiRecette } from '@/lib/utils';
+import { formatMinutes, cn, titreRecette, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 import { recetteHref } from '@/lib/seo';
 import { useTodayIndex } from '@/lib/useTodayIndex';
@@ -83,7 +83,7 @@ export function WeekColumns({
             <div className="flex-1 min-w-0 px-4 py-3 flex flex-col justify-center">
               {lien ? (
                 <Link href={lien} className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2 hover:underline underline-offset-2">
-                  {estReste ? `Restes de ${sourceDiner ? titreMajuscules(sourceDiner.titre) : 'la veille'}` : titreMajuscules(meal.titre)}
+                  {estReste ? `Restes de ${sourceDiner ? titreRecette(sourceDiner.titre) : 'la veille'}` : titreRecette(meal.titre)}
                 </Link>
               ) : (
                 <p className="font-bold text-[15px] text-gray-900 leading-snug line-clamp-2 break-words">{meal.titre}</p>
@@ -125,7 +125,7 @@ export function WeekColumns({
             dessert ? 'bg-sauge-50 text-sauge-800 hover:bg-sauge-100' : 'text-gray-400 hover:text-sauge-700 hover:bg-sauge-50',
             dragOver === `${day.jourIndex}-${dessertSlot}` && 'ring-2 ring-sauge-300')}>
           <span className="min-w-0 truncate">
-            🍰 {dessert ? <>Dessert : <strong>{dessert.personnalise ? dessert.titre : titreMajuscules(dessert.titre)}</strong></> : 'Ajouter un dessert'}
+            🍰 {dessert ? <>Dessert : <strong>{dessert.personnalise ? dessert.titre : titreRecette(dessert.titre)}</strong></> : 'Ajouter un dessert'}
           </span>
           {dessert && <span className="shrink-0 font-semibold">Changer</span>}
         </button>

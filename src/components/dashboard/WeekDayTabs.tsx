@@ -13,7 +13,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Loader2, Package, Check } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
-import { formatMinutes, cn, titreMajuscules, emojiRecette } from '@/lib/utils';
+import { formatMinutes, cn, titreRecette, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 import { useAuth } from '@/components/AuthProvider';
 import { useTodayIndex } from '@/lib/useTodayIndex';
@@ -146,8 +146,8 @@ export function WeekDayTabs({
                   <>
                     <h4 className="mt-1.5 font-bold text-xl text-gray-900 leading-snug">
                       {meal.personnalise ? meal.titre
-                        : estReste ? `Restes de ${sourceDiner ? titreMajuscules(sourceDiner.titre) : 'la veille'}`
-                        : titreMajuscules(meal.titre)}
+                        : estReste ? `Restes de ${sourceDiner ? titreRecette(sourceDiner.titre) : 'la veille'}`
+                        : titreRecette(meal.titre)}
                     </h4>
                     <p className="mt-1 text-sm text-gray-500">
                       {meal.personnalise ? 'Repas personnalisé'
@@ -180,7 +180,7 @@ export function WeekDayTabs({
                 <button onClick={() => ouvrir(day.jourIndex, dessertSlot)}
                   className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-sauge-50 border border-sauge-100 px-4 min-h-[48px] text-left">
                   <span className="min-w-0 truncate text-sm text-sauge-800">
-                    🍰 {dessert ? <>Dessert : <strong>{dessert.personnalise ? dessert.titre : titreMajuscules(dessert.titre)}</strong></> : 'Ajouter un dessert'}
+                    🍰 {dessert ? <>Dessert : <strong>{dessert.personnalise ? dessert.titre : titreRecette(dessert.titre)}</strong></> : 'Ajouter un dessert'}
                   </span>
                   <span className="shrink-0 text-xs font-semibold text-sauge-700">{dessert ? 'Changer' : '+'}</span>
                 </button>

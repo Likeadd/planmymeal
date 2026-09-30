@@ -2,7 +2,7 @@
 // Templates email PlanMyMeal — HTML inline (compatibilité clients mail maximale)
 // ============================================================================
 
-import { titreMajuscules } from '@/lib/utils';
+import { titreRecette } from '@/lib/utils';
 
 export interface DigestData {
   prenom: string;
@@ -13,7 +13,7 @@ export interface DigestData {
   /** Économie vs la base DÉCLARÉE par l'utilisateur (si saisie) */
   economieReference: number | null;
   /** Titres (bruts, DB) des principaux plats de la semaine — l'aperçu "Au menu"
-      applique la même casse que l'app (titreMajuscules). Vide = section absente. */
+      applique la même casse que l'app (titreRecette). Vide = section absente. */
   plats?: string[];
   /** YYYY-MM-DD — construit le lien direct vers la liste de courses de cette
       semaine. Absent (rétro-compat) = pas de bouton liste de courses. */
@@ -83,7 +83,7 @@ export function weeklyDigestEmailHtml(d: DigestData, baseUrl: string): string {
     apercuPlats.push('<ul style="margin:0;padding-left:18px;">');
     for (const t of plats.slice(0, 5)) {
       apercuPlats.push(
-        `<li style="color:#605242;font-size:13px;line-height:1.7;">${esc(titreMajuscules(t))}</li>`
+        `<li style="color:#605242;font-size:13px;line-height:1.7;">${esc(titreRecette(t))}</li>`
       );
     }
     apercuPlats.push('</ul>');
@@ -162,7 +162,7 @@ export function newsletterEmailHtml(d: NewsletterData, baseUrl: string): string 
   const lignesMenu = d.menu
     .map(
       m =>
-        `<li style="color:#605242;font-size:13px;line-height:1.9;">${esc(titreMajuscules(m.titre))}${
+        `<li style="color:#605242;font-size:13px;line-height:1.9;">${esc(titreRecette(m.titre))}${
           m.prix != null ? ` <span style="color:#16a34a;font-weight:600;">— ${eur(m.prix)}/portion</span>` : ''
         }</li>`
     )

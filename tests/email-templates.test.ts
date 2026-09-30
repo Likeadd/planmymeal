@@ -3,20 +3,20 @@ import { weeklyDigestEmailHtml, weeklyDigestSubject, welcomeEmailHtml } from '..
 
 // ============================================================================
 // Templates email — l'aperçu « Au menu cette semaine » applique la même casse
-// que l'app (titreMajuscules) ; welcome inchangé ; sujets sans titre de plat.
+// que l'app (titreRecette) ; welcome inchangé ; sujets sans titre de plat.
 // ============================================================================
 
 const BASE = 'https://planmymeal.app';
 
 describe('weeklyDigestEmailHtml — aperçu Au menu', () => {
-  it('liste les plats avec majuscules à chaque mot significatif', () => {
+  it('liste les plats en casse de phrase', () => {
     const html = weeklyDigestEmailHtml(
       { prenom: 'Camille', nbRepas: 12, semaineLabel: 'du 21 au 27 septembre', economie: null, economieReference: null, plats: ['curry de poulet au coco', 'salade de tomates'] },
       BASE
     );
     expect(html).toContain('Au menu cette semaine');
-    expect(html).toContain('Curry de Poulet au Coco');
-    expect(html).toContain('Salade de Tomates');
+    expect(html).toContain('Curry de poulet au coco');
+    expect(html).toContain('Salade de tomates');
     expect(html).not.toContain('curry de poulet au coco'); // plus de titre brut
   });
 
@@ -26,7 +26,7 @@ describe('weeklyDigestEmailHtml — aperçu Au menu', () => {
       { prenom: '', nbRepas: 14, semaineLabel: 'x', economie: null, economieReference: null, plats },
       BASE
     );
-    expect(html).toContain('Plat Un');
+    expect(html).toContain('Plat un');
     expect((html.match(/<li /g) || []).length).toBe(5);
     expect(html).toContain('… et 2 autres plats');
   });
@@ -62,8 +62,8 @@ describe('weeklyDigestEmailHtml — aperçu Au menu', () => {
       { prenom: '', nbRepas: 1, semaineLabel: 'x', economie: null, economieReference: null, plats: ['<b>attention</b> & fils'] },
       BASE
     );
-    // HTML échappé (jamais interprété) + casse appliquée aux mots textuels
-    expect(html).toContain('&lt;b&gt;attention&lt;/b&gt; &amp; Fils');
+    // HTML échappé (jamais interprété)
+    expect(html).toContain('&lt;b&gt;attention&lt;/b&gt; &amp; fils');
     expect(html).not.toContain('<b>');
   });
 });

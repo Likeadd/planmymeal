@@ -44,6 +44,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Ne révèle pas la stack technique (X-Powered-By: Next.js)
+  poweredByHeader: false,
   // Production : supprime les console.log/info/debug du bundle (garde error/warn)
   compiler: {
     removeConsole: isDev ? false : { exclude: ['error', 'warn'] },

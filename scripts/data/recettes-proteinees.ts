@@ -5,7 +5,7 @@
 
 export interface RecetteSaisie {
   titre: string;
-  type: 'plat' | 'dessert';
+  type: 'entree' | 'plat' | 'dessert';
   cuisine: string;
   prep: number;
   cuisson: number;

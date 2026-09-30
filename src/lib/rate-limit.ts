@@ -90,9 +90,14 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
 
 /** IP client derrière le proxy (Vercel fournit x-forwarded-for / x-real-ip). */
 export function clientIp(request: NextRequest): string {
+  // x-real-ip est posé par la plateforme (non falsifiable par le client) ;
+  // dans x-forwarded-for, seule la DERNIÈRE entrée est ajoutée par le proxy
+  // de confiance — la première peut être inventée par le client.
+  const reelle = request.headers.get('x-real-ip');
+  if (reelle) return reelle.trim();
   const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return request.headers.get('x-real-ip') ?? 'inconnue';
+  if (forwarded) return forwarded.split(',').pop()!.trim();
+  return 'inconnue';
 }
 
 export interface RateLimitOptions {

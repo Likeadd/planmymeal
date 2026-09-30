@@ -5,3 +5,5 @@
 alter table public.plan_meals
   add column if not exists texte_libre text
   check (texte_libre is null or char_length(texte_libre) between 1 and 80);
+
+notify pgrst, 'reload schema';

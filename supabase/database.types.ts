@@ -438,6 +438,11 @@ export type Database = {
           glucides: number | null
           id: number
           image_url: string | null
+          image_source: string | null
+          image_auteur: string | null
+          image_auteur_url: string | null
+          image_page_url: string | null
+          image_licence: string | null
           instructions: string[]
           is_public: boolean
           lipides: number | null
@@ -464,6 +469,11 @@ export type Database = {
           glucides?: number | null
           id?: number
           image_url?: string | null
+          image_source?: string | null
+          image_auteur?: string | null
+          image_auteur_url?: string | null
+          image_page_url?: string | null
+          image_licence?: string | null
           instructions?: string[]
           is_public?: boolean
           lipides?: number | null
@@ -490,6 +500,11 @@ export type Database = {
           glucides?: number | null
           id?: number
           image_url?: string | null
+          image_source?: string | null
+          image_auteur?: string | null
+          image_auteur_url?: string | null
+          image_page_url?: string | null
+          image_licence?: string | null
           instructions?: string[]
           is_public?: boolean
           lipides?: number | null
@@ -521,6 +536,7 @@ export type Database = {
           token: string
           created_at: string
           unsubscribed_at: string | null
+          confirmed_at: string | null
         }
         Insert: {
           id?: string
@@ -528,6 +544,7 @@ export type Database = {
           token?: string
           created_at?: string
           unsubscribed_at?: string | null
+          confirmed_at?: string | null
         }
         Update: {
           id?: string
@@ -535,7 +552,26 @@ export type Database = {
           token?: string
           created_at?: string
           unsubscribed_at?: string | null
+          confirmed_at?: string | null
         }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: { cle: string; fenetre_debut: string; compteur: number }
+        Insert: { cle: string; fenetre_debut: string; compteur: number }
+        Update: { cle?: string; fenetre_debut?: string; compteur?: number }
+        Relationships: []
+      }
+      user_allergy_families: {
+        Row: { user_id: string; code: string }
+        Insert: { user_id: string; code: string }
+        Update: { user_id?: string; code?: string }
+        Relationships: []
+      }
+      user_dislike_families: {
+        Row: { user_id: string; code: string }
+        Insert: { user_id: string; code: string }
+        Update: { user_id?: string; code?: string }
         Relationships: []
       }
       plan_meals: {
@@ -545,6 +581,7 @@ export type Database = {
           meal_id: number | null
           plan_id: number
           repas_type: string
+          texte_libre: string | null
         }
         Insert: {
           est_reste_de?: number | null
@@ -552,6 +589,7 @@ export type Database = {
           meal_id?: number | null
           plan_id: number
           repas_type: string
+          texte_libre?: string | null
         }
         Update: {
           est_reste_de?: number | null
@@ -559,6 +597,7 @@ export type Database = {
           meal_id?: number | null
           plan_id?: number
           repas_type?: string
+          texte_libre?: string | null
         }
         Relationships: [
           {
@@ -1048,6 +1087,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      rate_limit_hit: {
+        Args: { p_cle: string; p_limite: number; p_fenetre_ms: number }
+        Returns: { ok: boolean; retry_after_sec: number }[]
+      }
       quantite_achat_liste: {
         Args: { p_quantite: number; p_unite: string; p_unite_prix: string }
         Returns: number | null

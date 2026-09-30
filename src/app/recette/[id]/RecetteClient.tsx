@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Clock, Flame, ChefHat as ChefIcon, Star, ThumbsDown,
   ArrowLeft, Loader2, Utensils, Package, AlertTriangle, Users, Euro, CookingPot
@@ -137,8 +138,8 @@ export default function RecetteClient({
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900 mb-2">{error || 'Recette introuvable'}</h1>
-          <Link href="/dashboard" className="text-brand-600 hover:text-brand-700 font-medium">
-            ← Retour au planning
+          <Link href={user ? '/dashboard' : '/recettes'} className="text-brand-600 hover:text-brand-700 font-medium">
+            ← {user ? 'Retour au planning' : 'Toutes les recettes'}
           </Link>
         </div>
       </div>
@@ -155,13 +156,29 @@ export default function RecetteClient({
       <div className="container-app py-8">
         <div className="max-w-3xl mx-auto">
           {/* ─── Bandeau illustratif (emoji selon le type, plus de photos) ── */}
-          <div className="relative bg-brand-100 rounded-3xl h-64 sm:h-80 flex items-center justify-center mb-8 overflow-hidden">
+          <div className="relative bg-brand-100 rounded-3xl h-40 sm:h-64 flex items-center justify-center mb-8 overflow-hidden">
             {/* Vague crème en bas de bandeau */}
             <svg className="absolute bottom-0 left-0 w-full text-gray-50" viewBox="0 0 800 60" preserveAspectRatio="none" aria-hidden>
               <path d="M0 60 V30 C150 0 300 55 450 28 C600 5 720 35 800 18 V60 Z" fill="currentColor" opacity="0.5" />
             </svg>
-            <span className="text-8xl drop-shadow-xs" aria-hidden>{typeEmoji(meal.type_repas)}</span>
+            {meal.photo ? (
+              <Image src={meal.photo.url} alt={meal.titre} fill priority sizes="(max-width: 768px) 100vw, 768px"
+                className="object-cover" />
+            ) : (
+              <span className="text-8xl drop-shadow-xs" aria-hidden>{typeEmoji(meal.type_repas)}</span>
+            )}
           </div>
+          {/* Attribution exigée par la banque d'images */}
+          {meal.photo && (
+            <p className="-mt-6 mb-6 text-[11px] text-gray-500 text-right">
+              Photo :{' '}
+              {meal.photo.auteurUrl ? (
+                <a href={meal.photo.auteurUrl} target="_blank" rel="noopener noreferrer nofollow" className="underline decoration-gray-300 hover:text-brand-600">{meal.photo.auteur}</a>
+              ) : meal.photo.auteur}
+              {' '}sur{' '}
+              <a href={meal.photo.pageUrl ?? '#'} target="_blank" rel="noopener noreferrer nofollow" className="underline decoration-gray-300 hover:text-brand-600 capitalize">{meal.photo.source}</a>
+            </p>
+          )}
 
           {/* ─── Titre + badges ──────────────────────── */}
           <div className="flex items-start justify-between mb-6">
@@ -405,14 +422,29 @@ export default function RecetteClient({
             </div>
           </div>
 
+          {/* ─── Visiteur : la recette est une porte d'entrée (Google, partage) ── */}
+          {!user && (
+            <div className="mt-10 rounded-3xl bg-brand-50 border border-brand-100 p-6 sm:p-8 text-center">
+              <p className="font-display font-bold text-xl text-gray-900">Ajoutez cette recette à votre semaine</p>
+              <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto">
+                PlanMyMeal compose vos menus selon votre budget, vos goûts et votre frigo,
+                et prépare la liste de courses. Gratuit, sans carte bancaire.
+              </p>
+              <Link href="/signup?ref=recette"
+                className="mt-5 inline-flex items-center justify-center rounded-full bg-brand-500 text-white font-semibold px-6 py-3 hover:bg-brand-600 transition-colors shadow-cta">
+                Planifier ma semaine gratuitement
+              </Link>
+            </div>
+          )}
+
           {/* ─── Navigation bas ──────────────────────── */}
           <div className="mt-10 flex items-center justify-between">
             <Link
-              href="/dashboard"
+              href={user ? '/dashboard' : '/recettes'}
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Retour au planning
+              {user ? 'Retour au planning' : 'Toutes les recettes'}
             </Link>
             {feedback === 'liked' && (
               <span className="text-sm text-sable-600 font-medium flex items-center gap-1">

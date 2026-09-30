@@ -9,7 +9,7 @@ import { EQUIPEMENTS, type ContexteJour, type MealPreference, type Regime } from
 import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses } from '@/lib/budget';
 import { getSaisonActuelle, JOURS_NOMS } from '@/lib/dates';
 import { couvertureFrigo, ingredientIdsFrigo } from '@/lib/frigo';
-import { recetteServable, type IngredientPourRegime } from '@/lib/regimes';
+import { recetteServable, normaliserNom, type IngredientPourRegime } from '@/lib/regimes';
 import {
   chargerMemoire, tempsMaxJour, contexteJour, tempsTotal,
   type MemoireAlimentaire,
@@ -25,6 +25,7 @@ import {
 } from '@/lib/db-rows';
 import { UserError } from '@/lib/utils';
 import { cibleCaloriqueJour, facteurCalories } from '@/lib/nutrition';
+import { chargerExclusionsUtilisateur } from '@/lib/exclusions-alimentaires';
 
 /** Client Supabase typé (browser ou admin) */
 export type Db = SupabaseClient<Database>;
@@ -644,6 +645,24 @@ export async function chargerPoolMoteur(supabase: Db): Promise<RecetteMoteurEmbe
 // utilisateurs : une instance serveur chaude le réutilise quelques minutes au
 // lieu de retélécharger ~2 500 recettes + ingrédients à chaque génération.
 const POOL_TTL_MS = 10 * 60_000;
+
+/** Pool normalisé, mémorisé par instantané (clé = tableau de lignes du cache). */
+const poolConverti = new WeakMap<RecetteMoteurEmbed[], {
+  repas: RecetteMoteur[];
+  mealIngredientsByMeal: Map<number, MealIngredientMoteurEmbed[]>;
+}>();
+
+function convertirPool(rows: RecetteMoteurEmbed[]) {
+  let v = poolConverti.get(rows);
+  if (!v) {
+    v = {
+      repas: rows.map(toRecetteMoteur),
+      mealIngredientsByMeal: new Map(rows.map(m => [m.id, m.meal_ingredients ?? []])),
+    };
+    poolConverti.set(rows, v);
+  }
+  return v;
+}
 let poolCache: { at: number; rows: RecetteMoteurEmbed[] } | null = null;
 let poolEnCours: Promise<RecetteMoteurEmbed[]> | null = null;
 
@@ -690,8 +709,7 @@ export async function buildCandidates(
     { data: profileRow, error: profileError },
     memoire,
     frigoRes,
-    { data: allergies },
-    { data: dislikes },
+    exclusions,
     { data: regimesData },
     allMealsRows,
     { data: history },
@@ -700,8 +718,7 @@ export async function buildCandidates(
     supabase.from('profiles').select('*').eq('id', userId).single(),
     chargerMemoire(userId, supabase),
     supabase.from('fridge_items').select('ingredient_id').eq('user_id', userId),
-    supabase.from('user_allergies').select('ingredient_id').eq('user_id', userId),
-    supabase.from('user_dislikes').select('ingredient_id').eq('user_id', userId),
+    chargerExclusionsUtilisateur(userId, supabase),
     supabase.from('user_diets').select('regime').eq('user_id', userId),
     chargerPoolMoteur(supabase),
     supabase.from('meal_history').select('meal_id, planned_date, status')
@@ -716,8 +733,7 @@ export async function buildCandidates(
   // 2. Allergies + dislikes + régimes
   const regimes: Regime[] = (regimesData || []).map(r => r.regime as Regime);
 
-  const allergiesIds = new Set((allergies || []).map(a => a.ingredient_id));
-  const dislikesIds = new Set((dislikes || []).map(d => d.ingredient_id));
+  const { allergiesIds, dislikesIds } = exclusions;
 
   // 2bis. Filtres durs, calculés une seule fois pour toute la génération
   const filtresDurs: FiltresDurs = {
@@ -736,10 +752,11 @@ export async function buildCandidates(
   // déjeuner/dîner. Les desserts sont chargés aussi mais ignorés par la
   // sélection via isDessert.
 
-  // Normalisation une seule fois : lignes brutes → Meal[] + index des ingrédients
-  const mealIngredientsByMeal = new Map<number, MealIngredientMoteurEmbed[]>(
-    allMealsRows.map(m => [m.id, m.meal_ingredients ?? []])
-  );
+  // Normalisation une seule fois PAR INSTANTANÉ DU POOL (partagé 10 min entre
+  // toutes les générations de l'instance) : lignes brutes → recettes + index
+  // des ingrédients. Les mêmes objets recettes étant réutilisés, le mémo du
+  // prix par portion (lib/budget.ts) sert aussi d'une génération à l'autre.
+  const { repas, mealIngredientsByMeal } = convertirPool(allMealsRows);
 
   // 4. Historique 60 jours (chargé plus haut)
   const historyByMeal: Record<number, { derniereDate: Date; likes: number; dislikes: number; total: number }> = {};
@@ -758,8 +775,6 @@ export async function buildCandidates(
   const saisonActuelle = getSaisonActuelle();
   const candidats: Candidate[] = [];
 
-  // Normalisation des repas bruts (meal_ingredients → ingredients) une seule fois
-  const repas: RecetteMoteur[] = allMealsRows.map(toRecetteMoteur);
 
   // ─── 1re passe : score standard ───
   for (const meal of repas) {
@@ -1159,46 +1174,39 @@ export async function regeneratePlanSlots(
 
   if (!chosen.length) throw new UserError('Plus assez de plats disponibles pour régénérer');
 
-  // 4. Mise à jour du planning + historique de rotation
-  for (const c of chosen) {
-    const { data: existingRow } = await supabase.from('plan_meals')
-      .select('meal_id').eq('plan_id', plan.id)
-      .eq('jour_semaine', c.jour_semaine).eq('repas_type', c.repas_type)
-      .maybeSingle();    if (existingRow) {
-      await supabase.from('plan_meals')
-        .update({ meal_id: c.meal.id, est_reste_de: null })
-        .eq('plan_id', plan.id)
-        .eq('jour_semaine', c.jour_semaine).eq('repas_type', c.repas_type);
-    } else {
-      await supabase.from('plan_meals').insert({
-        plan_id: plan.id, jour_semaine: c.jour_semaine,
-        repas_type: c.repas_type, meal_id: c.meal.id, est_reste_de: null,
-      });
-    }
+  // 4. Mise à jour du planning + historique de rotation.
+  // Créneaux indépendants → traités EN PARALLÈLE ; par créneau, 3 à 4 requêtes
+  // au lieu de 6 à 7 (upsert sur la clé primaire au lieu de lire puis écrire,
+  // une seule suppression d'historique pour l'ancien et le nouveau plat).
+  await Promise.all(chosen.map(async c => {
+    const { error: errSlot } = await supabase.from('plan_meals').upsert(
+      { plan_id: plan.id, jour_semaine: c.jour_semaine, repas_type: c.repas_type, meal_id: c.meal.id, est_reste_de: null, texte_libre: null },
+      { onConflict: 'plan_id,jour_semaine,repas_type' }
+    );
+    if (errSlot) throw new Error(`Mise à jour du créneau impossible : ${errSlot.message}`);
 
-    // Si l'ancien plat servait de source à un reste, re-pointer le lien
-    if (c.oldMealId) {
-      await supabase.from('plan_meals')
-        .update({ est_reste_de: c.meal.id })
-        .eq('plan_id', plan.id).eq('est_reste_de', c.oldMealId);
-    }
-
-    // Historique : l'ancien plat "planned" de la semaine disparaît (on garde
-    // les retours cooked/liked/disliked), le nouveau entre en mémoire.
-    if (c.oldMealId) {
-      await supabase.from('meal_history')
-        .delete()
-        .eq('user_id', userId).eq('meal_id', c.oldMealId)
-        .eq('planned_date', semaineDebut).eq('status', 'planned');
-    }
-    await supabase.from('meal_history')
-      .delete()
-      .eq('user_id', userId).eq('meal_id', c.meal.id)
-      .eq('planned_date', semaineDebut).eq('status', 'planned');
-    await supabase.from('meal_history').insert({
-      user_id: userId, meal_id: c.meal.id, planned_date: semaineDebut, status: 'planned',
-    });
-  }
+    await Promise.all([
+      // Si l'ancien plat servait de source à un reste, re-pointer le lien
+      c.oldMealId
+        ? supabase.from('plan_meals')
+            .update({ est_reste_de: c.meal.id })
+            .eq('plan_id', plan.id).eq('est_reste_de', c.oldMealId)
+        : null,
+      // Historique : les lignes "planned" de la semaine pour l'ancien plat
+      // (qui disparaît) et le nouveau (évite le doublon) sont remplacées par
+      // une entrée pour le nouveau ; les retours cooked/liked/disliked restent.
+      (async () => {
+        await supabase.from('meal_history')
+          .delete()
+          .eq('user_id', userId)
+          .in('meal_id', c.oldMealId ? [c.oldMealId, c.meal.id] : [c.meal.id])
+          .eq('planned_date', semaineDebut).eq('status', 'planned');
+        await supabase.from('meal_history').insert({
+          user_id: userId, meal_id: c.meal.id, planned_date: semaineDebut, status: 'planned',
+        });
+      })(),
+    ]);
+  }));
 
   // 5. Liste de courses recalculée (les items cochés sont conservés)
   const shoppingListId = await recomputeShoppingList(userId, plan.id, supabase);
@@ -1327,7 +1335,117 @@ function buildStandardWeek(
     const diner = pickPourSlot(topPool, used, slots(i, 'diner'), rng);
     if (diner) { used.add(diner.meal.id); days[i].diner = diner.meal; }
   }
+  optimiserRecoupement(days, topPool, slots);
   return days;
+}
+
+// ─── Recoupement des ingrédients frais (anti-gaspillage) ───────────────────
+//
+// Le tirage créneau par créneau choisit chaque plat isolément : une botte de
+// coriandre achetée pour lundi finit souvent à la poubelle. Cette passe de
+// recherche locale échange des plats de la semaine contre d'autres candidats
+// du même vivier quand l'échange augmente le nombre d'ingrédients FRAIS
+// partagés entre plusieurs repas (liste plus courte, moins de restes jetés).
+//
+// Garde-fous : un plat n'est remplacé que par un candidat éligible au créneau
+// (temps du jour, type) dont le score de créneau vaut au moins
+// TOLERANCE_RECOUPEMENT × celui du plat remplacé — le goût, la mémoire et le
+// budget priment toujours ; seul le recoupement départage des plats proches.
+// Diversité : le catalogue compte de nombreuses variantes d'un même plat
+// (« Salade roquette au tofu… / au saumon… »). Sans garde, maximiser le
+// recoupement empilait ces variantes (mesuré : 0,7 → 3,4 doublons par
+// semaine). Un candidat dont la base de titre est déjà dans la semaine est
+// donc refusé, et l'optimisation ne crée jamais de nouveau doublon.
+// Déterministe et sans consommer le générateur aléatoire du moteur : la graine
+// dérive des plats déjà tirés (les tirages suivants — desserts — sont intacts).
+
+const RAYONS_PERISSABLES = new Set(['fruits_legumes', 'frais', 'viande_poisson']);
+export const ITERATIONS_RECOUPEMENT = 300;
+export const TOLERANCE_RECOUPEMENT = 0.85;
+
+/** Ingrédients frais (obligatoires) d'une recette, sans doublon. */
+export function ingredientsPerissables(meal: { ingredients?: { est_optionnel: boolean; ingredient: { id: number } }[] }): number[] {
+  const ids = new Set<number>();
+  for (const li of meal.ingredients ?? []) {
+    const rayon = (li.ingredient as { rayon?: string | null }).rayon ?? '';
+    if (!li.est_optionnel && RAYONS_PERISSABLES.has(rayon)) ids.add(li.ingredient.id);
+  }
+  return [...ids];
+}
+
+/** Réutilisations d'ingrédients frais dans la semaine : Σ (occurrences − 1). */
+export function scoreRecoupement(meals: Parameters<typeof ingredientsPerissables>[0][]): number {
+  const compte = new Map<number, number>();
+  for (const m of meals) for (const id of ingredientsPerissables(m)) compte.set(id, (compte.get(id) ?? 0) + 1);
+  let total = 0;
+  for (const n of compte.values()) if (n > 1) total += n - 1;
+  return total;
+}
+
+/** Base d'un titre (3 premiers mots normalisés) : identifie les variantes d'un même plat. */
+export function baseTitre(titre: string): string {
+  return normaliserNom(titre).split(/[\s,(]+/).filter(Boolean).slice(0, 3).join(' ');
+}
+
+/** Petit générateur déterministe (mulberry32). */
+function genererAleatoire(graine: number): Rng {
+  let a = graine >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function optimiserRecoupement(
+  days: DayPlan[],
+  pool: Candidate[],
+  slots: (jourIndex: number, repasType: RepasSlot) => SlotContexte,
+  iterations = ITERATIONS_RECOUPEMENT
+): void {
+  const creneaux: { i: number; repas: 'dejeuner' | 'diner' }[] = [];
+  days.forEach((d, i) => {
+    if (d.dejeuner) creneaux.push({ i, repas: 'dejeuner' });
+    if (d.diner) creneaux.push({ i, repas: 'diner' });
+  });
+  if (creneaux.length < 2 || pool.length === 0) return;
+
+  const candidatPar = new Map(pool.map(c => [c.meal.id, c]));
+  const semaine = () => creneaux.map(k => days[k.i][k.repas] as RecetteMoteur);
+  const utilises = new Set(semaine().map(m => m.id));
+  const bases = new Map<string, number>();
+  for (const m of semaine()) bases.set(baseTitre(m.titre), (bases.get(baseTitre(m.titre)) ?? 0) + 1);
+  const rng = genererAleatoire([...utilises].reduce((h, id) => Math.imul(h ^ id, 2654435761), 17));
+  let courant = scoreRecoupement(semaine());
+
+  for (let it = 0; it < iterations; it++) {
+    const k = creneaux[Math.floor(rng() * creneaux.length)];
+    const candidat = pool[Math.floor(rng() * pool.length)];
+    const actuel = days[k.i][k.repas] as RecetteMoteur;
+    const cActuel = candidatPar.get(actuel.id);
+    if (!cActuel || utilises.has(candidat.meal.id)) continue;
+    const baseCandidat = baseTitre(candidat.meal.titre);
+    const baseActuelle = baseTitre(actuel.titre);
+    if (baseCandidat !== baseActuelle && (bases.get(baseCandidat) ?? 0) > 0) continue;
+
+    const slot = slots(k.i, k.repas);
+    if (!eligiblePourSlot(candidat, slot)) continue;
+    if (scorePourSlot(candidat, slot) < scorePourSlot(cActuel, slot) * TOLERANCE_RECOUPEMENT) continue;
+
+    days[k.i][k.repas] = candidat.meal;
+    const nouveau = scoreRecoupement(semaine());
+    if (nouveau > courant) {
+      courant = nouveau;
+      utilises.delete(actuel.id);
+      utilises.add(candidat.meal.id);
+      bases.set(baseActuelle, (bases.get(baseActuelle) ?? 1) - 1);
+      bases.set(baseCandidat, (bases.get(baseCandidat) ?? 0) + 1);
+    } else {
+      days[k.i][k.repas] = actuel;
+    }
+  }
 }
 
 // ─── Construction batch cooking ─────────────────────────────────────────────

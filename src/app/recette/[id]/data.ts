@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { MealWithIngredients } from '@/lib/db-rows';
 
 /**
@@ -13,11 +13,7 @@ import type { MealWithIngredients } from '@/lib/db-rows';
 export const getRecettePublique = cache(async (id: number): Promise<MealWithIngredients | null> => {
   if (!Number.isInteger(id) || id <= 0) return null;
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const supabase = getSupabaseAdmin();
     const { data } = await supabase
       .from('meals')
       .select('*, meal_ingredients(quantite, unite, est_optionnel, ingredients!inner(*))')

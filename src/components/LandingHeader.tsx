@@ -112,6 +112,16 @@ export default function LandingHeader() {
               </>
             )}
           </div>
+
+          {/* Mobile : l'action principale reste visible sans ouvrir le menu */}
+          <div className="lg:hidden flex justify-end">
+            {!isLoggedIn && (
+              <Link href="/signup"
+                className="inline-flex items-center px-3.5 py-2 bg-brand-500 text-white text-[10px] font-semibold tracking-[0.12em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
+                Essayer
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 

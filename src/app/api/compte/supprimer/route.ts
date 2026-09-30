@@ -15,7 +15,7 @@ import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   // Anti-abus : route irréversible (RGPD) — débit très serré.
-  const limited = enforceRateLimit(request, { name: 'compte-supprimer', limit: 5, windowMs: 5 * 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'compte-supprimer', limit: 5, windowMs: 5 * 60_000 });
   if (limited) return limited;
 
   try {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'compte-supprimer', limit: 5, windowMs: 5 * 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'compte-supprimer', limit: 5, windowMs: 5 * 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({}));

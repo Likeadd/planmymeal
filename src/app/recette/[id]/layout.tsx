@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       description,
       type: 'article',
       url,
-      images: meal.image_url ? [{ url: meal.image_url, alt: meal.titre }] : undefined,
+      // Photo validée uniquement (image_source) ; sinon image de partage générée
+      // (opengraph-image.tsx) — image_url seul contient d'anciennes images fausses.
+      images: meal.image_url && meal.image_source ? [{ url: meal.image_url, alt: meal.titre }] : undefined,
     },
   };
 }
@@ -59,7 +61,9 @@ export default async function RecetteLayout({
         '@type': 'Recipe',
         name: meal.titre,
         description: meal.description || undefined,
-        image: meal.image_url || undefined,
+        // Pas de photo au catalogue : l'image de partage générée (opengraph-image.tsx)
+        // tient lieu d'image — Google l'exige pour les résultats enrichis Recette.
+        image: meal.image_url && meal.image_source ? meal.image_url : `${SITE_URL}${recetteHref(meal)}/opengraph-image`,
         url: `${SITE_URL}${recetteHref(meal)}`,
         inLanguage: 'fr-FR',
         author: { '@type': 'Organization', name: 'PlanMyMeal', url: SITE_URL },

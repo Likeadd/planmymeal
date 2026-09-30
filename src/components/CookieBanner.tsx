@@ -37,24 +37,25 @@ export function CookieBanner() {
 
   if (!visible) return null;
 
+  // Simple mention (aucun consentement n'est juridiquement requis) : une
+  // ligne compacte au-dessus de la barre de navigation mobile, au lieu d'une
+  // carte qui masquait ~40 % de l'écran d'un téléphone.
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50 p-4 sm:p-6">
-      <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-pop p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <Cookie className="w-6 h-6 text-brand-500 shrink-0" aria-hidden />
-        <p className="text-sm text-gray-600 leading-relaxed flex-1">
-          PlanMyMeal utilise uniquement des cookies techniques nécessaires
-          (connexion) et une mesure d’audience anonyme (Plausible) qui ne
-          dépose aucun cookie. Aucune donnée n’est partagée à des fins
-          publicitaires.{' '}
-          <Link href="/mentions-legales" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">
-            En savoir plus
+    <div role="region" aria-label="Information cookies"
+      className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-50 px-3 pointer-events-none">
+      <div className="pointer-events-auto max-w-xl mx-auto bg-white/95 backdrop-blur border border-gray-200 rounded-full shadow-pop pl-4 pr-1.5 py-1.5 flex items-center gap-3">
+        <Cookie className="w-4 h-4 text-brand-500 shrink-0" aria-hidden />
+        <p className="text-xs text-gray-600 flex-1 leading-snug">
+          Cookies techniques uniquement, audience anonyme sans cookie.{' '}
+          <Link href="/confidentialite" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">
+            Détails
           </Link>
         </p>
         <button
           onClick={fermer}
-          className="shrink-0 px-5 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-full hover:bg-brand-700 transition-colors"
+          className="shrink-0 px-3.5 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-full hover:bg-brand-700 transition-colors"
         >
-          J’ai compris
+          OK
         </button>
       </div>
     </div>

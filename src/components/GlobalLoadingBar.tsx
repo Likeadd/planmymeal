@@ -9,7 +9,11 @@
 // - Un délai de 150 ms évite le clignotement sur les requêtes instantanées.
 // - Seules les requêtes Supabase et /api/ sont comptées (pas les prefetch RSC,
 //   images ou analytics).
-// - Le patch de window.fetch est posé une fois et restauré au démontage.
+// - window.fetch est enveloppé UNE seule fois pour toute la vie de la page
+//   (garde globale) et jamais « restauré » : restaurer un fetch capturé au
+//   montage écraserait l'enveloppe d'une autre bibliothèque posée entre-temps,
+//   et le double montage de React (StrictMode, HMR) empilait les enveloppes.
+//   Le composant ne fait que s'abonner au compteur de requêtes en cours.
 // - prefers-reduced-motion : la règle globale de globals.css neutralise le
 //   mouvement, la barre reste un simple indicateur.
 // ============================================================================
@@ -26,6 +30,30 @@ function estRequeteSuivie(input: RequestInfo | URL): boolean {
   } catch {
     return false;
   }
+}
+
+// ─── Compteur global de requêtes en cours (un seul patch de fetch) ─────────
+const abonnes = new Set<(n: number) => void>();
+let requetesEnCours = 0;
+const MARQUE = '__pmmFetchSuivi';
+
+function installerSuiviFetch() {
+  const w = window as unknown as Record<string, unknown>;
+  if (w[MARQUE]) return;
+  w[MARQUE] = true;
+  const fetchOriginal = window.fetch.bind(window);
+  const notifier = () => abonnes.forEach(cb => cb(requetesEnCours));
+  window.fetch = async (...args: Parameters<typeof fetch>) => {
+    if (!estRequeteSuivie(args[0])) return fetchOriginal(...args);
+    requetesEnCours++;
+    notifier();
+    try {
+      return await fetchOriginal(...args);
+    } finally {
+      requetesEnCours = Math.max(0, requetesEnCours - 1);
+      notifier();
+    }
+  };
 }
 
 export function GlobalLoadingBar() {
@@ -47,18 +75,9 @@ export function GlobalLoadingBar() {
     };
 
     // Requêtes base de données / API
-    const fetchOriginal = window.fetch;
-    window.fetch = async (...args: Parameters<typeof fetch>) => {
-      if (!estRequeteSuivie(args[0])) return fetchOriginal.apply(window, args);
-      enCours.current++;
-      maj();
-      try {
-        return await fetchOriginal.apply(window, args);
-      } finally {
-        enCours.current = Math.max(0, enCours.current - 1);
-        maj();
-      }
-    };
+    installerSuiviFetch();
+    const surCompteur = (n: number) => { enCours.current = n; maj(); };
+    abonnes.add(surCompteur);
 
     // Navigation interne : démarre au clic sur un lien interne
     const onClick = (e: MouseEvent) => {
@@ -74,7 +93,7 @@ export function GlobalLoadingBar() {
     document.addEventListener('click', onClick);
 
     return () => {
-      window.fetch = fetchOriginal;
+      abonnes.delete(surCompteur);
       document.removeEventListener('click', onClick);
       if (timer.current) clearTimeout(timer.current);
     };

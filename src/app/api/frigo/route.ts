@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'frigo-get', limit: 120, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'frigo-get', limit: 120, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const items = await chargerFrigo(user.id, getSupabaseAdmin());
@@ -53,13 +53,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'frigo', limit: 60, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'frigo', limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'frigo', limit: 60, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'frigo', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({} as Record<string, unknown>));
@@ -93,13 +93,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'frigo-delete', limit: 60, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'frigo-delete', limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'frigo-delete', limit: 60, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'frigo-delete', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const admin = getSupabaseAdmin();

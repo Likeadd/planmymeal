@@ -17,8 +17,8 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
         a: 'En 3 étapes : 1) vous renseignez vos préférences (goûts, régimes, objectif, niveau de cuisine), 2) l’IA génère votre semaine complète de déjeuners et dîners, 3) vous récupérez la liste de courses triée par rayon et les fiches recettes.',
       },
       {
-        q: 'La première semaine est-elle vraiment offerte ?',
-        a: 'Oui. Votre première semaine est offerte, sans carte bancaire. Vous pouvez tester la génération, la liste de courses et le batch cooking avant de choisir un plan.',
+        q: 'Est-ce vraiment gratuit ?',
+        a: 'Oui. Le plan Gratuit l’est pour toujours, sans carte bancaire : génération de la semaine (4 par 7 jours), liste de courses, budget, batch cooking et frigo anti-gaspi. Les plans Pro et Famille ajoutent des générations illimitées, les profils par membre du foyer et quelques réglages avancés.',
       },
       {
         q: 'Sur quels appareils puis-je utiliser PlanMyMeal ?',

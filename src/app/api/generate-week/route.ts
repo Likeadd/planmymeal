@@ -36,13 +36,13 @@ async function verifierLimitePlan(userId: string, admin: Db): Promise<void> {
 export async function POST(request: NextRequest) {
   // Anti-abus : borne le débit brut par IP (le compute de génération est
   // cher) — la limite d'offre métier (4/sem sur gratuit) est vérifiée plus bas.
-  const limited = enforceRateLimit(request, { name: 'generate-week', limit: 20, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'generate-week', limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'generate-week', limit: 20, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'generate-week', limit: 20, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json();

@@ -11,6 +11,8 @@
 // `sauf` retire les faux positifs (lait de coco pour le lait, etc.).
 // ============================================================================
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/../supabase/database.types';
 import { normaliserNom } from '@/lib/regimes';
 
 export interface FamilleAliments {
@@ -155,4 +157,98 @@ export function resoudreExclusions(
     if (choisies.some(f => correspond(ing.nom, f))) ids.add(ing.id);
   }
   return [...ids];
+}
+
+// ─── Chargement des exclusions d'un utilisateur (moteur, frigo) ─────────────
+
+
+/** Catalogue d'ingrédients (id, nom) — identique pour tous : cache 10 min par instance. */
+let cacheIngredients: { at: number; rows: { id: number; nom: string }[] } | null = null;
+const TTL_INGREDIENTS_MS = 10 * 60_000;
+
+async function catalogueIngredients(supabase: SupabaseClient<Database>) {
+  if (cacheIngredients && Date.now() - cacheIngredients.at < TTL_INGREDIENTS_MS) return cacheIngredients.rows;
+  const { data } = await supabase.from('ingredients').select('id, nom');
+  const rows = data ?? [];
+  if (rows.length > 0) cacheIngredients = { at: Date.now(), rows };
+  return rows;
+}
+
+/**
+ * Ingrédients exclus d'un utilisateur : lignes par ingrédient (user_allergies,
+ * user_dislikes — y compris celles du foyer/anciennes versions) ∪ familles
+ * (user_allergy_families, user_dislike_families) résolues sur le catalogue
+ * ACTUEL : un ingrédient ajouté après l'inscription est donc couvert.
+ * Tables de familles absentes (migration 00031 non appliquée) → ignorées.
+ */
+export async function chargerExclusionsUtilisateur(
+  userId: string,
+  supabase: SupabaseClient<Database>
+): Promise<{ allergiesIds: Set<number>; dislikesIds: Set<number> }> {
+  const [al, di, alF, diF] = await Promise.all([
+    supabase.from('user_allergies').select('ingredient_id').eq('user_id', userId),
+    supabase.from('user_dislikes').select('ingredient_id').eq('user_id', userId),
+    supabase.from('user_allergy_families').select('code').eq('user_id', userId),
+    supabase.from('user_dislike_families').select('code').eq('user_id', userId),
+  ]);
+  const allergiesIds = new Set((al.data ?? []).map(r => r.ingredient_id));
+  const dislikesIds = new Set((di.data ?? []).map(r => r.ingredient_id));
+
+  const codesAllergies = (alF.data ?? []).map(r => r.code);
+  const codesDislikes = (diF.data ?? []).map(r => r.code);
+  if (codesAllergies.length > 0 || codesDislikes.length > 0) {
+    const ingredients = await catalogueIngredients(supabase);
+    for (const id of resoudreExclusions(codesAllergies, TOUTES_ALLERGIES, ingredients)) allergiesIds.add(id);
+    for (const id of resoudreExclusions(codesDislikes, DETESTES, ingredients)) dislikesIds.add(id);
+  }
+  return { allergiesIds, dislikesIds };
+}
+
+/**
+ * Enregistre les allergies et aliments détestés d'un utilisateur (REMPLACE
+ * l'existant) sous forme de familles. Les lignes par ingrédient sont effacées :
+ * elles viennent de résolutions anciennes, désormais recalculées à la volée.
+ * Repli si la migration 00031 n'est pas appliquée : on résout les familles en
+ * ingrédients et on écrit les tables historiques (comportement précédent).
+ * Une erreur est levée si les ALLERGIES n'ont pas pu être enregistrées
+ * (risque santé) ; un échec sur les détestés est seulement journalisé.
+ */
+export async function enregistrerExclusions(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  allergies: string[],
+  detestes: string[]
+): Promise<void> {
+  const remplacerFamilles = async (table: 'user_allergy_families' | 'user_dislike_families', codes: string[]) => {
+    const { error: del } = await supabase.from(table).delete().eq('user_id', userId);
+    if (del) return del;
+    if (codes.length === 0) return null;
+    const { error } = await supabase.from(table).insert(codes.map(code => ({ user_id: userId, code })));
+    return error;
+  };
+
+  const erreurFamilles = await remplacerFamilles('user_allergy_families', allergies);
+  if (!erreurFamilles) {
+    const errDislikes = await remplacerFamilles('user_dislike_families', detestes);
+    if (errDislikes) console.warn('Détestés non enregistrés :', errDislikes.message);
+    await supabase.from('user_allergies').delete().eq('user_id', userId);
+    await supabase.from('user_dislikes').delete().eq('user_id', userId);
+    return;
+  }
+
+  // Repli : tables de familles absentes → ingrédients résolus, tables historiques.
+  const { data: ingredients } = await supabase.from('ingredients').select('id, nom');
+  const allergieIds = resoudreExclusions(allergies, TOUTES_ALLERGIES, ingredients ?? []);
+  const detesteIds = resoudreExclusions(detestes, DETESTES, ingredients ?? []).filter(id => !allergieIds.includes(id));
+  const remplacerIds = async (table: 'user_allergies' | 'user_dislikes', ids: number[]) => {
+    const { error: del } = await supabase.from(table).delete().eq('user_id', userId);
+    if (del) return del;
+    if (ids.length === 0) return null;
+    const { error } = await supabase.from(table).insert(ids.map(ingredient_id => ({ user_id: userId, ingredient_id })));
+    return error;
+  };
+  const errAllergies = await remplacerIds('user_allergies', allergieIds);
+  if (errAllergies) throw errAllergies;
+  const errDislikes = await remplacerIds('user_dislikes', detesteIds);
+  if (errDislikes) console.warn('Détestés non enregistrés :', errDislikes.message);
 }

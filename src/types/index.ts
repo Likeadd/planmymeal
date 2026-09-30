@@ -255,10 +255,25 @@ export interface Meal {
   ustensiles: string[];
   instructions: string[];
   image_url: string | null;
+  /**
+   * Photo VALIDÉE (source + crédit renseignés, migration 00032). Absente tant
+   * que la photo n'a pas été relue puis appliquée : `image_url` seul n'est
+   * jamais affiché (anciennes images générées ne correspondant pas aux plats).
+   */
+  photo?: PhotoRecette | null;
   portions_par_defaut: number;
   created_by: string | null;
   is_public: boolean;
   ingredients?: IngredientQuantity[];
+}
+
+/** Photo d'une recette et son attribution (exigée par les banques d'images). */
+export interface PhotoRecette {
+  url: string;
+  source: string;
+  auteur: string | null;
+  auteurUrl: string | null;
+  pageUrl: string | null;
 }
 
 /**
@@ -364,6 +379,8 @@ export interface RecetteCarte {
 export interface RecettePlanning extends RecetteCarte {
   ustensiles: string[];
   portions_par_defaut: number;
+  /** true = repas saisi librement par l'utilisateur (`titre` = son texte, id = 0, aucune recette derrière) */
+  personnalise?: boolean;
 }
 
 /**

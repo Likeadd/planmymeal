@@ -1,0 +1,42 @@
+# ============================================================================
+# CI — vérifie chaque push et chaque pull request AVANT le déploiement Vercel :
+# lint, types, tests unitaires et build de production.
+# Le build utilise des valeurs factices : les pages qui lisent la base
+# (sitemap, catégories) ont un repli sans données, aucun secret n'est requis.
+# ============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://exemple.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: cle-factice-ci
+      SUPABASE_SERVICE_ROLE_KEY: cle-factice-ci
+      NEXT_PUBLIC_SITE_URL: https://getplanmymeal.com
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build

@@ -14,7 +14,7 @@ const MESSAGE_ECHEC = 'Email ou mot de passe incorrect.';
 const FENETRE_MS = 15 * 60_000;
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'login', limit: 10, windowMs: FENETRE_MS });
+  const limited = await enforceRateLimit(request, { name: 'login', limit: 10, windowMs: FENETRE_MS });
   if (limited) return limited;
 
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: MESSAGE_ECHEC }, { status: 400 });
     }
 
-    if (!rateLimit(`login-email:${email}`, 5, FENETRE_MS).ok) {
+    if (!(await rateLimit(`login-email:${email}`, 5, FENETRE_MS)).ok) {
       logRequestSecurityEvent(request, 'login_abuse', { email });
       return NextResponse.json(
         { error: 'Trop de tentatives. Réessayez dans quelques minutes.' },

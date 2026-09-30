@@ -28,6 +28,8 @@ import { OptimiserButton } from '@/components/dashboard/OptimiserBar';
 import { cn } from '@/lib/utils';
 import { createBrowserClient } from '@/lib/supabase';
 import { prechaufferCatalogue } from '@/lib/catalogue-cache';
+import LandingHeader from '@/components/LandingHeader';
+import LandingFooter from '@/components/LandingFooter';
 
 export function DashboardShell({
   children,
@@ -59,6 +61,20 @@ export function DashboardShell({
       return () => window.clearTimeout(t);
     }
   }, []);
+
+  // Visiteur NON connecté (pages publiques : catalogue, fiches recettes) :
+  // en-tête et pied de page du site, pas la navigation de l'application —
+  // ses onglets (Planning, Frigo, Compte) ne mènent qu'à la page de connexion.
+  const { user, loading } = useAuth();
+  if (!loading && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LandingHeader />
+        <main>{children}</main>
+        <LandingFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

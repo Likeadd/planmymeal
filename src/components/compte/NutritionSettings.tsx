@@ -23,7 +23,7 @@ import type { Objectif, Regime } from '@/types';
 import { REGIMES_CHOIX } from '@/lib/regimes';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import {
-  GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, resoudreExclusions, correspond,
+  GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, enregistrerExclusions, correspond,
   type FamilleAliments,
 } from '@/lib/exclusions-alimentaires';
 
@@ -78,7 +78,6 @@ export function NutritionSettings() {
   const [regimes, setRegimes] = useState<Regime[]>([]);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [detestes, setDetestes] = useState<string[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [chargement, setChargement] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -92,17 +91,22 @@ export function NutritionSettings() {
     if (!user) return;
     let alive = true;
     (async () => {
-      const [ing, al, di, re] = await Promise.all([
+      const [ing, al, di, alF, diF, re] = await Promise.all([
         supabase.from('ingredients').select('id, nom'),
         supabase.from('user_allergies').select('ingredient_id').eq('user_id', user.id),
         supabase.from('user_dislikes').select('ingredient_id').eq('user_id', user.id),
+        supabase.from('user_allergy_families').select('code').eq('user_id', user.id),
+        supabase.from('user_dislike_families').select('code').eq('user_id', user.id),
         supabase.from('user_diets').select('regime').eq('user_id', user.id),
       ]);
       if (!alive) return;
       const liste = (ing.data ?? []) as Ingredient[];
-      setIngredients(liste);
-      setAllergies(codesCoches(TOUTES_ALLERGIES, new Set((al.data ?? []).map(r => r.ingredient_id)), liste));
-      setDetestes(codesCoches(DETESTES, new Set((di.data ?? []).map(r => r.ingredient_id)), liste));
+      // Familles enregistrées ∪ familles déduites des anciennes lignes par ingrédient
+      const union = (a: string[], b: string[]) => [...new Set([...a, ...b])];
+      setAllergies(union((alF.data ?? []).map(r => r.code),
+        codesCoches(TOUTES_ALLERGIES, new Set((al.data ?? []).map(r => r.ingredient_id)), liste)));
+      setDetestes(union((diF.data ?? []).map(r => r.code),
+        codesCoches(DETESTES, new Set((di.data ?? []).map(r => r.ingredient_id)), liste)));
       setRegimes((re.data ?? []).map(r => r.regime as Regime));
       // Calories enregistrées : personnalisées seulement si ≠ calcul automatique
       const enregistrees = kcalValide(profile?.calories_par_jour);
@@ -146,20 +150,8 @@ export function NutritionSettings() {
         .eq('id', user.id);
       if (corpsErr) console.warn('Profil corporel non enregistré :', corpsErr.message);
 
-      // 3. Allergies / détestés / régimes : on remplace l'ensemble.
-      const allergieIds = resoudreExclusions(allergies, TOUTES_ALLERGIES, ingredients);
-      const detesteIds = resoudreExclusions(detestes, DETESTES, ingredients).filter(id => !allergieIds.includes(id));
-
-      const remplacer = async (table: 'user_allergies' | 'user_dislikes', ids: number[]) => {
-        const { error: del } = await supabase.from(table).delete().eq('user_id', user.id);
-        if (del) throw del;
-        if (ids.length === 0) return;
-        const { error: ins } = await supabase.from(table)
-          .insert(ids.map(ingredient_id => ({ user_id: user.id, ingredient_id })));
-        if (ins) throw ins;
-      };
-      await remplacer('user_allergies', allergieIds);
-      await remplacer('user_dislikes', detesteIds);
+      // 3. Allergies / détestés (familles) puis régimes : on remplace l'ensemble.
+      await enregistrerExclusions(supabase, user.id, allergies, detestes);
 
       const { error: delDiet } = await supabase.from('user_diets').delete().eq('user_id', user.id);
       if (delDiet) throw delDiet;

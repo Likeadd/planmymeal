@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'budget-get', limit: 120, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'budget-get', limit: 120, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const admin = getSupabaseAdmin();
@@ -75,13 +75,13 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   // Anti-abus : écriture budget/base/dépense + recalcul snapshot
-  const limited = enforceRateLimit(request, { name: 'budget', limit: 60, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'budget', limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'budget', limit: 60, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'budget', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json();

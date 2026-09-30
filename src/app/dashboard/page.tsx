@@ -62,7 +62,7 @@ function DashboardInner() {
   const {
     days, shoppingSections, loading, regenerating, error, empty,
     semaineDebut, fallbackUtilise, cuisinesDiversifiees, recup, regenerate, regenerateMeal, regeneratingSlots, toggleShoppingItem, uncheckAllShoppingItems,
-    swapMeal, moveMeal, markMealStatus, fetchSwapSuggestions, toggleRestes, restesToggling,
+    swapMeal, setRepasLibre, viderCreneau, moveMeal, markMealStatus, fetchSwapSuggestions, toggleRestes, restesToggling,
     weekOffset, estSemaineCourante, goToWeek, goToCurrentWeek,
     fromCache, estEnLigne,
   } = useWeeklyPlan(initialOffset);
@@ -174,6 +174,20 @@ function DashboardInner() {
     } catch (err) {
       // Le modal reste ouvert : l'utilisateur peut choisir une autre recette
       toast.error(err instanceof Error ? err.message : "Impossible d'appliquer ce repas. Réessayez.");
+    } finally {
+      setSwapping(false);
+    }
+  };
+
+  const handleCustomMeal = async (texte: string) => {
+    if (!swapModal) return;
+    setSwapping(true);
+    try {
+      await setRepasLibre(swapModal.dayIndex, swapModal.repas, texte);
+      toast.success('Repas enregistré ✓');
+      setSwapModal(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Impossible d'enregistrer ce repas. Réessayez.");
     } finally {
       setSwapping(false);
     }
@@ -388,10 +402,11 @@ function DashboardInner() {
             <WeekColumns days={days} semaineDebut={semaineDebut} dragOver={dragOver} moving={moving} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots} nbDesserts={recup.desserts}
               onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
               onDrop={handleDrop} onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
+              onCustom={setRepasLibre} onVider={viderCreneau}
               onToggleRestes={toggleRestes} restesToggling={restesToggling} estSemaineCourante={estSemaineCourante} />
             <WeekDayTabs days={days} semaineDebut={semaineDebut} estSemaineCourante={estSemaineCourante} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots}
-              onDragStart={handleDragStart}
-              onDrop={handleDrop} onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
+              onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
+              onCustom={setRepasLibre} onVider={viderCreneau}
               onToggleRestes={toggleRestes} restesToggling={restesToggling} />
           </>)}
 
@@ -434,6 +449,7 @@ function DashboardInner() {
           fetchSuggestions={fetchSwapSuggestions}
           swapping={swapping}
           onSelect={handleConfirmSwap}
+          onCustom={handleCustomMeal}
           onClose={() => setSwapModal(null)}
         />
       )}
@@ -565,7 +581,7 @@ function BatchCookingAccordion({ days, open, onToggle }: {
   for (const d of days) {
     if (!batchCoveredDays.includes(d.jourIndex)) continue;
     for (const meal of [d.dejeuner, d.diner]) {
-      if (!meal) continue;
+      if (!meal || meal.personnalise) continue;
       if (!batchRecipes.has(meal.id)) batchRecipes.set(meal.id, { titre: meal.titre, days: [] });
       batchRecipes.get(meal.id)!.days.push(d.jour);
     }

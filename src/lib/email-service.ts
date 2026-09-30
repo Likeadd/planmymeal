@@ -11,7 +11,7 @@
 // ============================================================================
 
 import type { Db } from '@/lib/rotation-engine';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, sendEmailsBatch, type SendEmailInput } from '@/lib/email';
 import { welcomeEmailHtml, weeklyDigestEmailHtml, weeklyDigestSubject } from '@/lib/email-templates';
 import { formatWeekRange, getMondayWithOffset } from '@/lib/dates';
 
@@ -99,111 +99,112 @@ export async function envoyerDigestsHebdomadaires(
   if (plansError) throw new Error(plansError.message);
   if (!plans || plans.length === 0) return result;
 
-  for (const plan of plans) {
-    try {
-      // weekly_plans.user_id est nullable dans les types générés → garde explicite
-      const userId = plan.user_id;
-      if (userId == null) { result.ignores.push({ userId: '', reason: 'plan sans utilisateur' }); continue; }
+  // 2. Lectures GROUPÉES (4 requêtes au total, au lieu de 4 par foyer) :
+  // profils, repas des plans et snapshots budget de tous les foyers d'un coup.
+  const plansValides = plans.filter((p): p is { user_id: string; id: number } => p.user_id != null);
+  for (const p of plans) if (p.user_id == null) result.ignores.push({ userId: '', reason: 'plan sans utilisateur' });
+  const userIds = plansValides.map(p => p.user_id);
+  const planIds = plansValides.map(p => p.id);
 
-      // Profil + préférences email
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('email, full_name, budget_hebdo, depense_reference_hebdo, emails_transactionnels, digest_envoye_le')
-        .eq('id', userId)
-        .single();
-
-      if (!prof?.email) { result.ignores.push({ userId, reason: 'email manquant' }); continue; }
-      const email = prof.email;
-      if (prof.emails_transactionnels === false) { result.ignores.push({ userId, reason: 'opt-out' }); continue; }
-      if (prof.digest_envoye_le === semaineDebut) { result.ignores.push({ userId, reason: 'déjà envoyé cette semaine' }); continue; }
-      if (emailFilter && !email.includes(emailFilter)) { result.ignores.push({ userId, reason: 'filtre' }); continue; }
-
-      // Nombre de repas du planning
-      const { count: nbRepas } = await supabase
-        .from('plan_meals')
-        .select('meal_id', { count: 'exact', head: true })
-        .eq('plan_id', plan.id);
-
-      // Aperçu « Au menu » : les repas de la semaine dans l'ordre (jour puis
-      // créneau), titres uniques — meals titre brut, la casse est appliquée
-      // au rendu du template (même convention que l'app).
-      const plats: string[] = [];
-      const { data: rowsPlats } = await supabase
-        .from('plan_meals')
-        .select('jour_semaine, ordre, meals(titre)')
-        .eq('plan_id', plan.id)
-        .order('jour_semaine', { ascending: true })
-        .order('ordre', { ascending: true });
-      if (rowsPlats) {
-        const vus = new Set<string>();
-        for (const row of rowsPlats as unknown as Array<{ meals: { titre: string } | null }>) {
-          const t = row.meals?.titre;
-          if (t && !vus.has(t)) { vus.add(t); plats.push(t); }
-          if (plats.length >= 8) break;
-        }
-      }
-
-      // Snapshot budget de la semaine
-      const { data: snap } = await supabase
-        .from('weekly_budget_snapshots')
-        .select('depense, economie, depense_reelle')
-        .eq('user_id', userId)
-        .eq('semaine_debut', semaineDebut)
-        .maybeSingle();
-
-      // Économies : base déclarée d'abord (dépense réelle si saisie, sinon prévue)
-      let economieReference: number | null = null;
-      const ref = prof.depense_reference_hebdo ?? null;
-      if (ref != null && snap) {
-        const depense = snap.depense_reelle ?? snap.depense;
-        economieReference = Math.round((ref - depense) * 100) / 100;
-      }
-      const economie = snap?.economie ?? null;
-
-      const cible: DigestCible = {
-        userId,
-        email,
-        nbRepas: nbRepas ?? 0,
-        semaineDebut,
-        economie,
-        economieReference,
-        plats,
-      };
-      result.cibles.push(cible);
-
-      if (!send) continue; // dry run
-
-      const prenom = (prof.full_name || '').split(' ')[0] || '';
-      const data = {
-        prenom,
-        nbRepas: cible.nbRepas,
-        semaineLabel: `du ${formatWeekRange(semaineDebut)}`,
-        economie: economie != null && prof.budget_hebdo != null ? economie : null,
-        economieReference,
-        plats: cible.plats ?? [],
-        semaineDebut: cible.semaineDebut,
-      };
-      const r = await sendEmail({
-        to: email,
-        subject: weeklyDigestSubject(data),
-        html: weeklyDigestEmailHtml(data, BASE_URL),
-      });
-
-      if (r.ok) {
-        result.envoyes++;
-        // Garde anti-doublon : marquer la semaine comme envoyée
-        await supabase
-          .from('profiles')
-          .update({ digest_envoye_le: semaineDebut })
-          .eq('id', userId);
-      } else {
-        result.echecs++;
-        console.error(`Digest ❌ ${prof.email} : ${r.error}`);
-      }
-    } catch (e) {
-      result.echecs++;
-      console.error(`Digest erreur user ${plan.user_id}:`, e);
+  const TRANCHE = 200; // taille raisonnable pour un filtre .in()
+  const parTranches = async <T,>(ids: (string | number)[], lire: (tranche: never[]) => PromiseLike<{ data: T[] | null }>) => {
+    const lignes: T[] = [];
+    for (let i = 0; i < ids.length; i += TRANCHE) {
+      const { data } = await lire(ids.slice(i, i + TRANCHE) as never[]);
+      lignes.push(...(data ?? []));
     }
+    return lignes;
+  };
+
+  const [profils, repas, snapshots] = await Promise.all([
+    parTranches(userIds, t => supabase.from('profiles')
+      .select('id, email, full_name, budget_hebdo, depense_reference_hebdo, emails_transactionnels, digest_envoye_le')
+      .in('id', t)),
+    // Pas de colonne « ordre » sur plan_meals : on trie par jour puis créneau
+    // (déjeuner avant dîner). L'ancien tri sur « ordre » faisait échouer la
+    // requête → l'aperçu « Au menu » de l'email était toujours vide.
+    parTranches(planIds, t => supabase.from('plan_meals')
+      .select('plan_id, jour_semaine, repas_type, texte_libre, meals!plan_meals_meal_id_fkey(titre)')
+      .in('plan_id', t)
+      .in('repas_type', ['dejeuner', 'diner'])
+      .order('jour_semaine', { ascending: true })
+      .order('repas_type', { ascending: true })),
+    parTranches(userIds, t => supabase.from('weekly_budget_snapshots')
+      .select('user_id, depense, economie, depense_reelle')
+      .eq('semaine_debut', semaineDebut)
+      .in('user_id', t)),
+  ]);
+
+  const profilPar = new Map(profils.map(p => [p.id, p]));
+  const snapPar = new Map(snapshots.map(s => [s.user_id, s]));
+  const repasPar = new Map<number, { titre: string | null }[]>();
+  for (const r of repas as unknown as { plan_id: number; texte_libre: string | null; meals: { titre: string } | null }[]) {
+    const liste = repasPar.get(r.plan_id) ?? [];
+    liste.push({ titre: r.meals?.titre ?? r.texte_libre ?? null });
+    repasPar.set(r.plan_id, liste);
+  }
+
+  const aEnvoyer: { userId: string; email: SendEmailInput }[] = [];
+  for (const plan of plansValides) {
+    const userId = plan.user_id;
+    const prof = profilPar.get(userId);
+    if (!prof?.email) { result.ignores.push({ userId, reason: 'email manquant' }); continue; }
+    const email = prof.email;
+    if (prof.emails_transactionnels === false) { result.ignores.push({ userId, reason: 'opt-out' }); continue; }
+    if (prof.digest_envoye_le === semaineDebut) { result.ignores.push({ userId, reason: 'déjà envoyé cette semaine' }); continue; }
+    if (emailFilter && !email.includes(emailFilter)) { result.ignores.push({ userId, reason: 'filtre' }); continue; }
+
+    const lignesRepas = repasPar.get(plan.id) ?? [];
+    // Aperçu « Au menu » : titres uniques dans l'ordre du planning (max 8)
+    const plats: string[] = [];
+    const vus = new Set<string>();
+    for (const { titre } of lignesRepas) {
+      if (titre && !vus.has(titre)) { vus.add(titre); plats.push(titre); }
+      if (plats.length >= 8) break;
+    }
+
+    // Économies : base déclarée d'abord (dépense réelle si saisie, sinon prévue)
+    const snap = snapPar.get(userId);
+    let economieReference: number | null = null;
+    const ref = prof.depense_reference_hebdo ?? null;
+    if (ref != null && snap) {
+      const depense = snap.depense_reelle ?? snap.depense;
+      economieReference = Math.round((ref - depense) * 100) / 100;
+    }
+    const economie = snap?.economie ?? null;
+
+    const cible: DigestCible = {
+      userId, email, nbRepas: lignesRepas.length, semaineDebut, economie, economieReference, plats,
+    };
+    result.cibles.push(cible);
+    if (!send) continue; // dry run
+
+    const data = {
+      prenom: (prof.full_name || '').split(' ')[0] || '',
+      nbRepas: cible.nbRepas,
+      semaineLabel: `du ${formatWeekRange(semaineDebut)}`,
+      economie: economie != null && prof.budget_hebdo != null ? economie : null,
+      economieReference,
+      plats,
+      semaineDebut,
+    };
+    aEnvoyer.push({ userId, email: { to: email, subject: weeklyDigestSubject(data), html: weeklyDigestEmailHtml(data, BASE_URL) } });
+  }
+
+  if (!send || aEnvoyer.length === 0) return result;
+
+  // 3. Envoi par lots de 100 (un appel HTTP par lot), puis garde anti-doublon
+  // posée en UNE requête pour tous les envois réussis.
+  const envois = await sendEmailsBatch(aEnvoyer.map(a => a.email));
+  const reussis: string[] = [];
+  envois.forEach((r, k) => {
+    if (r.ok) { result.envoyes++; reussis.push(aEnvoyer[k].userId); }
+    else { result.echecs++; console.error(`Digest ❌ ${aEnvoyer[k].email.to} : ${r.error}`); }
+  });
+  for (let i = 0; i < reussis.length; i += TRANCHE) {
+    await supabase.from('profiles')
+      .update({ digest_envoye_le: semaineDebut })
+      .in('id', reussis.slice(i, i + TRANCHE));
   }
 
   return result;

@@ -23,7 +23,7 @@ import {
 const ERREUR_GENERIQUE = 'Inscription impossible pour le moment. Réessayez dans un instant.';
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'signup', limit: 5, windowMs: 10 * 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'signup', limit: 5, windowMs: 10 * 60_000 });
   if (limited) return limited;
 
   try {
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Limite par email (anti-bombardement d'une boîte) ──
-    if (!rateLimit(`signup-email:${email}`, 3, 60 * 60_000).ok) {
+    if (!(await rateLimit(`signup-email:${email}`, 3, 60 * 60_000)).ok) {
       logRequestSecurityEvent(request, 'signup_abuse', { email });
       return NextResponse.json({ error: 'Trop de tentatives pour cette adresse. Réessayez plus tard.' }, { status: 429 });
     }

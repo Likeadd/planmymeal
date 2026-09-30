@@ -17,7 +17,7 @@ import { chargerCatalogue } from '@/lib/catalogue';
 import { toMealCatalogue } from '@/lib/db-rows';
 import { construireNewsletterHebdo } from '@/lib/newsletter';
 import { newsletterEmailHtml, newsletterSubject } from '@/lib/email-templates';
-import { sendEmail } from '@/lib/email';
+import { sendEmailsBatch } from '@/lib/email';
 import { publicErrorMessage } from '@/lib/utils';
 import { logRequestSecurityEvent } from '@/lib/security-log';
 
@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
     const { data: abonnes, error: erreurAbonnes } = await supabase
       .from('newsletter_subscribers')
       .select('email, token')
-      .is('unsubscribed_at', null);
+      .is('unsubscribed_at', null)
+      .not('confirmed_at', 'is', null); // double opt-in : confirmés uniquement
     if (erreurAbonnes) throw erreurAbonnes;
     if (!abonnes || abonnes.length === 0) {
       return NextResponse.json({ success: true, envoyes: 0, reason: 'aucun abonné' });
@@ -51,19 +52,22 @@ export async function GET(request: NextRequest) {
 
     const catalogue = (await chargerCatalogue(supabase)).map(toMealCatalogue);
 
+    // Un seul menu pour tout le monde cette semaine : seul le lien de
+    // désinscription change d'un abonné à l'autre.
+    const messages = abonnes.flatMap(abonne => {
+      const data = construireNewsletterHebdo(catalogue, baseUrl, abonne.token);
+      return data ? [{ to: abonne.email, subject: newsletterSubject(data), html: newsletterEmailHtml(data, baseUrl) }] : [];
+    });
+
     let envoyes = 0;
     let echecs = 0;
-    for (const abonne of abonnes) {
-      const data = construireNewsletterHebdo(catalogue, baseUrl, abonne.token);
-      if (!data) continue;
-      if (dryRun) { envoyes++; continue; }
-
-      const res = await sendEmail({
-        to: abonne.email,
-        subject: newsletterSubject(data),
-        html: newsletterEmailHtml(data, baseUrl),
-      });
-      if (res.ok) envoyes++; else echecs++;
+    if (dryRun) {
+      envoyes = messages.length;
+    } else {
+      // Envoi groupé : un appel HTTP par lot de 100 abonnés.
+      for (const r of await sendEmailsBatch(messages)) {
+        if (r.ok) envoyes++; else echecs++;
+      }
     }
 
     return NextResponse.json({ success: true, envoyes, echecs, total: abonnes.length, dryRun });

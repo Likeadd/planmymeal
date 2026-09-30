@@ -17,13 +17,13 @@ import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 
 /** GET : état complet du foyer de l'appelant (créé à la volée si absent). */
 export async function GET(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'foyer-partage', limit: 30, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'foyer-partage', limit: 30, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user, supabase } = await getAuthUserAndClient(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'foyer-partage', limit: 30, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'foyer-partage', limit: 30, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const { data: householdId, error: ensureError } = await supabase.rpc('ensure_household');
@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
 
 /** PATCH : réglages du foyer — délai des recettes aimées (créateur uniquement). */
 export async function PATCH(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'foyer-partage', limit: 20, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'foyer-partage', limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user, supabase } = await getAuthUserAndClient(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'foyer-partage', limit: 20, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'foyer-partage', limit: 20, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({} as Record<string, unknown>));
@@ -111,13 +111,13 @@ type Action =
 
 /** POST : actions du foyer (inviter, rejoindre, quitter, retirer un membre…). */
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'foyer-partage-action', limit: 15, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'foyer-partage-action', limit: 15, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user, supabase } = await getAuthUserAndClient(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'foyer-partage-action', limit: 15, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'foyer-partage-action', limit: 15, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = (await request.json().catch(() => ({}))) as Partial<Action>;

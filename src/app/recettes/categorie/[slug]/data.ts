@@ -1,6 +1,5 @@
 import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/../supabase/database.types';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { chargerCatalogue } from '@/lib/catalogue';
 import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
 
@@ -12,11 +11,7 @@ import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
  */
 export const getCatalogueSeo = cache(async (): Promise<MealCatalogue[]> => {
   try {
-    const supabase = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const supabase = getSupabaseAdmin();
     const lignes = await chargerCatalogue(supabase);
     return lignes.map(toMealCatalogue);
   } catch {

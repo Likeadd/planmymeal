@@ -34,6 +34,18 @@ export const TAILLE_PAGE = 100;
  */
 export const NB_SEMAINES_GLISSANTES = 4;
 
+/** Générations menées en parallèle (le moteur est surtout en attente réseau). */
+export const CONCURRENCE = 5;
+
+/**
+ * Sobriété : on ne prépare pas des semaines que personne ne regardera.
+ * - semaine suivante (offset 1) : comptes connectés dans les 90 derniers jours ;
+ * - semaines 2 à 4 : comptes connectés dans les 30 derniers jours.
+ * Un compte absent de la carte d'activité est traité comme actif (prudence).
+ */
+export const ACTIF_SEMAINE_SUIVANTE_JOURS = 90;
+export const ACTIF_FENETRE_JOURS = 30;
+
 export type StatutUtilisateur = 'genere' | 'existant' | 'erreur';
 
 export interface ResultatUtilisateur {
@@ -114,6 +126,8 @@ export async function orchestrerAutoPlan(
     logger?: (message: string) => void;
     /** Injection (tests) : remplace l'appel au vrai moteur */
     generer?: typeof genererSemaineUtilisateur;
+    /** Filtre d'éligibilité supplémentaire (ex. activité récente) */
+    eligible?: (userId: string) => boolean;
   } = {}
 ): Promise<ResultatAutoPlan> {
   const {
@@ -123,6 +137,7 @@ export async function orchestrerAutoPlan(
     cursor = null,
     logger = () => {},
     generer = genererSemaineUtilisateur,
+    eligible = () => true,
   } = options;
 
   // Le cron tourne le dimanche 19h UTC (20h/21h Paris selon la saison) → il
@@ -155,57 +170,84 @@ export async function orchestrerAutoPlan(
 
   logger(`${profils.length} profil(s) éligible(s) pour la semaine ${semaineDebut}`);
 
+  // Résultats rangés dans l'ordre des profils, quel que soit l'ordre de fin
+  // des traitements parallèles.
+  const parProfil = new Map<string, ResultatUtilisateur>();
+  const aTraiter: ProfilCron[] = [];
+  let curseurAtteint = !cursor;
+
   for (const profil of profils) {
     // Continuation : sauter jusqu'au curseur inclus
-    if (cursor && result.results.length === 0) {
+    if (!curseurAtteint) {
       if (profil.id !== cursor) continue;
+      curseurAtteint = true;
     }
 
     // Opt-out explicite (colonne auto_generate, défaut true)
     if (profil.auto_generate === false) {
-      result.results.push({ userId: profil.id, status: 'existant', message: 'auto-génération désactivée' });
+      parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'auto-génération désactivée' });
       continue;
     }
+    if (!eligible(profil.id)) {
+      parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'compte inactif — non planifié' });
+      continue;
+    }
+    aTraiter.push(profil);
+  }
+
+  // Par lots de CONCURRENCE : vérification anti-écrasement en parallèle, puis
+  // décision (limite du run) dans l'ordre, puis générations en parallèle.
+  for (let i = 0; i < aTraiter.length; i += CONCURRENCE) {
+    const lot = aTraiter.slice(i, i + CONCURRENCE);
 
     // 2. Anti-écrasement : une semaine déjà planifiée (manuellement ou par un
     //    run précédent) n'est jamais régénérée par le cron.
-    const { data: existant } = await supabase
-      .from('weekly_plans')
-      .select('id')
-      .eq('user_id', profil.id)
-      .eq('semaine_debut', semaineDebut);
-    if ((existant as { id: number }[] | null)?.length) {
-      result.conserves++;
-      result.results.push({ userId: profil.id, status: 'existant', message: 'planning déjà présent' });
-      logger(`⏭ ${profil.email ?? profil.id} — déjà planifié`);
-      continue;
-    }
+    const dejaPlanifies = await Promise.all(lot.map(async profil => {
+      const { data: existant } = await supabase
+        .from('weekly_plans')
+        .select('id')
+        .eq('user_id', profil.id)
+        .eq('semaine_debut', semaineDebut);
+      return !!(existant as { id: number }[] | null)?.length;
+    }));
 
-    if (dryRun) {
-      result.generes++; // décompte prospectif (aucune écriture)
-      result.results.push({ userId: profil.id, status: 'genere', message: 'dry run' });
-      continue;
-    }
-
-    if (result.generes >= limit) {
-      result.results.push({ userId: profil.id, status: 'erreur', message: 'limite du run atteinte (reprendre avec cursor)' });
-      continue;
-    }
+    const aGenerer: ProfilCron[] = [];
+    lot.forEach((profil, k) => {
+      if (dejaPlanifies[k]) {
+        result.conserves++;
+        parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'planning déjà présent' });
+        logger(`⏭ ${profil.email ?? profil.id} — déjà planifié`);
+      } else if (dryRun) {
+        result.generes++; // décompte prospectif (aucune écriture)
+        parProfil.set(profil.id, { userId: profil.id, status: 'genere', message: 'dry run' });
+      } else if (result.generes + aGenerer.length >= limit) {
+        parProfil.set(profil.id, { userId: profil.id, status: 'erreur', message: 'limite du run atteinte (reprendre avec cursor)' });
+      } else {
+        aGenerer.push(profil);
+      }
+    });
 
     // 3. Délégation au vrai moteur — même chemin que POST /api/generate-week
     //    (scoring, mémoire, frigo, famille, budget, équipement, restes,
     //    desserts, RPC transactionnel, snapshot budget).
-    try {
-      logger(`▶ ${profil.email ?? profil.id}`);
-      await generer(profil.id, semaineDebut, supabase as unknown as Db);
-      result.generes++;
-      result.results.push({ userId: profil.id, status: 'genere', message: 'planning généré' });
-    } catch (err) {
-      result.erreurs++;
-      const message = err instanceof Error ? err.message : String(err);
-      result.results.push({ userId: profil.id, status: 'erreur', message });
-      logger(`❌ ${profil.email ?? profil.id} — ${message}`);
-    }
+    await Promise.all(aGenerer.map(async profil => {
+      try {
+        logger(`▶ ${profil.email ?? profil.id}`);
+        await generer(profil.id, semaineDebut, supabase as unknown as Db);
+        result.generes++;
+        parProfil.set(profil.id, { userId: profil.id, status: 'genere', message: 'planning généré' });
+      } catch (err) {
+        result.erreurs++;
+        const message = err instanceof Error ? err.message : String(err);
+        parProfil.set(profil.id, { userId: profil.id, status: 'erreur', message });
+        logger(`❌ ${profil.email ?? profil.id} — ${message}`);
+      }
+    }));
+  }
+
+  for (const profil of profils) {
+    const r = parProfil.get(profil.id);
+    if (r) result.results.push(r);
   }
 
   result.total = profils.length;
@@ -230,9 +272,17 @@ export async function orchestrerAutoPlanGlissant(
     logger?: (message: string) => void;
     generer?: typeof genererSemaineUtilisateur;
     nbSemaines?: number;
+    /** userId → dernière connexion (ms). Absent = aucun filtre d'activité. */
+    activite?: Map<string, number> | null;
+    /** Horloge injectée (tests) */
+    maintenant?: number;
   } = {}
 ): Promise<ResultatAutoPlan[]> {
-  const { nbSemaines = NB_SEMAINES_GLISSANTES, ...rest } = options;
+  const { nbSemaines = NB_SEMAINES_GLISSANTES, activite = null, maintenant = Date.now(), ...rest } = options;
+  const actifDepuis = (jours: number) => (userId: string) => {
+    const derniere = activite?.get(userId);
+    return derniere == null || maintenant - derniere <= jours * 86_400_000;
+  };
   const resultats: ResultatAutoPlan[] = [];
   for (let offsetWeeks = 1; offsetWeeks <= nbSemaines; offsetWeeks++) {
     resultats.push(await orchestrerAutoPlan(supabase, {
@@ -240,6 +290,7 @@ export async function orchestrerAutoPlanGlissant(
       offsetWeeks,
       // Le curseur de reprise ne s'applique qu'à la semaine la plus urgente.
       cursor: offsetWeeks === 1 ? rest.cursor : null,
+      eligible: actifDepuis(offsetWeeks === 1 ? ACTIF_SEMAINE_SUIVANTE_JOURS : ACTIF_FENETRE_JOURS),
     }));
   }
   return resultats;

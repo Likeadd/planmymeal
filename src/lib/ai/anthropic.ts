@@ -20,12 +20,19 @@ import {
   type Validateur,
 } from './provider';
 
-const MODELE = 'claude-sonnet-4-5';
+// Sonnet actuel : même gamme que le modèle d'origine (claude-sonnet-4-5), moins
+// cher ($2/$10 au lieu de $3/$15 par million de tokens). Changements d'API
+// pris en compte ci-dessous : réflexion adaptative toujours active (on règle
+// l'effort, pas la réflexion), `temperature` non par défaut refusée (400),
+// arrêt `refusal` possible.
+const MODELE = 'claude-sonnet-5-5';
 const API_URL = 'https://api.anthropic.com/v1/messages';
-const MAX_SORTIE = 4096;
+// La réflexion compte dans max_tokens : marge large (requête non streamée).
+const MAX_SORTIE = 16000;
 
 interface ReponseMessages {
   content?: { type: string; text?: string }[];
+  stop_reason?: string;
 }
 
 /** Extrait le premier bloc JSON équilibré d'un texte (objet ou tableau). */
@@ -73,11 +80,18 @@ async function appeler(
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
+      // Repli côté serveur si le modèle décline la requête (catégorie de refus
+      // gérée par l'API, aucune liste de modèles à maintenir).
+      'anthropic-beta': 'server-side-fallback-2026-07-01',
     },
     body: JSON.stringify({
       model: MODELE,
       max_tokens: options.maxTokens ?? MAX_SORTIE,
-      temperature: options.temperature,
+      // `temperature` n'est plus envoyée : une valeur non par défaut renvoie
+      // une erreur 400 sur ce modèle (options.temperature reste ignorée).
+      // Extraction structurée simple → effort bas : moins de tokens, plus rapide.
+      output_config: { effort: 'low' },
+      fallbacks: 'default',
       ...(options.system ? { system: options.system } : {}),
       messages: [{ role: 'user', content: prompt }],
     }),
@@ -92,6 +106,8 @@ async function appeler(
   }
 
   const data = (await res.json()) as ReponseMessages;
+  // Requête déclinée (et repli déclinant aussi) : aucune recette à extraire.
+  if (data.stop_reason === 'refusal') return '';
   return (data.content ?? [])
     .filter(b => b.type === 'text')
     .map(b => b.text ?? '')

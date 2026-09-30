@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import { getMondayWithOffset, JOURS_NOMS } from '@/lib/dates';
 import { celebrate } from '@/lib/celebrate';
-import { toRecettePlanning, COLONNES_RECETTE_PLANNING, type WeeklyPlanEmbed } from '@/lib/db-rows';
+import { toRecettePlanning, repasPersonnalise, COLONNES_RECETTE_PLANNING, type WeeklyPlanEmbed } from '@/lib/db-rows';
 import { chargerSuggestionsSwap } from '@/lib/catalogue';
 import {
   saveCachedWeek, loadCachedWeek, queuePendingToggle,
@@ -51,6 +51,10 @@ interface UseWeeklyPlanResult {
   uncheckAllShoppingItems: () => void;
   /** Swap un repas sur un jour donné (dejeuner / diner / dessert / dessert midi) — liste de courses recalculée côté serveur */
   swapMeal: (dayIndex: number, repas: RepasSlot, newMealId: number) => Promise<void>;
+  /** Remplacer un créneau par un texte libre (« Repas anniversaire »…) — sans recette ni courses */
+  setRepasLibre: (dayIndex: number, repas: RepasSlot, texte: string) => Promise<void>;
+  /** Vider un créneau (« pas de repas ») — liste de courses recalculée */
+  viderCreneau: (dayIndex: number, repas: RepasSlot) => Promise<void>;
   /** Déplacer un repas d'un jour à l'autre (desserts inclus ; dessert ↔ repas principal permis) */
   moveMeal: (fromDay: number, fromType: RepasSlot, toDay: number, toType: RepasSlot) => void;
   /** Marquer un repas comme cooked/skipped */
@@ -164,7 +168,7 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
       // recette) et les macros détaillées n'étaient téléchargées que pour finir
       // dans le cache localStorage sans jamais être affichées. Le type
       // `RecettePlanning` interdit désormais à une carte de les lire.
-      .select(`id, semaine_debut, fallback_utilise, cuisines_diversifiees, plan_meals(jour_semaine, repas_type, meal_id, est_reste_de, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
+      .select(`id, semaine_debut, fallback_utilise, cuisines_diversifiees, plan_meals(jour_semaine, repas_type, meal_id, est_reste_de, texte_libre, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
       .eq('is_active', true)
       .eq('semaine_debut', semaineDebut)
       .order('generated_at', { ascending: false })
@@ -219,10 +223,12 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
     for (const pm of planEmbed.plan_meals || []) {
       const dayIdx = pm.jour_semaine;
       const mealRaw = pm.meals;
-      if (!mealRaw || dayIdx < 0 || dayIdx > 6) continue;
+      if (dayIdx < 0 || dayIdx > 6) continue;
+      if (!mealRaw && !pm.texte_libre) continue;
 
-      // Normaliser meal_ingredients → ingredients pour le calcul du prix
-      const meal = toRecettePlanning(mealRaw);
+      // Normaliser meal_ingredients → ingredients pour le calcul du prix ;
+      // créneau « texte libre » → pseudo-recette sans ingrédient
+      const meal = mealRaw ? toRecettePlanning(mealRaw) : repasPersonnalise(pm.texte_libre!);
 
       if (pm.repas_type === 'dejeuner') {
         builtDays[dayIdx].dejeuner = meal;
@@ -480,6 +486,31 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
     }
   }, [semaineDebut, loadPlan]);
 
+  // Repas « texte libre » : le créneau porte le texte de l'utilisateur, la
+  // liste de courses est recalculée côté serveur (l'ancienne recette disparaît).
+  const setRepasLibre = useCallback(async (dayIndex: number, repas: RepasSlot, texte: string, vider = false): Promise<void> => {
+    setError('');
+    try {
+      const res = await fetch('/api/repas-libre', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semaine_debut: semaineDebut, jour_semaine: dayIndex, repas_type: repas, texte, vider }),
+      });
+      if (!res.ok) {
+        const { error: apiError } = await res.json().catch(() => ({ error: `Erreur ${res.status}` }));
+        throw new Error(apiError || `Erreur ${res.status}`);
+      }
+      await loadPlan();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement du repas");
+      throw err;
+    }
+  }, [semaineDebut, loadPlan]);
+  const viderCreneau = useCallback(
+    (dayIndex: number, repas: RepasSlot) => setRepasLibre(dayIndex, repas, '', true),
+    [setRepasLibre],
+  );
+
   // Déplacer un repas d'un jour à un autre (drag & drop) via l'API serveur :
   // la logique métier (permutation, rupture du lien restes) vit côté serveur,
   // la liste de courses est recalculée et le snapshot budget rafraîchi —
@@ -602,6 +633,8 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
     toggleShoppingItem,
     uncheckAllShoppingItems,
     swapMeal,
+    setRepasLibre,
+    viderCreneau,
     moveMeal,
     markMealStatus,
     toggleRestes,

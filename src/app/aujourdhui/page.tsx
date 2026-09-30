@@ -29,7 +29,7 @@ import { getMondayWithOffset, getMonday } from '@/lib/dates';
 import { formatMinutes, formatCalories, cn, titreMajuscules } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
 import { recetteHref } from '@/lib/seo';
-import { COLONNES_RECETTE_PLANNING, toRecettePlanning, type WeeklyPlanEmbed } from '@/lib/db-rows';
+import { COLONNES_RECETTE_PLANNING, toRecettePlanning, repasPersonnalise, type WeeklyPlanEmbed } from '@/lib/db-rows';
 import type { RecettePlanning } from '@/types';
 
 interface BudgetRecap {
@@ -83,7 +83,7 @@ export default function AujourdhuiPage() {
         const lirePlan = async () => {
           const { data: plan } = await supabase
             .from('weekly_plans')
-            .select(`id, plan_meals(jour_semaine, repas_type, est_reste_de, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
+            .select(`id, plan_meals(jour_semaine, repas_type, est_reste_de, texte_libre, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
             .eq('user_id', user.id)
             .eq('is_active', true)
             .eq('semaine_debut', semaineDuProchain)
@@ -96,7 +96,7 @@ export default function AujourdhuiPage() {
               ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
               repas_type: pm.repas_type,
               est_reste_de: pm.est_reste_de,
-              meal: pm.meals ? toRecettePlanning(pm.meals) : null,
+              meal: pm.meals ? toRecettePlanning(pm.meals) : pm.texte_libre ? repasPersonnalise(pm.texte_libre) : null,
             }))
             .sort((a, b) => a.ordre - b.ordre);
           const prochains = slots.filter(s => s.meal);
@@ -194,21 +194,25 @@ export default function AujourdhuiPage() {
           <div className="mt-6 space-y-4 [&>*]:animate-card-in">
             {/* ── Prochain repas ─────────────────────────────────────────── */}
             {prochain ? (
-              <Link href={recetteHref(prochain.meal)}
+              <Link href={prochain.meal.personnalise ? '/dashboard' : recetteHref(prochain.meal)}
                 className="block group rounded-3xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-5">
                 <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-2 flex items-center gap-1.5">
                   <ChefHat className="w-3.5 h-3.5" /> Prochain repas · {prochain.label}
                 </p>
                 <h2 className="font-display font-bold text-xl text-gray-900 group-hover:text-brand-600 transition-colors">
-                  {titreMajuscules(prochain.meal.titre)}
+                  {prochain.meal.personnalise ? `✏️ ${prochain.meal.titre}` : titreMajuscules(prochain.meal.titre)}
                 </h2>
                 <div className="flex items-center gap-3.5 text-[13px] text-gray-500 mt-2.5">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> {formatMinutes(prochain.meal.temps_preparation + (prochain.meal.temps_cuisson || 0))}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5" /> {formatCalories(prochain.meal.calories_par_portion)}
-                  </span>
+                  {!prochain.meal.personnalise && (
+                    <>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> {formatMinutes(prochain.meal.temps_preparation + (prochain.meal.temps_cuisson || 0))}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5" /> {formatCalories(prochain.meal.calories_par_portion)}
+                      </span>
+                    </>
+                  )}
                   {nbRepasRestants > 1 && (
                     <span className="text-gray-500">+ {nbRepasRestants - 1} autre{nbRepasRestants > 2 ? 's' : ''} repas aujourd&apos;hui</span>
                   )}

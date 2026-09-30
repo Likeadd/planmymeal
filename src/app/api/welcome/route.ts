@@ -15,13 +15,13 @@ import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 export async function POST(request: NextRequest) {
   // Anti-abus : l'email de bienvenue est idempotent côté service, mais on
   // borne le débit pour ne pas servir de déclencheur à du spam.
-  const limited = enforceRateLimit(request, { name: 'welcome', limit: 5, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'welcome', limit: 5, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'welcome', limit: 5, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'welcome', limit: 5, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const result = await envoyerEmailBienvenue(user.id, getSupabaseAdmin());

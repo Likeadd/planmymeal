@@ -23,7 +23,12 @@
     "images": "tsx scripts/generate-meal-images.ts",
     "icons": "tsx scripts/generate-icons.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "backup": "tsx scripts/backup.ts"
+    "backup": "tsx scripts/backup.ts",
+    "db:verifier": "tsx scripts/verifier-schema.ts",
+    "db:types": "npx supabase gen types typescript --linked --schema public > supabase/database.types.ts",
+    "db:push": "npx supabase db push",
+    "photos:chercher": "tsx scripts/photos-libres.ts",
+    "photos:appliquer": "tsx scripts/photos-appliquer.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
@@ -55,5 +60,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'preferences-get', limit: 120, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'preferences-get', limit: 120, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const admin = getSupabaseAdmin();
@@ -65,13 +65,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'preferences', limit: 60, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'preferences', limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'preferences', limit: 60, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'preferences', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({} as Record<string, unknown>));
@@ -125,7 +125,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'preferences-delete', limit: 120, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'preferences-delete', limit: 120, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const mealId = Number(request.nextUrl.searchParams.get('meal_id'));

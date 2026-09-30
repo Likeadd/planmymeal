@@ -17,13 +17,13 @@ import { recomputeShoppingList, snapshotBudget } from '@/lib/rotation-engine';
  *   3. rafraîchir le snapshot budget
  */
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'swap-meal', limit: 40, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'swap-meal', limit: 40, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'swap-meal', limit: 40, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'swap-meal', limit: 40, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json();
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       const { error } = await admin.from('plan_meals')
-        .update({ meal_id: meal.id, est_reste_de: null })
+        .update({ meal_id: meal.id, est_reste_de: null, texte_libre: null })
         .eq('plan_id', plan.id).eq('jour_semaine', jour).eq('repas_type', repasType);
       if (error) throw new Error(error.message);
     } else {

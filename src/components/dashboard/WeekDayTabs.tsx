@@ -1,70 +1,56 @@
 'use client';
 
 // ============================================================================
-// WeekDayTabs — vue mobile (< md) du planning : onglets de jours « LUN 7 »,
-// « MAR 8 »… et liste verticale fluide des repas du jour sélectionné.
-// Remplace la grille horizontale (WeekColumns est réservée au ≥ md).
-// Les cartes du jour réutilisent MealCard → toutes les actions restent
-// accessibles sur mobile (swap, régénérer, cuisiné/sauté, restes).
-// Charte : jour actif = terracotta, aujourd'hui = pastille terracotta,
-// batch = lavande, restes = sable. Barre de jours : grille 7 colonnes qui tient
-// dans l'écran (dès 320px) — aucun jour coupé, aucun défilement horizontal.
+// WeekDayTabs — vue mobile (< lg) du planning : « un jour à la fois ».
+// En-tête « Aujourd'hui · Lundi 28 septembre » avec flèches, deux grandes
+// cartes « Ce midi » / « Ce soir » (dessert en ligne dessous), deux boutons
+// en toutes lettres : « Voir la recette » et « Changer ». « Changer » ouvre un
+// panneau à 4 choix (ChangerSheet). Pastilles L M M J V S D en bas ; balayage
+// horizontal = jour précédent / suivant.
 // ============================================================================
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { Package } from 'lucide-react';
-import type { DayPlan, RecettePlanning, RepasSlot } from '@/types';
+import { ChevronLeft, ChevronRight, Loader2, Package, Check } from 'lucide-react';
+import type { DayPlan, RepasSlot } from '@/types';
 import { formatMinutes, cn, titreMajuscules } from '@/lib/utils';
+import { formatPrix, prixParPortion } from '@/lib/budget';
 import { useAuth } from '@/components/AuthProvider';
 import { useTodayIndex } from '@/lib/useTodayIndex';
-import { MealCard } from '@/components/dashboard/MealCard';
+import { recetteHref } from '@/lib/seo';
+import { useChangerCreneau, repasDuCreneau } from '@/components/dashboard/useChangerCreneau';
 
 export function WeekDayTabs({
   days, semaineDebut, estSemaineCourante, mealStatuses, regeneratingSlots,
-  onDragStart, onDrop, onMarkStatus, onSwap, onRegenerate, onToggleRestes, restesToggling,
+  onMarkStatus, onSwap, onRegenerate, onCustom, onVider, onToggleRestes, restesToggling,
 }: {
   days: DayPlan[];
-  /** Lundi de la semaine affichée (YYYY-MM-DD) → numéros de jours réels */
+  /** Lundi de la semaine affichée (YYYY-MM-DD) */
   semaineDebut: string;
-  /** true = la semaine affichée est la semaine en cours (badge « Aujourd'hui ») */
   estSemaineCourante: boolean;
   mealStatuses: Record<number, string>;
   regeneratingSlots: Record<string, boolean>;
-  onDragStart: (e: React.DragEvent, dayIndex: number, repas: RepasSlot) => void;
-  onDrop: (e: React.DragEvent, toDay: number, toType: RepasSlot) => void;
   onMarkStatus: (mealId: number, status: 'cooked' | 'skipped') => void;
+  /** Ouvre la liste des recettes (SwapModal) */
   onSwap: (dayIndex: number, repas: RepasSlot) => void;
-  onRegenerate: (dayIndex: number, repas: RepasSlot) => void;
+  onRegenerate: (dayIndex: number, repas: RepasSlot) => Promise<void>;
+  onCustom: (dayIndex: number, repas: RepasSlot, texte: string) => Promise<void>;
+  onVider: (dayIndex: number, repas: RepasSlot) => Promise<void>;
   onToggleRestes: (jourDiner: number) => void;
   restesToggling: number | null;
 }) {
-  // Jour sélectionné : aujourd'hui si la semaine courante, sinon lundi.
-  // Sélection pilotée par index (0-6) : stable d'une semaine à l'autre.
-  //
-  // Le jour courant vient de useTodayIndex (fuseau Paris, sentinelle -1 au SSR).
-  // On ne fige donc PAS le jour dans un useState : pendant l'hydratation la
-  // valeur vaut -1 et l'initialisation retomberait sur lundi pour de bon.
-  // `selectedOverride` mémorise le clic de l'utilisateur, sinon on suit le jour.
   const todayIndex = useTodayIndex();
   const [selectedOverride, setSelectedOverride] = useState<number | null>(null);
   const selectedIndex = selectedOverride ?? (estSemaineCourante && todayIndex >= 0 ? todayIndex : 0);
-  // État batch (même source de vérité que WeekColumns : le profil)
-  // — appelé AVANT tout return conditionnel (règle des hooks).
   const { profile } = useAuth();
+  const { ouvrir, element: changerElement } = useChangerCreneau(days, {
+    onMarkStatus, onSwap, onRegenerate, onCustom, onVider, onToggleRestes, restesToggling,
+  });
 
-  // Balayage horizontal sur la liste du jour → jour précédent / suivant.
-  // Geste retenu seulement s'il est franchement horizontal (le scroll
-  // vertical de la page reste intact) et hors champs de saisie / zones
-  // qui défilent elles-mêmes horizontalement.
+  // Balayage horizontal → jour précédent / suivant (scroll vertical intact)
   const toucheDebut = useRef<{ x: number; y: number } | null>(null);
-  const SEUIL_BALAYAGE_PX = 60;
   const onTouchStart = (e: React.TouchEvent) => {
-    const cible = e.target as HTMLElement;
-    if (cible.closest('input, textarea, select, [data-no-swipe], .overflow-x-auto')) {
-      toucheDebut.current = null;
-      return;
-    }
+    if ((e.target as HTMLElement).closest('input, textarea, select, [data-no-swipe]')) { toucheDebut.current = null; return; }
     toucheDebut.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
@@ -73,120 +59,165 @@ export function WeekDayTabs({
     if (!debut) return;
     const dx = e.changedTouches[0].clientX - debut.x;
     const dy = e.changedTouches[0].clientY - debut.y;
-    if (Math.abs(dx) < SEUIL_BALAYAGE_PX || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    setSelectedOverride(i => {
-      const courant = i ?? selectedIndex;
-      return dx < 0 ? Math.min(days.length - 1, courant + 1) : Math.max(0, courant - 1);
-    });
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    aller(dx < 0 ? 1 : -1);
   };
+  const aller = (delta: number) =>
+    setSelectedOverride(Math.min(days.length - 1, Math.max(0, selectedIndex + delta)));
 
-  // Bornage : la semaine change (nav ← →) → l'index reste valide (0-6).
   const day = days[selectedIndex] ?? days[0];
   if (!day) return null;
 
-  const repasDuJour = [day.dejeuner, day.diner, day.dessert, day.dessertMidi].filter(Boolean) as RecettePlanning[];
-  const minutesDuJour = repasDuJour.reduce((s, m) => s + m.temps_preparation + (m.temps_cuisson || 0), 0);
-
+  const estAujourdhui = estSemaineCourante && todayIndex === day.jourIndex;
   const batchActive = profile?.batch_cooking === true;
   const batchJour = profile?.batch_cooking_jour ?? 6;
-  const batchCovered = batchActive ? [batchJour, (batchJour + 1) % 7, (batchJour + 2) % 7, (batchJour + 3) % 7] : [];
-  const isBatchSource = batchActive && day.jourIndex === batchJour;
-  const isBatchDay = batchActive && batchCovered.includes(day.jourIndex) && !isBatchSource;
+  const batchCovered = batchActive ? [1, 2, 3].map(k => (batchJour + k) % 7) : [];
   const sourceDiner = day.restesDe != null ? days[day.jourIndex - 1]?.diner : null;
 
+  const repasDe = (slot: RepasSlot) => repasDuCreneau(day, slot);
+
   return (
-    <div className="lg:hidden">
-      {/* ── Barre de jours : 7 colonnes égales, toujours entièrement visibles ── */}
-      <div role="tablist" aria-label="Jours de la semaine" className="grid grid-cols-7 gap-1 min-[400px]:gap-1.5 sm:gap-2 py-1.5">
-        {days.map((d, i) => {
-          const estAujourdhui = estSemaineCourante && todayIndex === d.jourIndex;
-          const selected = i === selectedIndex;
-          const estJourBatchTab = batchActive && d.jourIndex === batchJour;
+    <div className="lg:hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* ── En-tête du jour ── */}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <button onClick={() => aller(-1)} disabled={selectedIndex === 0} aria-label="Jour précédent"
+          className="w-11 h-11 shrink-0 rounded-full bg-creme-100 border border-gray-200 flex items-center justify-center text-gray-700 disabled:opacity-30">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="text-center min-w-0">
+          <p className={cn('text-sm font-semibold', estAujourdhui ? 'text-brand-600' : 'text-gray-500')}>
+            {estAujourdhui ? "Aujourd'hui" : ' '}
+          </p>
+          <h3 className="font-display font-bold text-2xl text-gray-900 leading-tight">{dateLongue(semaineDebut, day.jourIndex)}</h3>
+        </div>
+        <button onClick={() => aller(1)} disabled={selectedIndex >= days.length - 1} aria-label="Jour suivant"
+          className="w-11 h-11 shrink-0 rounded-full bg-creme-100 border border-gray-200 flex items-center justify-center text-gray-700 disabled:opacity-30">
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {batchActive && day.jourIndex === batchJour && (
+        <div className="mt-4 flex items-center gap-2 rounded-2xl bg-accent-100 border border-accent-200 px-4 py-3 text-sm font-semibold text-accent-700">
+          <Package className="w-4 h-4" /> Session batch cooking — vous cuisinez pour 4 jours
+        </div>
+      )}
+      {batchCovered.includes(day.jourIndex) && (
+        <div className="mt-4 rounded-2xl bg-accent-50 border border-accent-200 px-4 py-3 text-sm font-semibold text-accent-600">
+          🍱 Repas déjà cuisinés lors de la session batch
+        </div>
+      )}
+
+      {/* ── Ce midi / Ce soir ── */}
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        {(['dejeuner', 'diner'] as const).map(slot => {
+          const meal = repasDe(slot);
+          const dessertSlot: RepasSlot = slot === 'dejeuner' ? 'dessert_midi' : 'dessert';
+          const dessert = repasDe(dessertSlot);
+          const estReste = slot === 'dejeuner' && day.restesDe != null;
+          const soir = slot === 'diner';
+          const chargement = !!regeneratingSlots[`${day.jourIndex}-${slot}`];
+          const status = meal && !meal.personnalise ? mealStatuses[meal.id] : undefined;
+          const prix = meal && !meal.personnalise ? prixParPortion(meal) : null;
+          const lien = meal ? (estReste && day.restesDe ? `/recette/${day.restesDe}` : recetteHref(meal)) : null;
+
           return (
-            <button key={d.jour} role="tab" aria-selected={selected}
-              onClick={() => setSelectedOverride(i)}
-              className={cn(
-                'flex flex-col items-center gap-1 px-0.5 py-2.5 sm:py-3 rounded-2xl border min-w-0 transition-all',
-                selected
-                  ? 'bg-brand-500 border-brand-500 text-white shadow-cta'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-brand-200',
-              )}>
-              <span className={cn('text-[11px] font-bold uppercase tracking-[0.08em]', selected ? 'text-white/85' : 'text-gray-500')}>
-                {d.jour.slice(0, 3)}
-              </span>
-              {/* Chiffre du jour en sans-serif (audit #21 : données lisibles) */}
-              <span className="font-bold text-lg min-[400px]:text-xl leading-none tabular-nums">
-                {jourDuMois(semaineDebut, d.jourIndex)}
-              </span>
-              {estJourBatchTab && <span aria-hidden>🍳</span>}
-              {estAujourdhui && (
-                <span className={cn('text-[11px] font-bold uppercase tracking-wide rounded-full px-1.5',
-                  selected ? 'bg-white/25 text-white' : 'bg-brand-100 text-brand-600')}>
-                  Auj.
-                </span>
+            <section key={slot} className="relative rounded-3xl border border-gray-100 bg-white shadow-card overflow-hidden">
+              <div className={cn('h-24 flex items-center justify-center text-5xl', soir ? 'bg-accent-100' : 'bg-brand-100')} aria-hidden>
+                {!meal ? '🍽️' : meal.personnalise ? '✏️' : estReste ? '🍱' : soir ? '🌙' : '☀️'}
+              </div>
+              <div className="p-5">
+                <p className={cn('text-xs font-bold uppercase tracking-[0.1em]', soir ? 'text-accent-700' : 'text-brand-600')}>
+                  {soir ? '☾ Ce soir' : '☀ Ce midi'}
+                </p>
+
+                {!meal ? (
+                  <>
+                    <h4 className="mt-1.5 font-bold text-xl text-gray-400">Rien de prévu</h4>
+                    <button onClick={() => ouvrir(day.jourIndex, slot)}
+                      className="mt-4 w-full min-h-[52px] rounded-2xl bg-brand-500 text-white font-semibold text-base active:scale-[0.98] transition-transform">
+                      Ajouter un repas
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="mt-1.5 font-bold text-xl text-gray-900 leading-snug">
+                      {meal.personnalise ? meal.titre
+                        : estReste ? `Restes de ${sourceDiner ? titreMajuscules(sourceDiner.titre) : 'la veille'}`
+                        : titreMajuscules(meal.titre)}
+                    </h4>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {meal.personnalise ? 'Repas personnalisé'
+                        : estReste ? 'Cuisiné la veille · à réchauffer'
+                        : `${formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}${prix != null ? ` · ${formatPrix(prix)} par personne` : ''}`}
+                    </p>
+                    {status === 'cooked' && (
+                      <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-sauge-100 px-2.5 py-1 text-xs font-semibold text-sauge-700">
+                        <Check className="w-3.5 h-3.5" /> C&apos;est fait
+                      </p>
+                    )}
+                    <div className="mt-4 flex gap-3">
+                      {!meal.personnalise && lien && (
+                        <Link href={lien}
+                          className={cn('flex-1 min-h-[52px] rounded-2xl text-white font-semibold text-base flex items-center justify-center active:scale-[0.98] transition-transform',
+                            soir ? 'bg-accent-600' : 'bg-brand-500')}>
+                          Voir la recette
+                        </Link>
+                      )}
+                      <button onClick={() => ouvrir(day.jourIndex, slot)}
+                        className="flex-1 min-h-[52px] rounded-2xl bg-creme-100 border border-gray-200 text-gray-800 font-semibold text-base active:scale-[0.98] transition-transform">
+                        Changer
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Dessert : une ligne simple sous le repas */}
+                <button onClick={() => ouvrir(day.jourIndex, dessertSlot)}
+                  className="mt-4 w-full flex items-center justify-between gap-3 rounded-2xl bg-sauge-50 border border-sauge-100 px-4 min-h-[48px] text-left">
+                  <span className="min-w-0 truncate text-sm text-sauge-800">
+                    🍰 {dessert ? <>Dessert : <strong>{dessert.personnalise ? dessert.titre : titreMajuscules(dessert.titre)}</strong></> : 'Ajouter un dessert'}
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold text-sauge-700">{dessert ? 'Changer' : '+'}</span>
+                </button>
+              </div>
+
+              {chargement && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center" aria-live="polite">
+                  <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+                </div>
               )}
+            </section>
+          );
+        })}
+      </div>
+
+      {/* ── Pastilles des jours ── */}
+      <div role="tablist" aria-label="Jours de la semaine" className="mt-6 flex justify-between gap-1" data-no-swipe>
+        {days.map((d, i) => {
+          const actif = i === selectedIndex;
+          const auj = estSemaineCourante && todayIndex === d.jourIndex;
+          return (
+            <button key={d.jour} role="tab" aria-selected={actif} aria-label={d.jour}
+              onClick={() => setSelectedOverride(i)}
+              className={cn('w-11 h-11 rounded-full border text-sm font-bold transition-colors',
+                actif ? 'bg-brand-500 border-brand-500 text-white shadow-cta'
+                  : auj ? 'bg-brand-50 border-brand-300 text-brand-600'
+                  : 'bg-white border-gray-200 text-gray-600')}>
+              {d.jour.charAt(0)}
             </button>
           );
         })}
       </div>
 
-      {/* ── Liste verticale fluide du jour sélectionné ───────────────── */}
-      <div role="tabpanel" className="mt-5 touch-pan-y" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div className="flex items-center justify-between mb-3 gap-3">
-          <h3 className="font-display font-bold text-2xl text-gray-900 truncate">{day.jour}</h3>
-          <span className="text-xs font-semibold tracking-[0.14em] uppercase text-gray-500 shrink-0">
-            {repasDuJour.length} repas · {formatMinutes(minutesDuJour)}
-          </span>
-        </div>
-
-        {/* Bandeaux contexte du jour : batch (lavande) / restes (sable) */}
-        {isBatchSource && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl bg-accent-100 border border-accent-200 px-3.5 py-2.5 text-[13px] font-semibold text-accent-700">
-            <Package className="w-3.5 h-3.5" /> Session batch cooking — vous cuisinez pour 4 jours
-          </div>
-        )}
-        {isBatchDay && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl bg-accent-50 border border-accent-200 px-3.5 py-2.5 text-[13px] font-semibold text-accent-600">
-            🍱 Repas déjà cuisinés lors de la session batch
-          </div>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {([
-            { repas: 'Déjeuner', slot: 'dejeuner' as RepasSlot, meal: day.dejeuner, restesDe: day.restesDe ?? null },
-            { repas: 'Dessert midi', slot: 'dessert_midi' as RepasSlot, meal: day.dessertMidi, restesDe: null },
-            { repas: 'Dîner', slot: 'diner' as RepasSlot, meal: day.diner, restesDe: null },
-            { repas: 'Dessert', slot: 'dessert' as RepasSlot, meal: day.dessert, restesDe: null },
-          ]).map(({ repas, slot, meal, restesDe }) => (
-            <MealCard key={slot} repas={repas} meal={meal} status={meal ? mealStatuses[meal.id] : null}
-              slot={slot} jourIndex={day.jourIndex}
-              restesDe={restesDe} sourceTitre={sourceDiner ? titreMajuscules(sourceDiner.titre) : null}
-              regenerating={!!regeneratingSlots[`${day.jourIndex}-${slot}`]}
-              onDragStart={e => onDragStart(e, day.jourIndex, slot)}
-              onDrop={e => onDrop(e, day.jourIndex, slot)}
-              onMarkStatus={onMarkStatus}
-              onSwap={() => onSwap(day.jourIndex, slot)}
-              onRegenerate={() => onRegenerate(day.jourIndex, slot)}
-              onToggleRestes={slot === 'diner' && day.jourIndex <= 5 ? () => onToggleRestes(day.jourIndex) : undefined}
-              restesToggling={restesToggling === day.jourIndex}
-              resteActifPourDemain={day.restesDe != null} />
-          ))}
-        </div>
-
-        {/* Rappel discret : les créneaux vides du jour sont gérables via « + Ajouter » */}
-        {repasDuJour.length === 0 && (
-          <p className="mt-4 text-center text-sm text-gray-500">
-            Aucun repas planifié ce jour — utilisez <Link href="/dashboard" className="text-brand-600 underline underline-offset-2">le bouton Ajouter</Link> d&apos;un créneau.
-          </p>
-        )}
-      </div>
+      {changerElement}
     </div>
   );
 }
 
-/** Numéro réel du jour dans le mois : lundi (semaineDebut) + jourIndex */
-function jourDuMois(semaineDebut: string, jourIndex: number): string {
+/** « Lundi 28 septembre » depuis le lundi de la semaine + index du jour */
+function dateLongue(semaineDebut: string, jourIndex: number): string {
   const d = new Date(`${semaineDebut}T12:00:00`);
   d.setDate(d.getDate() + jourIndex);
-  return String(d.getDate());
+  const s = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

@@ -108,6 +108,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorkerRegister />
         <CookieBanner />
         <GlobalLoadingBar />
+        {/* Sans JavaScript, les animations d'apparition ne se déclencheraient
+            jamais : le contenu reste alors visible. */}
+        <noscript>
+          <style>{'[data-reveal],[style*="opacity:0"]{opacity:1!important;transform:none!important}'}</style>
+        </noscript>
         <ScrollReveal />
         <Toaster position="bottom-right" toastOptions={{ style: { background: '#332A1E', color: '#FBF8F1', border: 'none' } }} />
         {/* Plausible : mesure d'audience sans cookie ni donnée personnelle

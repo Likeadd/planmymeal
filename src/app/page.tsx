@@ -14,10 +14,12 @@ import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
 import { Reveal } from '@/components/Reveal';
+import { ChiffresCles } from '@/components/ChiffresCles';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { STRIPE_ENABLED, STRIPE_PLANS } from '@/lib/stripe';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
+import { IMPORTS_GRATUITS_PAR_MOIS } from '@/lib/limites';
 
 // SoftwareApplication schema.org : type d'app, plateforme et offres tarifaires
 const jsonLdApp = {
@@ -46,6 +48,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <IconsBanner />
+        <ChiffresCles />
         <Features />
         <Collection />
         <NouveautesMonde />
@@ -69,7 +72,11 @@ function Hero() {
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2">
         {/* Côté gauche : texte */}
         <div className="flex items-center px-6 sm:px-12 py-16 lg:py-24">
-          <Reveal className="max-w-xl" y={20}>
+          {/* Au-dessus de la ligne de flottaison : animation CSS (joue sans
+              JavaScript ni IntersectionObserver). Avec Reveal, le titre H1 était
+              servi en opacity:0 et restait invisible tant que le JS n'avait pas
+              tourné (aperçus de partage, robots, JS lent). */}
+          <div className="max-w-xl animate-hero-in">
             {isLoggedIn ? (
               <p className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
                 Bonjour {userName} — vous êtes connecté
@@ -113,9 +120,9 @@ function Hero() {
               ))}
             </ul>
             <p className="mt-3 text-xs text-gray-500">
-              Votre première semaine est offerte · sans carte bancaire
+              Gratuit pour toujours · sans carte bancaire
             </p>
-          </Reveal>
+          </div>
         </div>
 
         {/* Côté droit : terracotta tuilé, lever de soleil en haut à droite */}
@@ -550,8 +557,10 @@ function Promo() {
 
 // ─── Tarifs ─────────────────────────────────────────────────────────────────
 // Détail aligné sur STRIPE_PLANS (src/lib/stripe.ts) et les limites réelles du
-// code : 4 optimisations / 7 jours en gratuit (limite api/generate-week), 10 recettes
-// personnelles, budget & batch verrouillés côté Pro (api/budget).
+// code : 4 optimisations / 7 jours en gratuit (limite api/generate-week),
+// IMPORTS_GRATUITS_PAR_MOIS imports IA de recettes (api/import-recette), prix
+// max par portion (api/budget) et rythme Gourmand réservés Pro. Batch cooking,
+// restes et foyer partagé sont inclus pour tous (aucun verrou dans le code).
 
 const PLANS = [
   {
@@ -571,12 +580,11 @@ const PLANS = [
     desc: 'Pour les foodies exigeants',
     features: [
       'Optimisations illimitées',
-      'Rotation mémoire 21 jours complète',
-      'Rythme desserts Gourmand & batch cooking',
+      'Rythme desserts Gourmand (5-6 soirs)',
       'Prix max par portion',
-      'Recettes personnelles',
+      'Imports de recettes illimités',
     ],
-    cta: 'Passer à Pro', highlighted: true,
+    cta: STRIPE_ENABLED ? 'Passer à Pro' : 'Pro bientôt — commencer gratuitement', highlighted: true,
   },
   {
     name: 'Famille', price: '9,99', emoji: '👨‍👩‍👧‍👦',
@@ -585,10 +593,8 @@ const PLANS = [
       'Tout le plan Pro',
       '5 profils avec allergies & dégoûts',
       'Menus de compromis négociés par le moteur',
-      'Planning collaboratif',
-      'Courses partagées',
     ],
-    cta: 'Passer à Famille', highlighted: false,
+    cta: STRIPE_ENABLED ? 'Passer à Famille' : 'Famille bientôt — commencer gratuitement', highlighted: false,
   },
 ];
 
@@ -614,12 +620,12 @@ const COMPARATIF: { label: string; gratuit: CelluleComparatif; pro: CelluleCompa
   { label: 'Budget & dépense de la semaine', gratuit: true, pro: true, famille: true },
   { label: 'Prix max par portion', gratuit: false, pro: true, famille: true },
   { label: 'Macros détaillées (kcal, protéines…)', gratuit: true, pro: true, famille: true },
-  { label: 'Recettes personnelles', gratuit: true, pro: true, famille: true },
+  { label: 'Imports de recettes (IA)', gratuit: `${IMPORTS_GRATUITS_PAR_MOIS} / mois`, pro: 'Illimités', famille: 'Illimités' },
   { label: 'Frigo anti-gaspi', gratuit: true, pro: true, famille: true },
   { label: 'Profils', gratuit: '1', pro: '1', famille: '5' },
   { label: 'Allergies & dégoûts par membre', gratuit: false, pro: false, famille: true },
   { label: 'Menus de compromis famille', gratuit: false, pro: false, famille: true },
-  { label: 'Planning collaboratif & courses partagées', gratuit: false, pro: false, famille: true },
+  { label: 'Foyer partagé entre plusieurs comptes', gratuit: true, pro: true, famille: true },
 ];
 
 function CellulePlan({ value }: { value: CelluleComparatif }) {
@@ -647,6 +653,14 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
         Le détail de chaque plan, ligne par ligne.
       </p>
 
+      {/* Replié par défaut : le tableau (16 lignes) doublait la hauteur de la
+          section tarifs, surtout sur mobile. */}
+      <details className="group mt-6">
+        <summary className="mx-auto w-fit list-none cursor-pointer select-none inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:border-brand-300 hover:text-brand-600 transition-colors [&::-webkit-details-marker]:hidden">
+          <span className="group-open:hidden">Voir le comparatif détaillé</span>
+          <span className="hidden group-open:inline">Masquer le comparatif</span>
+          <ArrowRight className="w-4 h-4 rotate-90 group-open:-rotate-90 transition-transform" />
+        </summary>
       <div className="mt-6 bg-white rounded-3xl border border-gray-200 shadow-xs overflow-x-auto">
         <table className="w-full min-w-[640px] text-left">
           <thead>
@@ -711,6 +725,7 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
           </tbody>
         </table>
       </div>
+      </details>
     </Reveal>
   );
 }
@@ -756,7 +771,7 @@ function Pricing() {
         {/* Ruban offre : rappel au moment de la décision */}
         <div className="mt-10 flex justify-center">
           <span className="inline-flex items-center gap-2 bg-brand-50 border border-brand-200 rounded-full px-4 py-1.5 text-xs font-semibold text-brand-700">
-            🎁 Votre première semaine est offerte — sans carte bancaire
+            🎁 Gratuit pour toujours — sans carte bancaire
           </span>
         </div>
 

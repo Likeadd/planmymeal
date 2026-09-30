@@ -27,6 +27,32 @@ import { orchestrerAutoPlanGlissant, type AutoPlanDb } from '@/lib/auto-planner'
 import { publicErrorMessage } from '@/lib/utils';
 import { logRequestSecurityEvent } from '@/lib/security-log';
 
+/** Durée max de la fonction (s) : les générations tournent par lots parallèles. */
+export const maxDuration = 300;
+
+/**
+ * Dernière connexion de chaque compte (auth.users), pour ne pas préparer de
+ * semaines aux comptes inactifs. En cas d'échec : null → aucun filtre.
+ */
+async function chargerActivite(): Promise<Map<string, number> | null> {
+  try {
+    const admin = getSupabaseAdmin();
+    const activite = new Map<string, number>();
+    for (let page = 1; ; page++) {
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (error) return null;
+      for (const u of data.users) {
+        const t = Date.parse(u.last_sign_in_at ?? u.created_at);
+        if (Number.isFinite(t)) activite.set(u.id, t);
+      }
+      if (data.users.length < 1000) break;
+    }
+    return activite;
+  } catch {
+    return null;
+  }
+}
+
 /** Plafond dur : un run ne génère jamais plus de 500 plannings (timeout Vercel) */
 const LIMIT_MAX = 500;
 
@@ -59,9 +85,10 @@ export async function GET(request: NextRequest) {
 
     // Fenêtre glissante : maintient toujours les 4 semaines à venir prêtes
     // (pas seulement la suivante), en 4 passes indépendantes idempotentes.
+    const activite = await chargerActivite();
     const resultats = await orchestrerAutoPlanGlissant(
       getSupabaseAdmin() as unknown as AutoPlanDb,
-      { dryRun, limit, cursor, logger: m => console.log(`[auto-generate-week] ${m}`) }
+      { dryRun, limit, cursor, activite, logger: m => console.log(`[auto-generate-week] ${m}`) }
     );
 
     return NextResponse.json({

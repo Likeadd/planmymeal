@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import LandingHeader from '@/components/LandingHeader';
+import LandingFooter from '@/components/LandingFooter';
 import { notFound } from 'next/navigation';
 import { Clock, Flame } from 'lucide-react';
 import { CATEGORIES_SEO, getCategorieSeo } from '@/lib/categories-seo';
@@ -43,6 +45,8 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
   const recettes = catalogue.filter(categorie.filtre).sort(categorie.tri).slice(0, NB_AFFICHEES);
 
   return (
+    <>
+    <LandingHeader />
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <nav className="text-sm text-gray-500 mb-4">
         <Link href="/recettes" className="hover:text-brand-600">Recettes</Link>
@@ -57,7 +61,7 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
         {CATEGORIES_SEO.filter(c => c.slug !== categorie.slug).map(c => (
           <Link key={c.slug} href={`/recettes/categorie/${c.slug}`}
             className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-50 text-gray-600 hover:bg-brand-50 hover:text-brand-700 transition-colors">
-            {c.h1.replace(/^Recettes /i, '')}
+            {c.court}
           </Link>
         ))}
       </div>
@@ -92,5 +96,7 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
         </Link>
       </div>
     </main>
+    <LandingFooter />
+    </>
   );
 }

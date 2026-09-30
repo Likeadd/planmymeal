@@ -13,7 +13,7 @@ const TENTATIVES_PAR_EMAIL = 5;
 const FENETRE_MS = 15 * 60_000;
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'verify-otp', limit: 10, windowMs: FENETRE_MS });
+  const limited = await enforceRateLimit(request, { name: 'verify-otp', limit: 10, windowMs: FENETRE_MS });
   if (limited) return limited;
 
   try {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Code invalide.' }, { status: 400 });
     }
 
-    if (!rateLimit(`otp-email:${email}`, TENTATIVES_PAR_EMAIL, FENETRE_MS).ok) {
+    if (!(await rateLimit(`otp-email:${email}`, TENTATIVES_PAR_EMAIL, FENETRE_MS)).ok) {
       logRequestSecurityEvent(request, 'otp_abuse', { email });
       return NextResponse.json(
         { error: 'Trop de tentatives. Demandez un nouveau code dans quelques minutes.' },

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import { recetteHref } from '@/lib/seo';
 import { CATEGORIES_SEO } from '@/lib/categories-seo';
 
@@ -30,11 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const supabase = getSupabaseAdmin();
     const { count } = await supabase
       .from('meals')
       .select('id', { count: 'exact', head: true })

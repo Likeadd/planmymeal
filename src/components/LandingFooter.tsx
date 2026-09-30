@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Heart, Mail } from 'lucide-react';
 import { anneeParis } from '@/lib/dates';
 import { BrandMark } from '@/components/BrandMark';
+import { CATEGORIES_SEO } from '@/lib/categories-seo';
 
 const FOOTER_LINKS = [
   ['FAQ', '/faq'],
@@ -52,7 +53,7 @@ export default function LandingFooter() {
           <div>
             {statut === 'ok' ? (
               <p className="text-brand-600 font-medium text-sm pt-2">
-                🎉 Merci ! Votre premier menu arrive dimanche.
+                📬 Presque fini ! Confirmez votre adresse via l’email que nous venons d’envoyer.
               </p>
             ) : (
               <form onSubmit={inscrire}
@@ -97,6 +98,20 @@ export default function LandingFooter() {
           </div>
         </div>
       </div>
+
+      {/* Idées de recettes : pages catégories (SEO + navigation des visiteurs) */}
+      <nav aria-label="Idées de recettes" className="border-t border-gray-200 py-5 px-4">
+        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-gray-600">
+          {CATEGORIES_SEO.map(cat => (
+            <li key={cat.slug}>
+              <Link href={`/recettes/categorie/${cat.slug}`} className="hover:text-brand-600 transition-colors">
+                {cat.court}
+              </Link>
+            </li>
+          ))}
+          <li><Link href="/recettes" className="hover:text-brand-600 transition-colors">Toutes les recettes</Link></li>
+        </ul>
+      </nav>
 
       <div className="border-t border-gray-200 py-6 flex flex-col items-center gap-3">
         <BrandMark href="/" height={26} />

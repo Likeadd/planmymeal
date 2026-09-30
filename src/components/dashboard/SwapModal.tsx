@@ -8,7 +8,7 @@
 // ============================================================================
 
 import { useState, useEffect, useMemo } from 'react';
-import { Clock, Loader2, Plus, Shuffle, Utensils, X } from 'lucide-react';
+import { Clock, Loader2, Pencil, Plus, Shuffle, Utensils, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { RecetteSwap, RepasSlot, TypeRepas } from '@/types';
 import { formatMinutes, formatCalories, familleDessert, titreMajuscules } from '@/lib/utils';
@@ -56,13 +56,17 @@ function swapFiltersPour(repas: RepasSlot) {
 }
 
 export function SwapModal({
-  dayIndex, repas, fetchSuggestions, swapping, onSelect, onClose,
+  dayIndex, repas, fetchSuggestions, swapping, onSelect, onCustom, onClose,
 }: {
   dayIndex: number; repas: RepasSlot;
   fetchSuggestions: (dayIndex: number, repas: RepasSlot, type?: TypeRepas | 'tous') => Promise<RecetteSwap[]>;
   swapping: boolean;
-  onSelect: (mealId: number) => void; onClose: () => void;
+  onSelect: (mealId: number) => void;
+  /** Remplace le créneau par un texte libre (« Repas anniversaire »…) */
+  onCustom: (texte: string) => void;
+  onClose: () => void;
 }) {
+  const [texte, setTexte] = useState('');
   // Par défaut on ne propose que des plats (cohérence déjeuner/dîner) — sauf
   // créneau dessert (soir ou midi), qui ne propose que des desserts.
   const estSlotDessert = repas === 'dessert' || repas === 'dessert_midi';
@@ -136,6 +140,24 @@ export function SwapModal({
         </div>
 
         <div className="px-5 py-4">
+          {/* Repas libre : le créneau porte le texte de l'utilisateur (sans recette ni courses) */}
+          <form onSubmit={e => { e.preventDefault(); if (texte.trim()) onCustom(texte.trim()); }}
+            className="mb-5 rounded-2xl border border-accent-200 bg-accent-50/60 p-3">
+            <label htmlFor="repas-libre" className="flex items-center gap-1.5 text-sm font-semibold text-gray-800 mb-2">
+              <Pencil className="w-4 h-4 text-accent-600" /> Ou écrivez votre propre repas
+            </label>
+            <div className="flex gap-2">
+              <input id="repas-libre" value={texte} onChange={e => setTexte(e.target.value)} maxLength={80}
+                placeholder="Repas anniversaire, Apéro dinatoire…"
+                className="min-w-0 flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-300" />
+              <button type="submit" disabled={swapping || !texte.trim()}
+                className="shrink-0 rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                Valider
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-gray-500">Aucun ingrédient ajouté à la liste de courses pour ce repas.</p>
+          </form>
+
           {/* Filtre par type de repas (adapté au créneau) */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {swapFiltersPour(repas).map(f => (

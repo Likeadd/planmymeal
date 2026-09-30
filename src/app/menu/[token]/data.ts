@@ -1,8 +1,7 @@
 import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/../supabase/database.types';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import {
-  COLONNES_RECETTE_PLANNING, toRecettePlanning,
+  COLONNES_RECETTE_PLANNING, toRecettePlanning, repasPersonnalise,
   type WeeklyPlanEmbed,
 } from '@/lib/db-rows';
 import { chiffrerListeCourses, type PricedShoppingSection } from '@/lib/budget';
@@ -21,11 +20,7 @@ export interface PlanPartage {
 }
 
 function admin() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  return getSupabaseAdmin();
 }
 
 /** Planning public par token de partage — lu avec la clé de service, aucune
@@ -37,7 +32,7 @@ export const getPlanPartage = cache(async (token: string): Promise<PlanPartage |
     const supabase = admin();
     const { data: plan } = await supabase
       .from('weekly_plans')
-      .select(`id, semaine_debut, plan_meals(jour_semaine, repas_type, meal_id, est_reste_de, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
+      .select(`id, semaine_debut, plan_meals(jour_semaine, repas_type, meal_id, est_reste_de, texte_libre, meals!plan_meals_meal_id_fkey(${COLONNES_RECETTE_PLANNING}))`)
       .eq('share_token', token)
       .maybeSingle();
     if (!plan) return null;
@@ -45,8 +40,8 @@ export const getPlanPartage = cache(async (token: string): Promise<PlanPartage |
     const embed = plan as unknown as WeeklyPlanEmbed;
     const jours: RepasJour[] = Array.from({ length: 7 }, () => ({}));
     for (const pm of embed.plan_meals || []) {
-      if (!pm.meals || pm.jour_semaine < 0 || pm.jour_semaine > 6) continue;
-      const recette = toRecettePlanning(pm.meals);
+      if ((!pm.meals && !pm.texte_libre) || pm.jour_semaine < 0 || pm.jour_semaine > 6) continue;
+      const recette = pm.meals ? toRecettePlanning(pm.meals) : repasPersonnalise(pm.texte_libre!);
       if (pm.repas_type === 'dejeuner') jours[pm.jour_semaine].dejeuner = recette;
       else if (pm.repas_type === 'diner') jours[pm.jour_semaine].diner = recette;
       else if (pm.repas_type === 'dessert' || pm.repas_type === 'dessert_midi') jours[pm.jour_semaine].dessert = recette;

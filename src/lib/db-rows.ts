@@ -298,6 +298,15 @@ export function toRecettePlanning(row: RecettePlanningEmbed): RecettePlanning {
   };
 }
 
+/** Créneau « texte libre » (plan_meals.texte_libre) : pseudo-recette sans ingrédient */
+export function repasPersonnalise(texte: string): RecettePlanning {
+  return {
+    id: 0, titre: texte, temps_preparation: 0, temps_cuisson: null,
+    calories_par_portion: null, difficulte: 'facile' as RecettePlanning['difficulte'],
+    ustensiles: [], portions_par_defaut: 1, personnalise: true,
+  };
+}
+
 /** meals tel que renvoyé pour les favoris (voir `COLONNES_RECETTE_FAVORI`) */
 export interface RecetteFavoriEmbed extends CarteEmbedCommun {
   type_repas: string;
@@ -482,6 +491,10 @@ export function toMeal(row: MealWithIngredients): Meal {
     ustensiles: row.ustensiles ?? [],
     instructions: row.instructions ?? [],
     image_url: row.image_url,
+    // Affichée uniquement si validée (source renseignée par photos:appliquer)
+    photo: row.image_url && row.image_source
+      ? { url: row.image_url, source: row.image_source, auteur: row.image_auteur, auteurUrl: row.image_auteur_url, pageUrl: row.image_page_url }
+      : null,
     portions_par_defaut: row.portions_par_defaut,
     created_by: row.created_by,
     is_public: row.is_public,

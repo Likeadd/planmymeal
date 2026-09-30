@@ -24,6 +24,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { UserError, publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
+import { IMPORTS_GRATUITS_PAR_MOIS } from '@/lib/limites';
 import { getAIProvider, AIError } from '@/lib/ai/provider';
 import { validerRecetteExtraite, type RecetteExtraite } from '@/lib/ai/recette';
 
@@ -227,14 +228,33 @@ function errIgnored(err: { message: string } | null, nomIngredient: string): boo
 
 export async function POST(request: NextRequest) {
   // L'IA coûte : 5 imports / 10 min / IP, c'est large pour un usage réel
-  const limited = enforceRateLimit(request, { name: 'import-recette', limit: 5, windowMs: 10 * 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'import-recette', limit: 5, windowMs: 10 * 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'import-recette', limit: 5, windowMs: 10 * 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'import-recette', limit: 5, windowMs: 10 * 60_000 });
     if (userLimited) return userLimited;
+
+    // Quota : l'extraction IA a un coût réel. Plan gratuit → IMPORTS_GRATUITS_PAR_MOIS
+    // recettes personnelles par 30 jours glissants ; Pro/Famille → illimité
+    // (la limite de débit ci-dessus s'applique toujours).
+    const admin = getSupabaseAdmin();
+    const { data: profil } = await admin.from('profiles').select('plan').eq('id', user.id).maybeSingle();
+    if (profil?.plan !== 'pro' && profil?.plan !== 'famille') {
+      const depuis = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const { count } = await admin.from('meals')
+        .select('id', { count: 'exact', head: true })
+        .eq('created_by', user.id)
+        .gte('created_at', depuis);
+      if ((count ?? 0) >= IMPORTS_GRATUITS_PAR_MOIS) {
+        return NextResponse.json(
+          { error: `Plan gratuit : ${IMPORTS_GRATUITS_PAR_MOIS} imports de recettes par mois. Passez à Pro pour des imports illimités.` },
+          { status: 403 }
+        );
+      }
+    }
 
     const body = await request.json().catch(() => ({}));
     const url = typeof body.url === 'string' ? body.url.trim() : '';
@@ -285,7 +305,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = getSupabaseAdmin();
     const mealId = await enregistrerRecette(recette, user.id, admin);
 
     return NextResponse.json({

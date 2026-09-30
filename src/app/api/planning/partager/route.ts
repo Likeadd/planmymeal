@@ -16,13 +16,13 @@ import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 const SEMAINE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({}));

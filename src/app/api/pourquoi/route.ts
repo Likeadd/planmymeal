@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'pourquoi-get', limit: 120, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'pourquoi-get', limit: 120, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const params = request.nextUrl.searchParams;
@@ -52,6 +52,10 @@ export async function GET(request: NextRequest) {
       .from('meals')
       .select(COLONNES_RECETTE_MOTEUR)
       .eq('id', mealId)
+      // Clé admin : on restreint nous-mêmes à ce que l'utilisateur a le droit
+      // de voir (recette publique ou la sienne), sinon n'importe quelle
+      // recette privée d'un autre compte était lisible par son id.
+      .or(`is_public.eq.true,created_by.eq.${user.id}`)
       .maybeSingle();
 
     if (!mealRow) return NextResponse.json({ error: 'Recette introuvable' }, { status: 404 });

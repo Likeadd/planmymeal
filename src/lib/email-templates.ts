@@ -210,3 +210,29 @@ export function newsletterEmailHtml(d: NewsletterData, baseUrl: string): string 
 export function newsletterSubject(d: NewsletterData): string {
   return `🥕 Le menu de la semaine (${d.semaineLabel}) — ${eur(d.totalSemaine)}`;
 }
+
+/** Double opt-in de la newsletter : lien de confirmation à un clic. */
+export function newsletterConfirmationHtml(lienConfirmation: string, baseUrl: string): string {
+  return `
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#FBF8F1;">
+  <div style="background:#C2532A;border-radius:16px 16px 0 0;padding:18px 24px;">
+    <img src="${baseUrl}/brand/planmymeal-blanc.png" width="157" height="36" alt="PlanMyMeal"
+      style="display:block;border:0;color:#FBF6EE;font-family:Georgia,serif;font-size:20px;font-weight:700;" />
+  </div>
+  <div style="background:#ffffff;padding:28px 24px;border-radius:0 0 16px 16px;">
+    <h1 style="color:#332A1E;font-size:20px;margin:0 0 8px;">Plus qu'un clic !</h1>
+    <p style="color:#605242;margin:0 0 16px;line-height:1.5;">
+      Confirmez votre adresse pour recevoir chaque dimanche un menu de la semaine
+      et sa liste de courses.
+    </p>
+    <a href="${esc(lienConfirmation)}"
+       style="display:inline-block;background:#C4552C;color:#fff;text-decoration:none;
+              padding:12px 24px;border-radius:12px;font-weight:600;">
+      Confirmer mon inscription →
+    </a>
+  </div>
+  <p style="color:#7A6850;font-size:12px;margin-top:20px;text-align:center;">
+    Vous n'avez rien demandé ? Ignorez cet email : vous ne recevrez rien.
+  </p>
+</div>`;
+}

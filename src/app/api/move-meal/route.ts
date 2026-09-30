@@ -43,13 +43,13 @@ function parserCreneau(raw: unknown): Creneau | null {
 
 export async function POST(request: NextRequest) {
   // Anti-abus : un drag & drop est un geste utilisateur, pas une boucle
-  const limited = enforceRateLimit(request, { name: 'move-meal', limit: 60, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'move-meal', limit: 60, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'move-meal', limit: 60, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'move-meal', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({}));
@@ -83,17 +83,17 @@ export async function POST(request: NextRequest) {
 
     // Créneau source : doit contenir un repas (rien à déplacer sinon)
     const { data: source } = await admin.from('plan_meals')
-      .select('meal_id')
+      .select('meal_id, texte_libre')
       .eq('plan_id', plan.id)
       .eq('jour_semaine', from.jour).eq('repas_type', from.repas)
       .maybeSingle();
-    if (!source?.meal_id) {
+    if (!source?.meal_id && !source?.texte_libre) {
       return NextResponse.json({ error: 'Le créneau source est vide' }, { status: 400 });
     }
 
     // Créneau cible : son repas (s'il existe) part vers la source (permutation)
     const { data: cible } = await admin.from('plan_meals')
-      .select('meal_id')
+      .select('meal_id, texte_libre')
       .eq('plan_id', plan.id)
       .eq('jour_semaine', to.jour).eq('repas_type', to.repas)
       .maybeSingle();
@@ -101,20 +101,20 @@ export async function POST(request: NextRequest) {
     // 1. La cible reçoit le repas déplacé (insert si le créneau n'existait pas)
     if (cible) {
       const { error } = await admin.from('plan_meals')
-        .update({ meal_id: source.meal_id, est_reste_de: null })
+        .update({ meal_id: source.meal_id, texte_libre: source.texte_libre, est_reste_de: null })
         .eq('plan_id', plan.id).eq('jour_semaine', to.jour).eq('repas_type', to.repas);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await admin.from('plan_meals').insert({
         plan_id: plan.id, jour_semaine: to.jour,
-        repas_type: to.repas, meal_id: source.meal_id, est_reste_de: null,
+        repas_type: to.repas, meal_id: source.meal_id, texte_libre: source.texte_libre, est_reste_de: null,
       });
       if (error) throw new Error(error.message);
     }
 
     // 2. La source reçoit l'ancien repas de la cible (ou se vide)
     const { error: srcError } = await admin.from('plan_meals')
-      .update({ meal_id: cible?.meal_id ?? null, est_reste_de: null })
+      .update({ meal_id: cible?.meal_id ?? null, texte_libre: cible?.texte_libre ?? null, est_reste_de: null })
       .eq('plan_id', plan.id)
       .eq('jour_semaine', from.jour).eq('repas_type', from.repas);
     if (srcError) throw new Error(srcError.message);
@@ -122,10 +122,12 @@ export async function POST(request: NextRequest) {
     // 3. Un déplacement casse la relation « veille » : si le plat déplacé
     //    servait de source à un reste, on désactive le lien (l'utilisateur
     //    peut re-basculer le mode restes)
-    const { error: resteError } = await admin.from('plan_meals')
-      .update({ est_reste_de: null })
-      .eq('plan_id', plan.id).eq('est_reste_de', source.meal_id);
-    if (resteError) throw new Error(resteError.message);
+    if (source.meal_id) {
+      const { error: resteError } = await admin.from('plan_meals')
+        .update({ est_reste_de: null })
+        .eq('plan_id', plan.id).eq('est_reste_de', source.meal_id);
+      if (resteError) throw new Error(resteError.message);
+    }
 
     // 4. Liste de courses recalculée (best-effort : le planning est déjà à jour)
     let shoppingListId: number | null = null;

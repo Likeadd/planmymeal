@@ -33,13 +33,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Anti-abus : chaque appel consomme un quota d'API Stripe
-  const limited = enforceRateLimit(request, { name: 'billing-portal', limit: 10, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'billing-portal', limit: 10, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'billing-portal', limit: 10, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'billing-portal', limit: 10, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const stripe = await getStripeClient();

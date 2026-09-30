@@ -43,6 +43,7 @@ import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from 
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { recetteHref } from '@/lib/seo';
+import { CATEGORIES_SEO } from '@/lib/categories-seo';
 
 const TYPE_FILTERS: { value: TypeRepas | 'tous'; label: string }[] = [
   { value: 'tous', label: 'Tout' },
@@ -428,6 +429,15 @@ export default function RecettesPage() {
               ? 'Chargement du catalogue...'
               : `${meals.length} recette${meals.length > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
           </p>
+          {/* Sélections prêtes à l'emploi (pages catégories) */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CATEGORIES_SEO.map(cat => (
+              <Link key={cat.slug} href={`/recettes/categorie/${cat.slug}`}
+                className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors">
+                {cat.court}
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Error */}

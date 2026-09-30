@@ -160,6 +160,15 @@
 }
 .animate-page-in { animation: pageIn 0.15s ease-out; }
 
+/* ── Entrée du hero : mouvement SEUL, jamais d'opacité — le titre reste
+   lisible même si l'animation ne joue pas (aperçus de partage, robots,
+   onglet en arrière-plan). ── */
+@keyframes heroIn {
+  from { transform: translateY(14px); }
+  to { transform: none; }
+}
+.animate-hero-in { animation: heroIn 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+
 /* ── Barre de chargement globale (GlobalLoadingBar) : segment qui balaie ── */
 @keyframes loadingBar {
   0% { transform: translateX(-100%); }

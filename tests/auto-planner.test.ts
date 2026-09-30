@@ -252,3 +252,33 @@ describe('orchestrerAutoPlanGlissant — fenêtre de 4 semaines', () => {
     expect(resultats[1].results.map(r => r.userId)).toEqual(['u1', 'u2', 'u3']);
   });
 });
+
+describe('orchestrerAutoPlanGlissant — sobriété (comptes inactifs)', () => {
+  const JOUR = 86_400_000;
+  const maintenant = Date.parse('2026-09-27T19:00:00Z');
+
+  it('compte actif récemment : 4 semaines ; inactif depuis 60 j : semaine suivante seulement ; depuis 120 j : rien', async () => {
+    const db = dbStandard();
+    const generer = vi.fn(genererOk);
+    const activite = new Map<string, number>([
+      ['u1', maintenant - 2 * JOUR],   // actif
+      ['u2', maintenant - 60 * JOUR],  // peu actif
+    ]);
+    const resultats = await orchestrerAutoPlanGlissant(db, { generer, activite, maintenant });
+
+    const genereePour = (i: number) => resultats[i].results.filter(r => r.status === 'genere').map(r => r.userId);
+    expect(genereePour(0)).toEqual(['u1', 'u2']);
+    expect(genereePour(1)).toEqual(['u1']);
+    expect(resultats[1].results.find(r => r.userId === 'u2')?.message).toContain('inactif');
+
+    activite.set('u2', maintenant - 120 * JOUR);
+    const resultats2 = await orchestrerAutoPlanGlissant(dbStandard(), { generer: vi.fn(genererOk), activite, maintenant });
+    expect(resultats2[0].results.filter(r => r.status === 'genere').map(r => r.userId)).toEqual(['u1']);
+  });
+
+  it('sans carte d\'activité (listUsers indisponible) : aucun filtre', async () => {
+    const generer = vi.fn(genererOk);
+    await orchestrerAutoPlanGlissant(dbStandard(), { generer, activite: null });
+    expect(generer).toHaveBeenCalledTimes(8);
+  });
+});

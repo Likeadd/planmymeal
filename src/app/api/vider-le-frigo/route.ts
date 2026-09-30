@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { chargerExclusionsUtilisateur } from '@/lib/exclusions-alimentaires';
 import { prixParPortion } from '@/lib/budget';
 import { APPAREILS_CONNUES } from '@/lib/rotation-engine';
 import { recetteServable } from '@/lib/regimes';
@@ -37,13 +38,13 @@ interface FrigoCandidate {
 
 export async function POST(request: NextRequest) {
   // Anti-abus : score de tout le catalogue à chaque appel
-  const limited = enforceRateLimit(request, { name: 'vider-le-frigo', limit: 15, windowMs: 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'vider-le-frigo', limit: 15, windowMs: 60_000 });
   if (limited) return limited;
 
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    const userLimited = enforceUserRateLimit(request, user.id, { name: 'vider-le-frigo', limit: 15, windowMs: 60_000 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'vider-le-frigo', limit: 15, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
     const body = await request.json().catch(() => ({}));
@@ -67,14 +68,11 @@ export async function POST(request: NextRequest) {
     const meals = await chargerPlatsRapides(admin);
 
     // 2. Allergies, dislikes & régimes du user (on n'empoisonne personne)
-    const [{ data: allergies }, { data: dislikes }, { data: regimesData }, { data: profile }] = await Promise.all([
-      admin.from('user_allergies').select('ingredient_id').eq('user_id', user.id),
-      admin.from('user_dislikes').select('ingredient_id').eq('user_id', user.id),
+    const [{ allergiesIds, dislikesIds }, { data: regimesData }, { data: profile }] = await Promise.all([
+      chargerExclusionsUtilisateur(user.id, admin),
       admin.from('user_diets').select('regime').eq('user_id', user.id),
       admin.from('profiles').select('equipements, nb_personnes, budget_hebdo').eq('id', user.id).single(),
     ]);
-    const allergiesIds = new Set((allergies || []).map(a => a.ingredient_id));
-    const dislikesIds = new Set((dislikes || []).map(d => d.ingredient_id));
     const regimes: Regime[] = (regimesData || []).map(r => r.regime as Regime);
     const frigo = new Set(ingredientIds);
     const equipements: string[] = profile?.equipements ?? [];

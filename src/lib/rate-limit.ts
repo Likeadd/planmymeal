@@ -1,5 +1,14 @@
 // ============================================================================
-// Rate-limiting en mémoire — PlanMyMeal
+// Rate-limiting — PlanMyMeal
+//
+// PARTAGÉ entre toutes les instances : compteur en base via la fonction SQL
+// `rate_limit_hit` (migration 00031), appelée avec la clé de service. Sur
+// Vercel chaque lambda a sa mémoire : un compteur en mémoire seul se
+// contourne en répartissant les appels sur plusieurs instances.
+// Repli en mémoire (ci-dessous) si la base est injoignable ou la migration
+// absente : la limite reste « par instance » mais l'app ne casse jamais.
+//
+// --- Ancien fonctionnement, conservé comme repli : ---
 //
 // Fenêtre glissante par IP+route, stockée en mémoire du process serveur.
 // Objectif : casser les abus simples sur les routes d'écriture (spam, script
@@ -13,6 +22,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { logSecurityEvent } from '@/lib/security-log';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 const buckets = new Map<string, number[]>();
 
@@ -38,8 +48,8 @@ export interface RateLimitResult {
   retryAfterSec: number;
 }
 
-/** Fenêtre glissante : true si l'appel reste sous `limit` appels / `windowMs`. */
-export function rateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
+/** Repli en mémoire (fenêtre glissante, par instance). */
+export function rateLimitMemoire(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
   sweep(now);
 
@@ -52,6 +62,30 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
   hits.push(now);
   buckets.set(key, hits);
   return { ok: true, retryAfterSec: 0 };
+}
+
+/** Base indisponible (ou migration absente) : on n'insiste pas pendant 60 s. */
+let baseIndisponibleJusqua = 0;
+
+/**
+ * Limite partagée (base) : true si l'appel reste sous `limit` appels par
+ * fenêtre de `windowMs`. Repli en mémoire si la base ne répond pas.
+ */
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+  const configure = !!process.env.SUPABASE_SERVICE_ROLE_KEY && !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (configure && Date.now() >= baseIndisponibleJusqua) {
+    try {
+      const { data, error } = await getSupabaseAdmin().rpc('rate_limit_hit', {
+        p_cle: key, p_limite: limit, p_fenetre_ms: windowMs,
+      });
+      const ligne = Array.isArray(data) ? data[0] : null;
+      if (!error && ligne) return { ok: ligne.ok, retryAfterSec: ligne.retry_after_sec };
+      baseIndisponibleJusqua = Date.now() + 60_000;
+    } catch {
+      baseIndisponibleJusqua = Date.now() + 60_000;
+    }
+  }
+  return rateLimitMemoire(key, limit, windowMs);
 }
 
 /** IP client derrière le proxy (Vercel fournit x-forwarded-for / x-real-ip). */
@@ -72,15 +106,15 @@ export interface RateLimitOptions {
 
 /**
  * À appeler en tête de chaque handler de route d'écriture :
- *   const limited = enforceRateLimit(request, { name: 'generate-week', limit: 20, windowMs: 60_000 });
+ *   const limited = await enforceRateLimit(request, { name: 'generate-week', limit: 20, windowMs: 60_000 });
  *   if (limited) return limited;
  * Retourne null si l'appel est autorisé, sinon une réponse 429 prête à renvoyer.
  */
-export function enforceRateLimit(
+export async function enforceRateLimit(
   request: NextRequest,
   options: RateLimitOptions
-): NextResponse | null {
-  const { ok, retryAfterSec } = rateLimit(
+): Promise<NextResponse | null> {
+  const { ok, retryAfterSec } = await rateLimit(
     `${options.name}:${clientIp(request)}`,
     options.limit,
     options.windowMs
@@ -100,15 +134,15 @@ export function enforceRateLimit(
  * Limite PAR UTILISATEUR (en plus de la limite par IP) — à appeler juste
  * après l'authentification : un compte ne peut pas contourner la limite en
  * changeant d'IP.
- *   const userLimited = enforceUserRateLimit(request, user.id, { name: 'frigo', limit: 60, windowMs: 60_000 });
+ *   const userLimited = await enforceUserRateLimit(request, user.id, { name: 'frigo', limit: 60, windowMs: 60_000 });
  *   if (userLimited) return userLimited;
  */
-export function enforceUserRateLimit(
+export async function enforceUserRateLimit(
   request: NextRequest,
   userId: string,
   options: RateLimitOptions
-): NextResponse | null {
-  const { ok, retryAfterSec } = rateLimit(
+): Promise<NextResponse | null> {
+  const { ok, retryAfterSec } = await rateLimit(
     `user:${options.name}:${userId}`,
     options.limit,
     options.windowMs

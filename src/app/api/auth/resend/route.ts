@@ -9,7 +9,7 @@ import { logRequestSecurityEvent } from '@/lib/security-log';
 import { supabaseForResponse, magicLinkRedirect, normaliserEmail } from '@/lib/auth-server';
 
 export async function POST(request: NextRequest) {
-  const limited = enforceRateLimit(request, { name: 'resend', limit: 5, windowMs: 10 * 60_000 });
+  const limited = await enforceRateLimit(request, { name: 'resend', limit: 5, windowMs: 10 * 60_000 });
   if (limited) return limited;
 
   try {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const email = normaliserEmail(body.email);
     if (!email) return NextResponse.json({ error: 'Adresse email invalide.' }, { status: 400 });
 
-    if (!rateLimit(`resend-email:${email}`, 3, 10 * 60_000).ok) {
+    if (!(await rateLimit(`resend-email:${email}`, 3, 10 * 60_000)).ok) {
       logRequestSecurityEvent(request, 'signup_abuse', { email, action: 'resend' });
       return NextResponse.json({ error: 'Patientez quelques minutes avant un nouvel envoi.' }, { status: 429 });
     }

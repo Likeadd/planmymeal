@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import LandingHeader from '@/components/LandingHeader';
+import LandingFooter from '@/components/LandingFooter';
 import { notFound } from 'next/navigation';
 import { Clock, Flame, ShoppingBasket } from 'lucide-react';
 import { getPlanPartage, type RepasJour } from './data';
@@ -33,6 +35,14 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
 function CarteRepas({ label, recette }: { label: string; recette?: RecettePlanning }) {
   if (!recette) return null;
+  if (recette.personnalise) {
+    return (
+      <div className="rounded-xl border border-accent-200 bg-accent-50/60 p-3">
+        <p className="text-[10px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-1">{label}</p>
+        <p className="font-display font-bold text-sm text-gray-900 leading-snug">✏️ {recette.titre}</p>
+      </div>
+    );
+  }
   const prix = prixParPortion(recette);
   return (
     <Link href={recetteHref(recette)}
@@ -58,6 +68,8 @@ export default async function MenuPartagePage({ params }: { params: Promise<{ to
   const totalCourses = plan.courses.reduce((s, sec) => s + sec.total, 0);
 
   return (
+    <>
+    <LandingHeader />
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
       <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-1.5">Menu partagé</p>
       <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">
@@ -118,5 +130,7 @@ export default async function MenuPartagePage({ params }: { params: Promise<{ to
         </Link>
       </div>
     </main>
+    <LandingFooter />
+    </>
   );
 }

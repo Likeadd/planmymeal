@@ -15,6 +15,8 @@ import type { Regime } from '@/types';
 
 export interface CategorieSeo {
   slug: string;
+  /** Libellé court des liens (pied de page, puces du catalogue) */
+  court: string;
   h1: string;
   metaTitle: string;
   metaDescription: string;
@@ -41,6 +43,7 @@ const parNom = (a: MealCatalogue, b: MealCatalogue) => a.titre.localeCompare(b.t
 export const CATEGORIES_SEO: CategorieSeo[] = [
   {
     slug: 'pas-cher',
+    court: 'Recettes pas chères',
     h1: 'Recettes pas chères (moins de 2 €/portion)',
     metaTitle: 'Recettes pas chères — moins de 2 €/portion',
     metaDescription:
@@ -53,6 +56,7 @@ export const CATEGORIES_SEO: CategorieSeo[] = [
   },
   {
     slug: 'batch-cooking',
+    court: 'Batch cooking',
     h1: 'Recettes batch cooking (se conservent 3 jours et plus)',
     metaTitle: 'Recettes batch cooking — à préparer en avance',
     metaDescription:
@@ -65,6 +69,7 @@ export const CATEGORIES_SEO: CategorieSeo[] = [
   },
   {
     slug: 'rapides',
+    court: 'Recettes rapides',
     h1: 'Recettes rapides (30 minutes ou moins)',
     metaTitle: 'Recettes rapides — prêtes en 30 minutes',
     metaDescription:
@@ -77,6 +82,7 @@ export const CATEGORIES_SEO: CategorieSeo[] = [
   },
   {
     slug: 'vegetarien',
+    court: 'Recettes végétariennes',
     h1: 'Recettes végétariennes',
     metaTitle: 'Recettes végétariennes — menu de la semaine sans viande ni poisson',
     metaDescription:
@@ -88,6 +94,7 @@ export const CATEGORIES_SEO: CategorieSeo[] = [
   },
   {
     slug: 'riches-en-proteines',
+    court: 'Riches en protéines',
     h1: 'Recettes riches en protéines',
     metaTitle: 'Recettes riches en protéines (25 g et plus par portion)',
     metaDescription:

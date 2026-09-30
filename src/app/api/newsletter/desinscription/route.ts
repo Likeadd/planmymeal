@@ -10,7 +10,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
   const base = request.nextUrl.origin;
-  if (!token) return NextResponse.redirect(`${base}/`);
+  if (!token || !/^[0-9a-f-]{36}$/i.test(token)) return NextResponse.redirect(`${base}/`);
 
   const supabase = getSupabaseAdmin();
   await supabase

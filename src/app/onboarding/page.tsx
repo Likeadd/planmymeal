@@ -13,7 +13,7 @@ import type { Objectif, NiveauCuisine, Regime } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import { REGIMES_CHOIX } from '@/lib/regimes';
-import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, resoudreExclusions } from '@/lib/exclusions-alimentaires';
+import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, enregistrerExclusions } from '@/lib/exclusions-alimentaires';
 
 /** Libellés du récapitulatif (étape 9) */
 const RYTHME_LABELS: Partial<Record<RythmeDesserts, string>> = {
@@ -157,32 +157,8 @@ export default function OnboardingPage() {
         .eq('id', user.id);
       if (corpsError) console.warn('Profil corporel non enregistré :', corpsError.message);
 
-      // Allergies et détestés : familles → ingrédients réels du catalogue
-      const besoinCatalogue = form.allergies.length > 0 || form.dislikes.length > 0;
-      const { data: ingredients } = besoinCatalogue
-        ? await supabase.from('ingredients').select('id, nom')
-        : { data: [] as { id: number; nom: string }[] };
-      const allergieIds = resoudreExclusions(form.allergies, TOUTES_ALLERGIES, ingredients ?? []);
-      const dislikeIds = resoudreExclusions(form.dislikes, DETESTES, ingredients ?? [])
-        .filter(id => !allergieIds.includes(id));
-
-      // 2. Sauvegarder les allergies
-      if (allergieIds.length > 0) {
-        const { error: allergiesError } = await supabase.from('user_allergies').upsert(
-          allergieIds.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
-          { onConflict: 'user_id,ingredient_id' }
-        );
-        // Une allergie non enregistrée est un risque santé : on bloque.
-        if (allergiesError) throw allergiesError;
-      }
-
-      // 3. Sauvegarder les dislikes
-      if (dislikeIds.length > 0) {
-        await supabase.from('user_dislikes').upsert(
-          dislikeIds.map(ingredient_id => ({ user_id: user.id, ingredient_id })),
-          { onConflict: 'user_id,ingredient_id' }
-        );
-      }
+      // 2-3. Allergies et détestés (familles d'aliments, résolues à la génération)
+      await enregistrerExclusions(supabase, user.id, form.allergies, form.dislikes);
 
       // 4. Sauvegarder les régimes
       if (form.regimes.length > 0) {

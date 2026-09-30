@@ -122,7 +122,24 @@ export function prixRecette(
 }
 
 /** Prix par portion d'une recette. */
+/**
+ * Mémo du prix par portion SANS surcharge utilisateur, par objet recette :
+ * le moteur le demande plusieurs fois par recette et par génération (filtre
+ * prix max, facteur budget, prix moyen) et le catalogue à chaque filtrage.
+ * WeakMap : l'entrée disparaît avec l'objet, aucune fuite mémoire. Valide car
+ * les recettes ne sont jamais modifiées après leur normalisation.
+ */
+const memoPrixPortion = new WeakMap<RecetteChiffrable, number | null>();
+
 export function prixParPortion(meal: RecetteChiffrable, overrides?: Map<number, number> | null): number | null {
+  const memoisable = !overrides || overrides.size === 0;
+  if (memoisable && memoPrixPortion.has(meal)) return memoPrixPortion.get(meal)!;
+  const prix = calculerPrixParPortion(meal, overrides);
+  if (memoisable) memoPrixPortion.set(meal, prix);
+  return prix;
+}
+
+function calculerPrixParPortion(meal: RecetteChiffrable, overrides?: Map<number, number> | null): number | null {
   const { total, chiffres } = prixRecette(meal, overrides);
   if (chiffres === 0) return null;
   const portions = meal.portions_par_defaut || 2;

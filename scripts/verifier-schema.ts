@@ -1,102 +1,59 @@
 // ============================================================================
-// Vérification du schéma distant — PlanMyMeal
-// Usage : npx tsx scripts/verifier-schema.ts
+// Vérifie que la base Supabase est à jour par rapport aux migrations du code.
+// Usage : npm run db:verifier   (lit .env.local, lecture seule)
 //
-// 100 % LECTURE SEULE : on interroge la spec OpenAPI exposée par PostgREST
-// (`GET /rest/v1/`), qui liste les tables exposées, leurs colonnes et les
-// fonctions RPC. Aucune requête n'écrit ni ne lit la moindre donnée métier.
-////       Sert à répondre à « les migrations 00016 et 00017 sont-elles appliquées ? »
-// sans accès au SQL Editor ni au mot de passe Postgres.
+// Pourquoi : les migrations sont appliquées à la main dans le SQL Editor. Une
+// migration oubliée ne se voit qu'en production (« Could not find the
+// 'rythme_desserts' column … in the schema cache »). Ce script teste chaque
+// colonne / table / fonction ajoutée par une migration récente et dit
+// laquelle appliquer.
 // ============================================================================
 
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+import { createClient } from '@supabase/supabase-js';
 
-interface Check {
-  nom: string;
-  ok: boolean;
-  detail?: string;
-}
+config({ path: '.env.local', quiet: true });
 
-async function main(): Promise<number> {
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !key) {
-  console.error('❌ NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant dans .env.local');
-  return 1;
+const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!url || !cle) {
+  console.error('NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY requis (.env.local)');
+  process.exit(1);
 }
+const supabase = createClient(url, cle, { auth: { persistSession: false } });
 
-console.log(`🔎 Projet : ${url.replace(/^https:\/\//, '').split('.')[0]}`);
-
-const res = await fetch(`${url}/rest/v1/`, {
-  headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/openapi+json' },
-});
-
-if (!res.ok) {
-  console.error(`❌ Spec OpenAPI illisible : HTTP ${res.status} ${res.statusText}`);
-  return 1;
-}
-
-const spec = (await res.json()) as {
-  paths?: Record<string, unknown>;
-  definitions?: Record<string, { properties?: Record<string, unknown> }>;
-  components?: { schemas?: Record<string, { properties?: Record<string, unknown> }> };
-};
-
-const paths = Object.keys(spec.paths ?? {});
-const schemas = spec.definitions ?? spec.components?.schemas ?? {};
-
-const aTable = (t: string) => paths.includes(`/${t}`);
-const aColonne = (t: string, c: string) => Boolean(schemas[t]?.properties?.[c]);
-
-const checks: Check[] = [
-  // ── Socle historique (doit déjà être là) ──
-  { nom: 'Table profiles', ok: aTable('profiles') },
-  { nom: 'Table meal_history', ok: aTable('meal_history') },
-  { nom: 'RPC save_weekly_plan', ok: paths.includes('/rpc/save_weekly_plan') },
-  { nom: 'RPC recompute_shopping_list', ok: paths.includes('/rpc/recompute_shopping_list') },
-
-  // ── Migration 00016 : mémoire alimentaire ──
-  { nom: 'Table user_meal_preferences', ok: aTable('user_meal_preferences') },
-  { nom: 'Colonne profiles.temps_max_par_jour', ok: aColonne('profiles', 'temps_max_par_jour') },
-  { nom: 'Colonne profiles.contexte_jours', ok: aColonne('profiles', 'contexte_jours') },
-  { nom: 'Colonne profiles.nouveaute', ok: aColonne('profiles', 'nouveaute') },
-  { nom: 'Colonne meal_history.raison', ok: aColonne('meal_history', 'raison') },
-
-  // ── Migration 00016 : frigo ──
-  { nom: 'Table fridge_items', ok: aTable('fridge_items') },
-  { nom: 'Colonne fridge_items.expiration', ok: aColonne('fridge_items', 'expiration') },
-  { nom: 'RPC recompute_shopping_list_frigo', ok: paths.includes('/rpc/recompute_shopping_list_frigo') },
-
-  // ── Migration 00017 : profils famille ──
-  { nom: 'Table family_members', ok: aTable('family_members') },
-  { nom: 'Table family_member_ingredients', ok: aTable('family_member_ingredients') },
-  { nom: 'Table family_member_meal_preferences', ok: aTable('family_member_meal_preferences') },
-  { nom: 'Colonne family_members.poids', ok: aColonne('family_members', 'poids') },
-  { nom: 'Colonne profiles.poids_famille', ok: aColonne('profiles', 'poids_famille') },
-  { nom: 'RPC save_family_member', ok: paths.includes('/rpc/save_family_member') },
+/** migration → colonnes à tester (table: colonnes séparées par des virgules) */
+const ATTENDU: { migration: string; table: string; colonnes: string }[] = [
+  { migration: '00022_rythme_desserts', table: 'profiles', colonnes: 'rythme_desserts' },
+  { migration: '00027_foyer_gouvernance', table: 'profiles', colonnes: 'utiliser_saison' },
+  { migration: '00027_foyer_gouvernance', table: 'households', colonnes: 'delai_recettes_aimees_jours' },
+  { migration: '00028_newsletter_subscribers', table: 'newsletter_subscribers', colonnes: 'id, email, token, unsubscribed_at' },
+  { migration: '00029_partage_public_menu', table: 'weekly_plans', colonnes: 'share_token' },
+  { migration: '00030_profil_corporel_regimes', table: 'profiles', colonnes: 'sexe, age, taille_cm, poids_kg' },
+  { migration: '00031_securite_audit', table: 'newsletter_subscribers', colonnes: 'confirmed_at' },
+  { migration: '00031_securite_audit', table: 'user_allergy_families', colonnes: 'user_id, code' },
+  { migration: '00031_securite_audit', table: 'user_dislike_families', colonnes: 'user_id, code' },
+  { migration: '00031_securite_audit', table: 'rate_limits', colonnes: 'cle, fenetre_debut, compteur' },
 ];
 
-const largeur = Math.max(...checks.map(c => c.nom.length));
-console.log('');
-for (const c of checks) {
-  console.log(`  ${c.ok ? '✅' : '❌'}  ${c.nom.padEnd(largeur)}${c.detail ? `  ${c.detail}` : ''}`);
-}
+(async () => {
+  const manquantes = new Set<string>();
+  for (const { migration, table, colonnes } of ATTENDU) {
+    const { error } = await supabase.from(table).select(colonnes).limit(0);
+    const ok = !error;
+    console.log(`${ok ? '✅' : '❌'} ${migration.padEnd(32)} ${table}(${colonnes})${ok ? '' : ` — ${error.message}`}`);
+    if (!ok) manquantes.add(migration);
+  }
 
-const manquants = checks.filter(c => !c.ok);
+  // Fonction de limite de débit (00031)
+  const { error: rpcErr } = await supabase.rpc('rate_limit_hit', { p_cle: 'verifier-schema', p_limite: 1000, p_fenetre_ms: 1000 });
+  console.log(`${rpcErr ? '❌' : '✅'} ${'00031_securite_audit'.padEnd(32)} fonction rate_limit_hit${rpcErr ? ` — ${rpcErr.message}` : ''}`);
+  if (rpcErr) manquantes.add('00031_securite_audit');
 
-console.log('');
-if (manquants.length === 0) {
-  console.log('🎉 Schéma complet — migrations 00016 et 00017 appliquées.');
-  return 0;
-}
-
-console.log(`⚠️  ${manquants.length} objet(s) manquant(s) : ${manquants.map(c => c.nom).join(', ')}`);
-console.log('   → Applique le fichier de migration correspondant (idempotent, relançable) :');
-console.log('       supabase db query --linked -f supabase/migrations/00016_memoire_alimentaire.sql');
-console.log('       supabase db query --linked -f supabase/migrations/00017_profils_famille.sql');
-return 1;
-}
-
-main().then(code => process.exit(code));
+  if (manquantes.size === 0) {
+    console.log('\nBase à jour.');
+  } else {
+    console.log(`\nMigrations à appliquer (SQL Editor, dans l'ordre) :\n${[...manquantes].sort().map(m => `  supabase/migrations/${m}.sql`).join('\n')}`);
+    process.exit(1);
+  }
+})();

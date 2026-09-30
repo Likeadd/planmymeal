@@ -106,6 +106,42 @@ export function cn(...classes: (string | undefined | false | null)[]): string {
 }
 
 /**
+ * Emoji illustratif d'une recette d'après son TITRE (faute de photo) : des
+ * pâtes affichent 🍝, une soupe 🍲… et non plus le même 🍛 pour tous les plats.
+ * Premier motif reconnu gagnant (ordre = du plus spécifique au plus général).
+ */
+const EMOJIS_TITRE: [RegExp, string][] = [
+  [/pizza/i, '🍕'], [/burger/i, '🍔'], [/sushi|maki|poke/i, '🍣'], [/ramen|pho|nouilles|udon|soba|pad ?tha/i, '🍜'],
+  [/p[âa]tes|spaghetti|penne|tagliatelle|lasagne|linguine|fusilli|gnocchi|ravioli|macaroni|risotto/i, '🍝'],
+  [/soupe|velout[ée]|potage|bouillon|minestrone|gaspacho|miso/i, '🍲'],
+  [/curry|dhal|dal\b|korma|masala|tikka|wot|wat/i, '🍛'],
+  [/wrap|burrito|tacos?|fajita|quesadilla|kebab|pita|falafel/i, '🌯'],
+  [/sandwich|croque|bagel|toast|tartine|bruschetta/i, '🥪'],
+  [/omelette|[œo]ufs?|frittata|shakshuka|tortilla/i, '🍳'],
+  [/quiche|tarte sal[ée]e|tourte|feuillet/i, '🥧'],
+  [/salade|taboul[ée]|coleslaw/i, '🥗'],
+  [/bowl|buddha|quinoa|boulgour/i, '🥙'],
+  [/crevette|gambas|scampi/i, '🍤'], [/moule|fruits de mer|calamar|poulpe/i, '🦪'],
+  [/saumon|thon|cabillaud|poisson|truite|colin|merlu|sardine|maquereau|dorade/i, '🐟'],
+  [/poulet|dinde|volaille|canard/i, '🍗'],
+  [/steak|b[œo]euf|bavette|entrec[ôo]te|veau|agneau|chili/i, '🥩'],
+  [/porc|jambon|lardon|saucisse|chorizo|travers/i, '🥓'],
+  [/riz|wok|paella|biryani|cantonais/i, '🍚'],
+  [/gratin|hachis|parmentier|tian|moussaka/i, '🫕'], [/tajine|couscous/i, '🥘'],
+  [/cr[êe]pe|pancake|gaufre/i, '🥞'], [/cookie|biscuit|sabl[ée]/i, '🍪'], [/muffin|cupcake/i, '🧁'],
+  [/chocolat|brownie|fondant/i, '🍫'], [/g[âa]teau|cake|cheesecake|moelleux|tiramisu/i, '🍰'],
+  [/tarte|crumble|clafoutis/i, '🥧'], [/yaourt|skyr|fromage blanc|verrine|panna|mousse/i, '🍨'],
+  [/compote|pomme|poire/i, '🍏'], [/fraise|framboise|fruits? rouges|myrtille/i, '🍓'], [/banane/i, '🍌'],
+  [/porridge|granola|muesli|overnight/i, '🥣'], [/l[ée]gumes|ratatouille|courge|aubergine|courgette/i, '🥕'],
+];
+const EMOJIS_TYPE: Record<string, string> = { plat: '🍽️', entree: '🥗', dessert: '🍰', petit_dejeuner: '🥐', snack: '🍎' };
+
+export function emojiRecette(titre: string, type?: string | null): string {
+  for (const [re, e] of EMOJIS_TITRE) if (re.test(titre)) return e;
+  return (type && EMOJIS_TYPE[type]) || '🍽️';
+}
+
+/**
  * Majuscule initiale à chaque mot d'un titre de recette (« curry de poulet »
  * → « Curry de Poulet »). Conventions : articles et prépositions françaises
  * courtes restent en minuscule EN MILIEU de titre (mais prennent la majuscule

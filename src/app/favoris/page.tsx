@@ -7,9 +7,10 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   Star, Clock, Flame, ChefHat as ChefIcon, Loader2, AlertTriangle,
-  ArrowLeft, Plus, X, Check, Package,
+  ArrowLeft, Plus, X, Check, Package, HeartOff,
 } from 'lucide-react';
-import type { RecetteFavori, TypeRepas } from '@/types';
+import type { RecetteFavori, RepasSlot, TypeRepas } from '@/types';
+import { toast } from 'sonner';
 import { useFavorites } from '@/lib/useFavorites';
 import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -35,16 +36,20 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'type', label: '🏷 Type' },
 ];
 
+const LIBELLE_CRENEAU: Record<RepasSlot, string> = {
+  dejeuner: '☀️ Déjeuner', diner: '🌙 Dîner', dessert_midi: '🍰 Dessert midi', dessert: '🍰 Dessert soir',
+};
+
 /** Ordre de regroupement pour le tri par type */
 const TYPE_ORDER: Record<string, number> = {
   plat: 0, entree: 1, dessert: 2, petit_dejeuner: 3, snack: 4,
 };
 
 export default function FavorisPage() {
-  const { favorites, loading, error, addToPlanning, adding } = useFavorites();
+  const { favorites, loading, error, addToPlanning, removeFavorite, adding } = useFavorites();
   const [addModal, setAddModal] = useState<RecetteFavori | null>(null);
   const [selectedDay, setSelectedDay] = useState<number>(0);
-  const [selectedRepas, setSelectedRepas] = useState<'dejeuner' | 'diner'>('dejeuner');
+  const [selectedRepas, setSelectedRepas] = useState<RepasSlot>('dejeuner');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<TypeRepas | 'tous'>('tous');
   const [sortKey, setSortKey] = useState<SortKey>('defaut');
@@ -86,7 +91,7 @@ export default function FavorisPage() {
     try {
       await addToPlanning(addModal.id, selectedDay, selectedRepas);
       setAddModal(null);
-      setFeedback(`✅ "${addModal.titre}" ajouté au ${JOURS_NOMS[selectedDay].toLowerCase()} (${selectedRepas}) !`);
+      setFeedback(`✅ « ${titreMajuscules(addModal.titre)} » ajouté : ${JOURS_NOMS[selectedDay].toLowerCase()}, ${LIBELLE_CRENEAU[selectedRepas].toLowerCase()}`);
       setTimeout(() => setFeedback(null), 3000);
     } catch (err) {
       setFeedback(`❌ Erreur : ${errorMessage(err)}`);
@@ -131,7 +136,7 @@ export default function FavorisPage() {
           <p className="text-gray-500 mt-2">
             {favorites.length > 0
               ? `${favorites.length} repas liké${favorites.length > 1 ? 's' : ''} · Ajoutez-les directement au planning de la semaine`
-              : 'Likez des repas depuis le dashboard pour les retrouver ici'}
+              : 'Ajoutez des recettes en favori pour les retrouver ici'}
           </p>
         </div>
 
@@ -149,7 +154,7 @@ export default function FavorisPage() {
             <div className="text-6xl mb-6">⭐</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Aucun favori pour le moment</h2>
             <p className="text-gray-500 mb-8">
-              Cliquez sur l&apos;étoile ⭐ sur les cartes repas du dashboard pour les ajouter à vos favoris.
+              Sur une recette, touchez « Favori » (ou « Changer » → « Favori » depuis le planning) pour la retrouver ici.
             </p>
             <Link href="/aujourdhui"
               className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 text-white font-semibold rounded-full hover:bg-brand-600 transition-all shadow-cta">
@@ -258,7 +263,7 @@ export default function FavorisPage() {
 
                   {/* Bouton ajouter au planning */}
                   <button
-                    onClick={() => { setAddModal(meal); setSelectedDay(0); setSelectedRepas('dejeuner'); }}
+                    onClick={() => { setAddModal(meal); setSelectedDay(0); setSelectedRepas(meal.type_repas === 'dessert' ? 'dessert' : 'diner'); }}
                     disabled={adding === meal.id}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 disabled:opacity-50 transition-colors">
                     {adding === meal.id ? (
@@ -266,6 +271,11 @@ export default function FavorisPage() {
                     ) : (
                       <><Plus className="w-4 h-4" /> Ajouter au planning</>
                     )}
+                  </button>
+                  <button
+                    onClick={() => { void removeFavorite(meal.id).then(() => toast.success('Retiré des favoris')).catch(e => toast.error(errorMessage(e))); }}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 min-h-[40px] text-xs font-medium text-gray-500 rounded-full hover:bg-gray-100 hover:text-gray-700 transition-colors">
+                    <HeartOff className="w-3.5 h-3.5" /> Retirer des favoris
                   </button>
                 </div>
               </div>
@@ -331,7 +341,7 @@ export default function FavorisPage() {
             {/* Choix du repas */}
             <label className="block text-sm font-medium text-gray-700 mb-2">Repas</label>
             <div className="flex gap-2 mb-6">
-              {(['dejeuner', 'diner'] as const).map(r => (
+              {(addModal.type_repas === 'dessert' ? (['dessert_midi', 'dessert'] as const) : (['dejeuner', 'diner'] as const)).map(r => (
                 <button key={r}
                   onClick={() => setSelectedRepas(r)}
                   className={`flex-1 py-3 rounded-full text-sm font-medium transition-all ${
@@ -339,7 +349,7 @@ export default function FavorisPage() {
                       ? 'bg-brand-500 text-white shadow-xs'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
                   }`}>
-                  {r === 'dejeuner' ? '☀️ Déjeuner' : '🌙 Dîner'}
+                  {LIBELLE_CRENEAU[r]}
                 </button>
               ))}
             </div>
@@ -347,7 +357,7 @@ export default function FavorisPage() {
             {/* Récap */}
             <div className="bg-creme-50 rounded-xl p-3 mb-6 text-center text-sm text-gray-500">
               <Check className="w-4 h-4 inline text-sauge-600 mr-1" />
-              {JOURS_NOMS[selectedDay]} · {selectedRepas === 'dejeuner' ? 'Déjeuner' : 'Dîner'}
+              {JOURS_NOMS[selectedDay]} · {LIBELLE_CRENEAU[selectedRepas]}
             </div>
 
             <div className="flex gap-3">

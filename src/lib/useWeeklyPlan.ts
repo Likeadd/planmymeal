@@ -84,6 +84,18 @@ export const WEEK_OFFSET_MAX = 4;
 // codés en dur dans le hook (fondation i18n, audit P0.4)
 const RAYON_LABELS: Record<string, string> = DICT_FR.rayons;
 
+/** Coche / décoche via l'API serveur (plus d'écriture directe depuis le navigateur). */
+async function cocherServeur(body: Record<string, unknown>): Promise<boolean> {
+  try {
+    const res = await fetch('/api/courses/cocher', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
   const [days, setDays] = useState<DayPlan[]>([]);
   const [shoppingSections, setShoppingSections] = useState<ShoppingSection[]>([]);
@@ -134,15 +146,11 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
     if (pending.length === 0) return;
     const echecs: typeof pending = [];
     for (const t of pending) {
-      const { error } = await supabase
-        .from('shopping_list_items')
-        .update({ checked: t.checked })
-        .eq('list_id', t.listId)
-        .eq('ingredient_id', t.ingredientId);
-      if (error) echecs.push(t);
+      const ok = await cocherServeur({ list_id: t.listId, ingredient_id: t.ingredientId, checked: t.checked });
+      if (!ok) echecs.push(t);
     }
     replacePendingToggles(echecs);
-  }, [supabase]);
+  }, []);
 
   // Connectivité : à chaque retour du réseau, on resynchronise les coches
   useEffect(() => {
@@ -367,6 +375,8 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
       await loadPlan();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la régénération');
+      // Rethrow : l'appelant affiche un toast d'erreur (et pas « Nouveau repas ✓ »)
+      throw err;
     } finally {
       setRegeneratingSlots(prev => ({ ...prev, [key]: false }));
     }
@@ -387,12 +397,9 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
             if (!navigator.onLine) {
               queuePendingToggle({ listId: shoppingListId, ingredientId: it.ingredient_id, checked: newChecked });
             } else {
-              supabase
-                .from('shopping_list_items')
-                .update({ checked: newChecked })
-                .eq('list_id', shoppingListId)
-                .eq('ingredient_id', it.ingredient_id)
-                .then(({ error }) => { if (error) console.error('Erreur update checked:', error); });
+              // Échec réseau → file locale, rejouée au retour (comme hors ligne)
+              void cocherServeur({ list_id: shoppingListId, ingredient_id: it.ingredient_id, checked: newChecked })
+                .then(ok => { if (!ok) queuePendingToggle({ listId: shoppingListId, ingredientId: it.ingredient_id, checked: newChecked }); });
             }
           }
           return { ...it, checked: newChecked };
@@ -417,15 +424,9 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
       return prev.map(s => ({ ...s, items: s.items.map(it => ({ ...it, checked: false })) }));
     });
     if (shoppingListId && navigator.onLine) {
-      supabase
-        .from('shopping_list_items')
-        .update({ checked: false })
-        .eq('list_id', shoppingListId)
-        .eq('checked', true)
-        .then(({ error }) => { if (error) console.error('Erreur uncheck all:', error); });
+      void cocherServeur({ list_id: shoppingListId, tout_decocher: true });
     }
-    // supabase = singleton de createBrowserClient() → instance stable
-  }, [shoppingListId, supabase]);
+  }, [shoppingListId]);
 
   // Toggle restes : "cuisiné le soir, mangé aussi le lendemain midi"
   const toggleRestes = useCallback(async (jourDiner: number) => {

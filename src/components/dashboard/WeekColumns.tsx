@@ -11,11 +11,13 @@
 import Link from 'next/link';
 import { CalendarDays, Loader2, Check } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
-import { formatMinutes, cn, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, cn, titreMajuscules, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 import { recetteHref } from '@/lib/seo';
 import { useTodayIndex } from '@/lib/useTodayIndex';
 import { useAuth } from '@/components/AuthProvider';
+import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
+import { FamilleLegendeInline } from '@/components/dashboard/FamilleLegende';
 import { useChangerCreneau, repasDuCreneau, type ActionsCreneau } from '@/components/dashboard/useChangerCreneau';
 
 export function WeekColumns({
@@ -76,7 +78,7 @@ export function WeekColumns({
               survol ? 'border-brand-400 ring-2 ring-brand-200' : 'border-gray-100 shadow-card hover:shadow-pop',
               status === 'cooked' && 'opacity-80')}>
             <div className={cn('w-16 shrink-0 flex items-center justify-center text-2xl', fond)} aria-hidden>
-              {meal.personnalise ? '✏️' : estReste ? '🍱' : soir ? '🌙' : '☀️'}
+              {meal.personnalise ? '✏️' : estReste ? '🍱' : emojiRecette(meal.titre)}
             </div>
             <div className="flex-1 min-w-0 px-4 py-3 flex flex-col justify-center">
               {lien ? (
@@ -93,9 +95,12 @@ export function WeekColumns({
                 {status === 'cooked' && <span className="ml-2 inline-flex items-center gap-0.5 text-sauge-700 font-semibold"><Check className="w-3.5 h-3.5" /> fait</span>}
               </p>
               {lien && (
-                <Link href={lien} className={cn('mt-1 text-[12.5px] font-semibold hover:underline w-fit', couleurLien)}>
-                  Voir la recette ›
-                </Link>
+                <div className="mt-1 flex items-center gap-3 min-w-0">
+                  <Link href={lien} className={cn('text-[12.5px] font-semibold hover:underline shrink-0', couleurLien)}>
+                    Voir la recette ›
+                  </Link>
+                  {!estReste && <FamilleBadges meal={meal} compacte />}
+                </div>
               )}
             </div>
             <div className="shrink-0 flex items-center pr-4">
@@ -134,7 +139,10 @@ export function WeekColumns({
         <h2 className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-gray-900">
           <CalendarDays className="w-4 h-4 text-brand-500" aria-hidden /> Mes repas de la semaine
         </h2>
-        <span className="text-xs font-medium text-gray-500">🍰 {desserts} desserts cette semaine</span>
+        <div className="flex items-center gap-5">
+          <FamilleLegendeInline />
+          <span className="text-xs font-medium text-gray-500">🍰 {desserts} desserts cette semaine</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-3 items-start">

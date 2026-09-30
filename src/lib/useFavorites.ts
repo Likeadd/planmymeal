@@ -5,14 +5,16 @@ import { createBrowserClient } from '@/lib/supabase';
 import { toRecetteFavori, COLONNES_RECETTE_FAVORI, type RecetteFavoriEmbed } from '@/lib/db-rows';
 import { getMonday } from '@/lib/dates';
 import { errorMessage } from '@/lib/utils';
-import type { RecetteFavori } from '@/types';
+import type { RecetteFavori, RepasSlot } from '@/types';
 
 interface UseFavoritesResult {
   favorites: RecetteFavori[];
   loading: boolean;
   error: string;
-  /** Ajoute un repas à un jour/repas du planning courant */
-  addToPlanning: (mealId: number, jourSemaine: number, repasType: 'dejeuner' | 'diner') => Promise<void>;
+  /** Ajoute un repas à un jour/créneau du planning (via le serveur) */
+  addToPlanning: (mealId: number, jourSemaine: number, repasType: RepasSlot, semaineDebut?: string) => Promise<void>;
+  /** Retire la recette des favoris */
+  removeFavorite: (mealId: number) => Promise<void>;
   adding: number | null; // meal_id en cours d'ajout
 }
 
@@ -78,43 +80,21 @@ export function useFavorites(): UseFavoritesResult {
     void (async () => { await loadFavorites(); })();
   }, [loadFavorites]);
 
-  /** Ajouter un repas aux favoris à un créneau du planning courant */
-  const addToPlanning = async (mealId: number, jourSemaine: number, repasType: 'dejeuner' | 'diner') => {
+  /** Placer un favori sur un créneau via l'API serveur (/api/swap-meal) : la
+   *  liste de courses et le budget sont recalculés, les règles de créneau
+   *  (dessert ↔ créneau dessert) appliquées côté serveur. */
+  const addToPlanning = async (mealId: number, jourSemaine: number, repasType: RepasSlot, semaineDebut = getMonday()) => {
     setAdding(mealId);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
-
-      const semaineDebut = getMonday();
-
-      // Chercher ou créer le plan de la semaine courante
-      let { data: plan } = await supabase
-        .from('weekly_plans')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('semaine_debut', semaineDebut)
-        .eq('is_active', true)
-        .single();
-
-      if (!plan) {
-        const { data: newPlan } = await supabase
-          .from('weekly_plans')
-          .insert({ user_id: user.id, semaine_debut: semaineDebut, is_active: true })
-          .select('id')
-          .single();
-        plan = newPlan;
+      const res = await fetch('/api/swap-meal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semaine_debut: semaineDebut, jour_semaine: jourSemaine, repas_type: repasType, meal_id: mealId }),
+      });
+      if (!res.ok) {
+        const { error: apiError } = await res.json().catch(() => ({ error: `Erreur ${res.status}` }));
+        throw new Error(apiError || `Erreur ${res.status}`);
       }
-
-      if (!plan) throw new Error('Impossible de créer/trouver le planning');
-
-      // Upsert le repas dans le créneau (PK composite explicite)
-      await supabase
-        .from('plan_meals')
-        .upsert(
-          { plan_id: plan.id, jour_semaine: jourSemaine, repas_type: repasType, meal_id: mealId },
-          { onConflict: 'plan_id,jour_semaine,repas_type' }
-        );
-
     } catch (err) {
       throw new Error(errorMessage(err, 'Erreur lors de l\'ajout'));
     } finally {
@@ -122,5 +102,16 @@ export function useFavorites(): UseFavoritesResult {
     }
   };
 
-  return { favorites, loading, error, addToPlanning, adding };
+  /** Retirer une recette des favoris (efface l'avis côté serveur) */
+  const removeFavorite = async (mealId: number) => {
+    const res = await fetch('/api/favori', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meal_id: mealId, avis: null }),
+    });
+    if (!res.ok) throw new Error("Impossible de retirer ce favori");
+    setFavorites(prev => prev.filter(f => f.id !== mealId));
+  };
+
+  return { favorites, loading, error, addToPlanning, removeFavorite, adding };
 }

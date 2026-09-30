@@ -14,9 +14,8 @@ import { useState } from 'react';
 import { X, Loader2, Check } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
-import { createBrowserClient } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
-import { NOTES_REPAS, noterRepas, type NoteRepas } from '@/lib/memoire';
+import { NOTES_REPAS, type NoteRepas } from '@/lib/memoire';
 import { RAISONS_NOTE, type RaisonNote } from '@/types';
 import { errorMessage } from '@/lib/utils';
 
@@ -29,7 +28,6 @@ export function MealNotation({
   /** Appelé après un enregistrement réussi (permet au parent de rafraîchir) */
   onNoted?: (note: NoteRepas) => void;
 }) {
-  const supabase = createBrowserClient();
   const { user } = useAuth();
   const reduceMotion = useReducedMotion();
 
@@ -44,7 +42,15 @@ export function MealNotation({
     }
     setSaving(true);
     try {
-      await noterRepas(user.id, mealId, valeur, raison, supabase);
+      const res = await fetch('/api/noter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_id: mealId, note: valeur, raison }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: `Erreur ${res.status}` }));
+        throw new Error(error);
+      }
       setDone(true);
       onNoted?.(valeur);
       toast.success(

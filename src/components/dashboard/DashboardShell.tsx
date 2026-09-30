@@ -19,7 +19,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import {
   CalendarDays, Refrigerator, BookOpen, Star, Wallet,
-  Settings, Sparkles, Crown, Users, Home,
+  Settings, Sparkles, Crown, Users, Home, History,
 } from 'lucide-react';
 import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/components/AuthProvider';
@@ -169,6 +169,7 @@ function UserMenu() {
       liens={[
         { href: '/compte', label: 'Mon compte', icon: Settings },
         { href: '/favoris', label: 'Favoris', icon: Star },
+        { href: '/planning', label: 'Historique des semaines', icon: History },
         { href: '/budget', label: 'Budget', icon: Wallet },
       ]}
       surDeconnexion={async () => {

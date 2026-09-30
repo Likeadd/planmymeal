@@ -4,30 +4,19 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  Clock, Flame, ChefHat as ChefIcon, Star, ThumbsDown,
+  Clock, Flame, ChefHat as ChefIcon, Heart, ThumbsDown,
   ArrowLeft, Loader2, Utensils, Package, AlertTriangle, Users, Euro, CookingPot
 } from 'lucide-react';
-import type { Meal, IngredientQuantity, TypeRepas } from '@/types';
+import type { Meal, IngredientQuantity } from '@/types';
 import { toMeal, type MealWithIngredients } from '@/lib/db-rows';
 import { createBrowserClient } from '@/lib/supabase';
-import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules, emojiRecette } from '@/lib/utils';
 import { prixParPortion, prixRecette, prixLigne, formatPrix } from '@/lib/budget';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { USTENSILE_ICONS, detecterUstensile } from '@/lib/ustensiles';
 import { useAuth } from '@/components/AuthProvider';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 
-/** Emoji illustratif par type de recette (remplace les photos générées) */
-function typeEmoji(type: TypeRepas): string {
-  const emojis: Record<TypeRepas, string> = {
-    plat: '🍛',
-    entree: '🥗',
-    dessert: '🍰',
-    petit_dejeuner: '🥐',
-    snack: '🍎',
-  };
-  return emojis[type] ?? '🍽️';
-}
 
 export default function RecetteClient({
   mealId, initial,
@@ -104,22 +93,22 @@ export default function RecetteClient({
     return () => { cancelled = true; };
   }, [mealId, user, supabase, initialMeal]);
 
+  // Avis via l'API serveur : un second clic sur le même bouton RETIRE vraiment
+  // l'avis (avant, l'annulation n'était qu'affichée, la base gardait le like).
   const handleFeedback = async (status: 'liked' | 'disliked') => {
     if (!user || !meal) return;
     setSaving(true);
-
-    // Si on reclique sur le même, annuler
     const newStatus = feedback === status ? null : status;
-    if (newStatus) {
-      await supabase.from('meal_history').insert({
-        user_id: user.id,
-        meal_id: meal.id,
-        planned_date: new Date().toISOString().split('T')[0],
-        status: newStatus,
+    try {
+      const res = await fetch('/api/favori', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_id: meal.id, avis: newStatus }),
       });
+      if (res.ok) setFeedback(newStatus);
+    } finally {
+      setSaving(false);
     }
-    setFeedback(newStatus);
-    setSaving(false);
   };
 
   // ─── Loading ─────────────────────────────────────
@@ -165,7 +154,7 @@ export default function RecetteClient({
               <Image src={meal.photo.url} alt={meal.titre} fill priority sizes="(max-width: 768px) 100vw, 768px"
                 className="object-cover" />
             ) : (
-              <span className="text-8xl drop-shadow-xs" aria-hidden>{typeEmoji(meal.type_repas)}</span>
+              <span className="text-8xl drop-shadow-xs" aria-hidden>{emojiRecette(meal.titre, meal.type_repas)}</span>
             )}
           </div>
           {/* Attribution exigée par la banque d'images */}
@@ -181,8 +170,8 @@ export default function RecetteClient({
           )}
 
           {/* ─── Titre + badges ──────────────────────── */}
-          <div className="flex items-start justify-between mb-6">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+            <div className="min-w-0">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
                   {formatTypeRepas(meal.type_repas)}
@@ -209,19 +198,23 @@ export default function RecetteClient({
               <button
                 onClick={() => handleFeedback('liked')}
                 disabled={saving}
-                className={`p-2.5 rounded-xl border-2 transition-all ${
+                aria-pressed={feedback === 'liked'}
+                className={`inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl border-2 text-sm font-semibold transition-all ${
                   feedback === 'liked'
-                    ? 'bg-sable-50 border-sable-400 text-sable-600'
-                    : 'border-gray-200 text-gray-300 hover:border-sable-300 hover:text-sable-500'
+                    ? 'bg-brand-50 border-brand-400 text-brand-600'
+                    : 'border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-500'
                 }`}
-                title="J'aime cette recette"
+                title={feedback === 'liked' ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               >
-                <Star className={`w-5 h-5 ${feedback === 'liked' ? 'fill-current' : ''}`} />
+                <Heart className={`w-5 h-5 ${feedback === 'liked' ? 'fill-current' : ''}`} />
+                {feedback === 'liked' ? 'Favori' : 'Ajouter aux favoris'}
               </button>
               <button
                 onClick={() => handleFeedback('disliked')}
                 disabled={saving}
-                className={`p-2.5 rounded-xl border-2 transition-all ${
+                aria-pressed={feedback === 'disliked'}
+                aria-label="Je n'aime pas cette recette"
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border-2 transition-all ${
                   feedback === 'disliked'
                     ? 'bg-red-50 border-red-400 text-red-600'
                     : 'border-gray-200 text-gray-300 hover:border-red-300 hover:text-red-400'
@@ -278,9 +271,11 @@ export default function RecetteClient({
             className="mb-8 px-3 py-2 rounded-xl border border-gray-100 bg-white shadow-xs"
           />
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* ─── Colonne gauche : ingrédients + macros ─── */}
-            <div className="lg:col-span-1 space-y-6">
+          {/* Mobile : ingrédients → étapes → ustensiles & nutrition (on cuisine
+              avec les étapes, elles ne doivent pas arriver en dernier).
+              Desktop : ingrédients + extras à gauche, étapes à droite. */}
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+            <div className="lg:col-span-1 lg:col-start-1 lg:row-start-1 space-y-6">
               {/* Ingrédients avec prix */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
@@ -325,7 +320,9 @@ export default function RecetteClient({
                   )}
                 </div>
               </div>
+            </div>
 
+            <div className="lg:col-span-1 lg:col-start-1 lg:row-start-2 space-y-6 order-3 lg:order-none">
               {/* Ustensiles */}
               {meal.ustensiles && meal.ustensiles.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
@@ -369,7 +366,7 @@ export default function RecetteClient({
             </div>
 
             {/* ─── Colonne droite : instructions pas à pas ─── */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 lg:col-start-2 lg:row-start-1 lg:row-span-2 order-2 lg:order-none">
               <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-8 shadow-xs">
                 <h2 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-lg">
                   <ChefIcon className="w-5 h-5 text-brand-500" />
@@ -447,8 +444,8 @@ export default function RecetteClient({
               {user ? 'Retour au planning' : 'Toutes les recettes'}
             </Link>
             {feedback === 'liked' && (
-              <span className="text-sm text-sable-600 font-medium flex items-center gap-1">
-                <Star className="w-4 h-4 fill-current" /> Recette likée — elle reviendra plus souvent !
+              <span className="text-sm text-brand-600 font-medium flex items-center gap-1">
+                <Heart className="w-4 h-4 fill-current" /> Dans vos favoris — elle reviendra plus souvent
               </span>
             )}
             {feedback === 'disliked' && (

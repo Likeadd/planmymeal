@@ -7,13 +7,13 @@ import { useRouter } from 'next/navigation';
 import { ChefHat, Users, Clock, Sparkles, ArrowRight, ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { BrandMark } from '@/components/BrandMark';
 import { toast } from 'sonner';
-import { createBrowserClient } from '@/lib/supabase';
+import { enregistrerProfil } from '@/lib/profil-client';
 import { useAuth } from '@/components/AuthProvider';
 import type { Objectif, NiveauCuisine, Regime } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import { REGIMES_CHOIX } from '@/lib/regimes';
-import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, enregistrerExclusions } from '@/lib/exclusions-alimentaires';
+import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES } from '@/lib/exclusions-alimentaires';
 
 /** Libellés du récapitulatif (étape 9) */
 const RYTHME_LABELS: Partial<Record<RythmeDesserts, string>> = {
@@ -68,7 +68,6 @@ const STEPS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const supabase = createBrowserClient();
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -117,10 +116,12 @@ export default function OnboardingPage() {
     setSaving(true);
 
     try {
-      // 1. Mettre à jour le profil
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      // Profil, profil corporel, exclusions et régimes : une seule écriture
+      // serveur (/api/profil), validée côté serveur.
+      const pe = profilEffectif(profilCorporel);
+      const saisi = (v: number | null, effectif: number) => (v != null && v === effectif ? effectif : null);
+      await enregistrerProfil({
+        profil: {
           nb_personnes: form.nb_personnes,
           objectif: form.objectif,
           niveau_cuisine: form.niveau_cuisine,
@@ -135,38 +136,16 @@ export default function OnboardingPage() {
           utiliser_saison: form.utiliser_saison,
           calories_par_jour: kcalFinales,
           onboarding_complete: true,
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Profil corporel (colonnes 00030) : enregistrement séparé et non
-      // bloquant — si la migration n'est pas encore appliquée, l'inscription
-      // aboutit quand même (les kcal sont déjà enregistrées ci-dessus).
-      // Une saisie hors bornes n'est pas enregistrée (null = référence).
-      const pe = profilEffectif(profilCorporel);
-      const saisi = (v: number | null, effectif: number) => (v != null && v === effectif ? effectif : null);
-      const { error: corpsError } = await supabase
-        .from('profiles')
-        .update({
+        },
+        corps: {
           sexe: form.sexe,
           age: saisi(profilCorporel.age, pe.age),
           taille_cm: saisi(profilCorporel.taille_cm, pe.taille_cm),
           poids_kg: saisi(profilCorporel.poids_kg, pe.poids_kg),
-        })
-        .eq('id', user.id);
-      if (corpsError) console.warn('Profil corporel non enregistré :', corpsError.message);
-
-      // 2-3. Allergies et détestés (familles d'aliments, résolues à la génération)
-      await enregistrerExclusions(supabase, user.id, form.allergies, form.dislikes);
-
-      // 4. Sauvegarder les régimes
-      if (form.regimes.length > 0) {
-        await supabase.from('user_diets').upsert(
-          form.regimes.map(regime => ({ user_id: user.id, regime })),
-          { onConflict: 'user_id,regime' }
-        );
-      }
+        },
+        exclusions: { allergies: form.allergies, detestes: form.dislikes },
+        regimes: { liste: form.regimes, mode: 'ajouter' },
+      });
 
       // 5. Email de bienvenue (transactionnel unique, jamais bloquant —
       // fire-and-forget : on ne retarde pas la navigation vers le dashboard)

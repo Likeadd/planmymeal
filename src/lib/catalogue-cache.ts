@@ -18,7 +18,7 @@ import type { Database } from '@/../supabase/database.types';
 import type { MealCatalogueEmbed } from '@/lib/db-rows';
 import { chargerCatalogue } from '@/lib/catalogue';
 
-const CACHE_KEY = 'pmm:catalogue:v1';
+const CACHE_KEY = 'pmm:catalogue:v2'; // v2 : catalogue nettoyé (titres, saisons, variantes masquées)
 /** Au-delà, le cache est jugé périmé et revalidé en arrière-plan. */
 const DUREE_FRAICHE = 60 * 60 * 1000; // 1 h
 

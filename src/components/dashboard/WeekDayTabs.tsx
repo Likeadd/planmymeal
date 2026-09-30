@@ -13,11 +13,13 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Loader2, Package, Check } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
-import { formatMinutes, cn, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, cn, titreMajuscules, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
 import { useAuth } from '@/components/AuthProvider';
 import { useTodayIndex } from '@/lib/useTodayIndex';
 import { recetteHref } from '@/lib/seo';
+import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
+import { FamilleLegende } from '@/components/dashboard/FamilleLegende';
 import { useChangerCreneau, repasDuCreneau } from '@/components/dashboard/useChangerCreneau';
 
 export function WeekDayTabs({
@@ -107,6 +109,8 @@ export function WeekDayTabs({
         </div>
       )}
 
+      <FamilleLegende className="mt-4 mb-0" />
+
       {/* ── Ce midi / Ce soir ── */}
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         {(['dejeuner', 'diner'] as const).map(slot => {
@@ -123,7 +127,7 @@ export function WeekDayTabs({
           return (
             <section key={slot} className="relative rounded-3xl border border-gray-100 bg-white shadow-card overflow-hidden">
               <div className={cn('h-24 flex items-center justify-center text-5xl', soir ? 'bg-accent-100' : 'bg-brand-100')} aria-hidden>
-                {!meal ? '🍽️' : meal.personnalise ? '✏️' : estReste ? '🍱' : soir ? '🌙' : '☀️'}
+                {!meal ? '🍽️' : meal.personnalise ? '✏️' : estReste ? '🍱' : emojiRecette(meal.titre)}
               </div>
               <div className="p-5">
                 <p className={cn('text-xs font-bold uppercase tracking-[0.1em]', soir ? 'text-accent-700' : 'text-brand-600')}>
@@ -150,6 +154,7 @@ export function WeekDayTabs({
                         : estReste ? 'Cuisiné la veille · à réchauffer'
                         : `${formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}${prix != null ? ` · ${formatPrix(prix)} par personne` : ''}`}
                     </p>
+                    {!meal.personnalise && !estReste && <FamilleBadges meal={meal} className="mt-2" />}
                     {status === 'cooked' && (
                       <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-sauge-100 px-2.5 py-1 text-xs font-semibold text-sauge-700">
                         <Check className="w-3.5 h-3.5" /> C&apos;est fait

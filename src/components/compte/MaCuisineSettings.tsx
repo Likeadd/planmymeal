@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { Check, Crown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
-import { createBrowserClient } from '@/lib/supabase';
+import { enregistrerProfil } from '@/lib/profil-client';
 import { errorMessage } from '@/lib/utils';
 import { EQUIPEMENTS } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
@@ -30,7 +30,6 @@ const RYTHMES: { value: RythmeDesserts; label: string; sous: string; pro?: boole
 export function MaCuisineSettings() {
   const { user, profile, refreshProfile, isPro, isFamille } = useAuth();
   const gateGourmand = !isPro && !isFamille;
-  const supabase = createBrowserClient();
   // Initialisé depuis le profil (le parent re-monte ce composant via `key`
   // quand le profil change → pas besoin de setState dans un effet)
   const [equipements, setEquipements] = useState<string[]>(profile?.equipements ?? []);
@@ -54,10 +53,9 @@ export function MaCuisineSettings() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('profiles')
-        .update({ equipements, auto_restes: autoRestes, rythme_desserts: rythmeDesserts, utiliser_saison: utiliserSaison })
-        .eq('id', user.id);
-      if (error) throw error;
+      await enregistrerProfil({
+        profil: { equipements, auto_restes: autoRestes, rythme_desserts: rythmeDesserts, utiliser_saison: utiliserSaison },
+      });
       await refreshProfile();
       setDirty(false);
     } catch (err) {

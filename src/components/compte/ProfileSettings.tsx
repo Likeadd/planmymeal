@@ -10,6 +10,7 @@ import { Check, Loader2, Mail, Pencil, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { createBrowserClient } from '@/lib/supabase';
+import { enregistrerProfil } from '@/lib/profil-client';
 import { errorMessage } from '@/lib/utils';
 
 export function ProfileSettings() {
@@ -42,11 +43,7 @@ export function ProfileSettings() {
 
     try {
       // 1. Mettre à jour le nom dans profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ full_name: name.trim() })
-        .eq('id', user.id);
-      if (profileError) throw profileError;
+      await enregistrerProfil({ profil: { full_name: name.trim() } });
 
       // 2. Mettre à jour l'email auth si modifié
       if (emailChanged) {

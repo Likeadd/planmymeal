@@ -12,8 +12,6 @@ import { toast } from 'sonner';
 import type { DayPlan, RecettePlanning, RepasSlot } from '@/types';
 import { titreMajuscules, errorMessage } from '@/lib/utils';
 import { useAuth } from '@/components/AuthProvider';
-import { createBrowserClient } from '@/lib/supabase';
-import { noterRepas } from '@/lib/memoire';
 import { ChangerSheet } from '@/components/dashboard/ChangerSheet';
 import { MealNotation } from '@/components/dashboard/MealNotation';
 import { WhyModal } from '@/components/dashboard/WhyModal';
@@ -39,7 +37,6 @@ export function repasDuCreneau(day: DayPlan, slot: RepasSlot): RecettePlanning |
 
 export function useChangerCreneau(days: DayPlan[], a: ActionsCreneau) {
   const { user } = useAuth();
-  const supabase = createBrowserClient();
   const [cible, setCible] = useState<{ jour: number; slot: RepasSlot } | null>(null);
   const [notation, setNotation] = useState<RecettePlanning | null>(null);
   const [pourquoi, setPourquoi] = useState<{ meal: RecettePlanning; jour: number; slot: RepasSlot } | null>(null);
@@ -47,7 +44,12 @@ export function useChangerCreneau(days: DayPlan[], a: ActionsCreneau) {
   const ajouterFavori = async (meal: RecettePlanning) => {
     if (!user) return;
     try {
-      await noterRepas(user.id, meal.id, 5, null, supabase);
+      const res = await fetch('/api/favori', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meal_id: meal.id, avis: 'liked' }),
+      });
+      if (!res.ok) throw new Error("Impossible d'ajouter aux favoris");
       toast.success('Ajouté à vos favoris ❤️');
     } catch (e) {
       toast.error(errorMessage(e, "Impossible d'ajouter aux favoris"));
@@ -76,7 +78,7 @@ export function useChangerCreneau(days: DayPlan[], a: ActionsCreneau) {
         onVider={meal ? avecToast(() => a.onVider(jour, slot), 'Créneau vidé') : undefined}
         secondaires={recette && meal ? [
           { emoji: '✅', label: "C'est fait", onClick: () => a.onMarkStatus(meal.id, 'cooked') },
-          { emoji: '❤️', label: 'Favori', onClick: () => void ajouterFavori(meal) },
+          { emoji: '❤️', label: 'Ajouter aux favoris', onClick: () => void ajouterFavori(meal) },
           { emoji: '⭐', label: 'Noter', onClick: () => setNotation(meal) },
           { emoji: '❓', label: 'Pourquoi ce repas ?', onClick: () => setPourquoi({ meal, jour, slot }) },
           ...(slot === 'diner' && jour <= 5 ? [{

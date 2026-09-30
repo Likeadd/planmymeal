@@ -31,7 +31,8 @@ const ACCOUNT_LINKS = [
   { href: '/aujourdhui', label: "Aujourd'hui", icon: LayoutDashboard },
   { href: '/favoris', label: 'Favoris', icon: Star },
   { href: '/recettes', label: 'Recettes', icon: BookOpen },
-  { href: '/planning', label: 'Planning', icon: Calendar },
+  { href: '/dashboard', label: 'Mon planning', icon: Calendar },
+  { href: '/planning', label: 'Historique', icon: Calendar },
   { href: '/compte', label: 'Mon compte', icon: Settings },
 ];
 

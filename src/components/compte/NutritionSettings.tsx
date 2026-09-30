@@ -18,12 +18,13 @@ import { Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { createBrowserClient } from '@/lib/supabase';
+import { enregistrerProfil } from '@/lib/profil-client';
 import { errorMessage } from '@/lib/utils';
 import type { Objectif, Regime } from '@/types';
 import { REGIMES_CHOIX } from '@/lib/regimes';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import {
-  GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, enregistrerExclusions, correspond,
+  GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES, correspond,
   type FamilleAliments,
 } from '@/lib/exclusions-alimentaires';
 
@@ -131,35 +132,21 @@ export function NutritionSettings() {
     if (!user) return;
     setSaving(true);
     try {
-      // 1. Objectif + calories (colonnes historiques)
-      const { error: profilErr } = await supabase.from('profiles')
-        .update({ objectif, calories_par_jour: kcalValide(kcalManuelles) ?? kcalCalculees })
-        .eq('id', user.id);
-      if (profilErr) throw profilErr;
-
-      // 2. Profil corporel (colonnes 00030) — non bloquant si la migration manque
+      // Une seule écriture serveur (/api/profil) : objectif + calories,
+      // profil corporel, exclusions (familles) et régimes (remplacés).
       const pe = profilEffectif(corps);
       const saisi = (v: number | null, effectif: number) => (v != null && v === effectif ? effectif : null);
-      const { error: corpsErr } = await supabase.from('profiles')
-        .update({
+      await enregistrerProfil({
+        profil: { objectif, calories_par_jour: kcalValide(kcalManuelles) ?? kcalCalculees },
+        corps: {
           sexe,
           age: saisi(corps.age, pe.age),
           taille_cm: saisi(corps.taille_cm, pe.taille_cm),
           poids_kg: saisi(corps.poids_kg, pe.poids_kg),
-        })
-        .eq('id', user.id);
-      if (corpsErr) console.warn('Profil corporel non enregistré :', corpsErr.message);
-
-      // 3. Allergies / détestés (familles) puis régimes : on remplace l'ensemble.
-      await enregistrerExclusions(supabase, user.id, allergies, detestes);
-
-      const { error: delDiet } = await supabase.from('user_diets').delete().eq('user_id', user.id);
-      if (delDiet) throw delDiet;
-      if (regimes.length > 0) {
-        const { error: insDiet } = await supabase.from('user_diets')
-          .insert(regimes.map(regime => ({ user_id: user.id, regime })));
-        if (insDiet) throw insDiet;
-      }
+        },
+        exclusions: { allergies, detestes },
+        regimes: { liste: regimes, mode: 'remplacer' },
+      });
 
       await refreshProfile();
       setDirty(false);

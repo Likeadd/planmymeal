@@ -115,6 +115,11 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
     [days]
   );
 
+  // Pas de référence (ni budget ni dépense habituelle) : « 0 € d'économies »
+  // se lisait comme un échec — on invite à définir la référence à la place.
+  const sansReference = profile?.budget_hebdo == null && recap?.economie_reference == null;
+  const valeurEconomie = economie != null && economie > 0 ? formatPrix(economie) : sansReference ? 'À définir' : '0 €';
+
   // Anti-gaspi : déjeuners marqués « restes » dans la semaine affichée
   const nbRestes = useMemo(() => days.filter(d => d.restesDe != null).length, [days]);
 
@@ -126,7 +131,7 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
         <CelluleCompacte
           href="/compte" titre="Économies"
           icone={<PiggyBank className="w-3.5 h-3.5" />} iconCls="bg-brand-50 text-brand-600"
-          valeur={recap == null ? null : (economie != null && economie > 0 ? formatPrix(economie) : '0 €')}
+          valeur={recap == null ? null : valeurEconomie}
           loadingClass="w-12" />
         {editionBudget ? (
           <span className="flex items-center gap-1.5 px-3 py-2.5 min-w-0">
@@ -149,7 +154,7 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
           <CelluleCompacte
             href={recap?.budget != null ? '/budget' : undefined}
             onClicSansLien={recap?.budget == null ? ouvrirEditionBudget : undefined}
-            titre={recap?.budget != null ? `Budget ${formatPrix(recap.budget)}` : 'Budget ?'}
+            titre={recap?.budget != null ? `sur ${formatPrix(recap.budget)}` : 'Coût · fixer budget'}
             icone={<Wallet className="w-3.5 h-3.5" />} iconCls="bg-accent-50 text-accent-600"
             valeur={recap == null ? null : formatPrix(recap.depense)}
             loadingClass="w-16" />
@@ -157,8 +162,9 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
         <CelluleCompacte titre="Cuisine"
           icone={<Timer className="w-3.5 h-3.5" />} iconCls="bg-brand-50 text-brand-600"
           valeur={tempsTotal >= 60 ? `${Math.floor(tempsTotal / 60)} h ${String(tempsTotal % 60).padStart(2, '0')}` : `${tempsTotal} min`} />
-        <CelluleCompacte titre={nbRestes > 0 ? `anti-gaspi ×${nbRestes}` : 'Zéro gaspi'}
-          icone={<Recycle className="w-3.5 h-3.5" />} iconCls="bg-sauge-100 text-sauge-600" />
+        <CelluleCompacte titre={nbRestes > 0 ? 'restes cuisinés' : 'Restes'}
+          icone={<Recycle className="w-3.5 h-3.5" />} iconCls="bg-sauge-100 text-sauge-600"
+          valeur={nbRestes > 0 ? `${nbRestes} repas` : 'Aucun'} />
       </div>
       <div className="hidden md:grid grid-cols-4 divide-x divide-gray-100">
         {/* Économies — la promesse produit. KPI « Économies » nu = arbitraire
@@ -168,11 +174,11 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
           <MetricIcon className="bg-brand-50 text-brand-600 group-hover:bg-brand-100"><PiggyBank className="w-4 h-4" /></MetricIcon>
           <div className="min-w-0">
             <MetricValue loading={recap === null} loadingClass="w-14">
-              {economie != null && economie > 0 ? formatPrix(economie) : '0 €'}
+              {valeurEconomie}
             </MetricValue>
             <MetricLabel>
               {recap?.economie_reference ? 'vs vos achats habituels'
-                : profile?.budget_hebdo != null ? 'vs votre budget' : 'Économies'}
+                : profile?.budget_hebdo != null ? 'vs votre budget' : 'Économies (dans Compte)'}
             </MetricLabel>
           </div>
         </Link>

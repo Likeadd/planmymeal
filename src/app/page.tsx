@@ -169,7 +169,7 @@ function HeroMealCard() {
   ];
 
   return (
-    <div className="w-[320px] sm:w-[380px] bg-white rounded-4xl shadow-2xl shadow-brand-900/20 p-6 rotate-2">
+    <div className="w-[min(320px,calc(100vw-5rem))] sm:w-[380px] bg-white rounded-4xl shadow-2xl shadow-brand-900/20 p-6 rotate-2">
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="text-[11px] tracking-[0.22em] uppercase text-brand-600 font-semibold">Mardi · Déjeuner</div>
@@ -337,7 +337,7 @@ function Collection() {
             budget. Fait pour votre peau… enfin, votre assiette — et la planète.
           </p>
           <a href="#tarifs"
-            className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-300 hover:text-brand-700 transition-colors">
+            className="mt-7 inline-flex items-center min-h-[44px] gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-300 hover:text-brand-700 transition-colors">
             Découvrir les menus
             <ArrowRight className="w-4 h-4" />
           </a>
@@ -416,7 +416,7 @@ function NouveautesMonde() {
               </p>
             </div>
             <Link href="/recettes"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-300 hover:text-brand-700 transition-colors whitespace-nowrap">
+              className="inline-flex items-center min-h-[44px] gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-300 hover:text-brand-700 transition-colors whitespace-nowrap">
               Explorer tout le catalogue
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -487,7 +487,7 @@ function Promo() {
             Des rituels qui font du bien et qui font du bien à faire.
           </p>
           <a href="#tarifs"
-            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white underline underline-offset-4 decoration-white/50 hover:decoration-white transition-colors">
+            className="mt-6 inline-flex items-center min-h-[44px] gap-2 text-sm font-semibold text-white underline underline-offset-4 decoration-white/50 hover:decoration-white transition-colors">
             Découvrir le batch cooking
             <ArrowRight className="w-4 h-4" />
           </a>
@@ -546,7 +546,7 @@ function Promo() {
             </>
           )}
           <a href="#collection"
-            className="mt-6 text-sm font-semibold text-gray-900 underline underline-offset-4 decoration-accent-400 hover:text-brand-600 transition-colors">
+            className="mt-6 inline-flex items-center min-h-[44px] text-sm font-semibold text-gray-900 underline underline-offset-4 decoration-accent-400 hover:text-brand-600 transition-colors">
             Découvrir les menus
           </a>
         </div>

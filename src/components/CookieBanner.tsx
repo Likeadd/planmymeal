@@ -47,7 +47,7 @@ export function CookieBanner() {
         <Cookie className="w-4 h-4 text-brand-500 shrink-0" aria-hidden />
         <p className="text-xs text-gray-600 flex-1 leading-snug">
           Cookies techniques uniquement, audience anonyme sans cookie.{' '}
-          <Link href="/confidentialite" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">
+          <Link href="/confidentialite" className="inline-block py-3 -my-3 px-1 -mx-1 text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">
             Détails
           </Link>
         </p>

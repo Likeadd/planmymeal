@@ -39,7 +39,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { chargerCatalogueCached } from '@/lib/catalogue-cache';
 import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
 import { recetteServable, normaliserNom, type IngredientPourRegime } from '@/lib/regimes';
-import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules } from '@/lib/utils';
+import { formatMinutes, formatCalories, formatTypeRepas, titreMajuscules, emojiRecette } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { recetteHref } from '@/lib/seo';
@@ -55,14 +55,26 @@ const TYPE_FILTERS: { value: TypeRepas | 'tous'; label: string }[] = [
 ];
 
 /** Critères de tri du catalogue */
-type TriChamp = 'nom' | 'temps' | 'calories' | 'prix' | 'proteines';
+type TriChamp = 'idees' | 'nom' | 'temps' | 'calories' | 'prix' | 'proteines';
 const TRI_OPTIONS: { value: TriChamp; label: string }[] = [
+  { value: 'idees', label: 'Idées de la semaine' },
   { value: 'nom', label: 'A → Z' },
   { value: 'temps', label: 'Le plus rapide' },
   { value: 'calories', label: 'Le moins calorique' },
   { value: 'prix', label: 'Le moins cher' },
   { value: 'proteines', label: 'Le plus protéiné' },
 ];
+
+/** En dessous de ce nombre de recettes, un filtre n'est pas proposé (bruit) */
+const SEUIL_FILTRE = 10;
+
+/** Rang pseudo-aléatoire d'une recette, stable pendant une semaine ISO */
+function melangeSemaine(id: number): number {
+  const semaine = Math.floor(Date.now() / (7 * 24 * 3600 * 1000));
+  let h = (id * 2654435761 + semaine * 40503) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0; h ^= h >>> 13;
+  return h;
+}
 
 const DIFFICULTES: { value: 'toutes' | 'facile' | 'moyen' | 'difficile'; label: string }[] = [
   { value: 'toutes', label: 'Toutes difficultés' },
@@ -130,18 +142,6 @@ const BATCH_MIN_JOURS = 3;
  * recettes sans valeur sont exclues comme pour les autres seuils.
  */
 const PROTEINES_MIN_G = 25;
-
-/** Emoji illustratif par type de recette (remplace les photos générées) */
-function typeEmoji(type: TypeRepas): string {
-  const emojis: Record<TypeRepas, string> = {
-    plat: '🍛',
-    entree: '🥗',
-    dessert: '🍰',
-    petit_dejeuner: '🥐',
-    snack: '🍎',
-  };
-  return emojis[type] ?? '🍽️';
-}
 
 /** Ingrédients d'une recette au format du filtre régimes (avec rayon). */
 function ingredientsRegime(m: MealCatalogue): IngredientPourRegime[] {
@@ -222,7 +222,7 @@ export default function RecettesPage() {
   const [typeFilter, setTypeFilter] = useState<TypeRepas | 'tous'>('tous');
   const [search, setSearch] = useState('');
   const [equipementFilter, setEquipementFilter] = useState<Equipement | 'tous'>('tous');
-  const [tri, setTri] = useState<TriChamp>('nom');
+  const [tri, setTri] = useState<TriChamp>('idees');
   const [difficulteFilter, setDifficulteFilter] = useState<'toutes' | 'facile' | 'moyen' | 'difficile'>('toutes');
   const [saisonFilter, setSaisonFilter] = useState<Saison | 'toutes'>('toutes');
   // Liens directs depuis la landing et les pages catégories SEO (/recettes/categorie/*) :
@@ -353,7 +353,10 @@ export default function RecettesPage() {
           // DESCENDANT : les plus protéinées d'abord. Valeur inconnue (null) →
           // en FIN de liste, même convention que les autres tris (9999/∞).
           return (b.proteines ?? -1) - (a.proteines ?? -1) || a.titre.localeCompare(b.titre, 'fr');
-        default: return a.titre.localeCompare(b.titre, 'fr');
+        case 'nom': return a.titre.localeCompare(b.titre, 'fr');
+        // « Idées de la semaine » : ordre mélangé, stable pendant la semaine,
+        // différent la suivante (plus de « Ananas frais en dés » en tête).
+        default: return melangeSemaine(a.id) - melangeSemaine(b.id);
       }
     });
   }, [meals, stats, typeFilter, search, equipementFilter, difficulteFilter, cuisineFilter, saisonFilter, tempsMax, kcalMax, prixMax, batchOnly, proteinesOnly, regimes, tri]);
@@ -385,10 +388,10 @@ export default function RecettesPage() {
 
   const nbFiltresAvances =
     (tempsMax != null ? 1 : 0) + (kcalMax != null ? 1 : 0) + (prixMax != null ? 1 : 0) +
-    (batchOnly ? 1 : 0) + (proteinesOnly ? 1 : 0) + regimes.length;
+    (batchOnly ? 1 : 0) + (proteinesOnly ? 1 : 0) + regimes.length +
+    (equipementFilter !== 'tous' ? 1 : 0) + (difficulteFilter !== 'toutes' ? 1 : 0) + (saisonFilter !== 'toutes' ? 1 : 0);
   const nbFiltresActifs = nbFiltresAvances
-    + (typeFilter !== 'tous' ? 1 : 0) + (search.trim() ? 1 : 0) + (equipementFilter !== 'tous' ? 1 : 0)
-    + (difficulteFilter !== 'toutes' ? 1 : 0) + (cuisineFilter !== 'toutes' ? 1 : 0) + (saisonFilter !== 'toutes' ? 1 : 0);
+    + (typeFilter !== 'tous' ? 1 : 0) + (search.trim() ? 1 : 0) + (cuisineFilter !== 'toutes' ? 1 : 0);
 
   const reinitialiser = () => {
     setTypeFilter('tous');
@@ -430,10 +433,10 @@ export default function RecettesPage() {
               : `${meals.length} recette${meals.length > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
           </p>
           {/* Sélections prêtes à l'emploi (pages catégories) */}
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto sm:flex-wrap [scrollbar-width:none]">
             {CATEGORIES_SEO.map(cat => (
               <Link key={cat.slug} href={`/recettes/categorie/${cat.slug}`}
-                className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors">
+                className="shrink-0 inline-flex items-center min-h-[40px] text-xs font-semibold px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-colors">
                 {cat.court}
               </Link>
             ))}
@@ -458,11 +461,22 @@ export default function RecettesPage() {
         {/* Filtres */}
         {!error && !loading && meals.length > 0 && (
           <>
+            <div className="relative mb-3 max-w-md">
+              <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher un plat ou un ingrédient..."
+                className="w-full pl-10 pr-4 py-3 text-base sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
+              />
+            </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {TYPE_FILTERS.map(f => {
                 const count = f.value === 'tous'
                   ? meals.length
                   : meals.filter(m => m.type_repas === f.value).length;
+                if (f.value !== 'tous' && count < SEUIL_FILTRE && typeFilter !== f.value) return null;
                 return (
                   <button key={f.value} onClick={() => setTypeFilter(f.value)}
                   className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full transition-colors ${typeFilter === f.value
@@ -470,28 +484,6 @@ export default function RecettesPage() {
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                     {f.label}
                     <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({count})</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Filtre par équipement (Air fryer, Cookéo, Thermomix...) */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              <button onClick={() => setEquipementFilter('tous')}
-                className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === 'tous'
-                  ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
-                🍳 Tout appareil
-              </button>
-              {EQUIPEMENTS.map(eq => {
-                const count = meals.filter(m => (m.ustensiles || []).some(u => u === eq || u.startsWith(eq))).length;
-                if (count === 0) return null;
-                return (
-                  <button key={eq} onClick={() => setEquipementFilter(eq)}
-                  className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === eq
-                    ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
-                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({count})</span>
                   </button>
                 );
               })}
@@ -509,12 +501,6 @@ export default function RecettesPage() {
                 </select>
               </label>
 
-              {/* Difficulté */}
-              <select value={difficulteFilter} onChange={e => setDifficulteFilter(e.target.value as typeof difficulteFilter)}
-                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
-                {DIFFICULTES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
-
               {/* Cuisine */}
               {cuisines.length > 1 && (
                 <select value={cuisineFilter} onChange={e => setCuisineFilter(e.target.value)}
@@ -523,12 +509,6 @@ export default function RecettesPage() {
                   {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
-
-              {/* Saison */}
-              <select value={saisonFilter} onChange={e => setSaisonFilter(e.target.value as Saison | 'toutes')}
-                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
-                {SAISONS_FILTRES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
 
               {/* Panneau avancé (temps, calories, prix, batch, régimes) */}
               <button onClick={() => setShowAdvanced(v => !v)} aria-expanded={showAdvanced}
@@ -560,6 +540,45 @@ export default function RecettesPage() {
             {/* Panneau de filtres avancés */}
             {showAdvanced && (
               <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3 space-y-4">
+                <GroupeFiltre label="Appareil">
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => setEquipementFilter('tous')}
+                className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === 'tous'
+                  ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
+                🍳 Tout appareil
+              </button>
+              {EQUIPEMENTS.map(eq => {
+                const count = meals.filter(m => (m.ustensiles || []).some(u => u === eq || u.startsWith(eq))).length;
+                if (count < SEUIL_FILTRE && equipementFilter !== eq) return null;
+                return (
+                  <button key={eq} onClick={() => setEquipementFilter(eq)}
+                  className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === eq
+                    ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
+                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+                </GroupeFiltre>
+
+                <div className="flex flex-wrap gap-2">
+              {/* Difficulté */}
+              <select value={difficulteFilter} onChange={e => setDifficulteFilter(e.target.value as typeof difficulteFilter)}
+                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                {DIFFICULTES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+              </select>
+
+              {/* Saison */}
+              <select value={saisonFilter} onChange={e => setSaisonFilter(e.target.value as Saison | 'toutes')}
+                className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
+                {SAISONS_FILTRES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+
+                </div>
+
                 <GroupeFiltre label="Prêt en (préparation + cuisson)">
                   {TEMPS_MAX_OPTIONS.map(o => (
                     <PuceFiltre key={o.value} actif={tempsMax === o.value}
@@ -616,16 +635,6 @@ export default function RecettesPage() {
               </div>
             )}
 
-            <div className="relative mb-6 max-w-md">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Rechercher un plat ou un ingrédient..."
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-300 focus:border-brand-300 placeholder:text-gray-400"
-              />
-            </div>
           </>
         )}
 
@@ -654,7 +663,7 @@ export default function RecettesPage() {
                   {/* Illustration : emoji selon le type de recette (plus de photos) */}
                   <div className="bg-brand-50 h-32 flex items-center justify-center overflow-hidden">
                     <span className="w-14 h-14 rounded-2xl bg-white shadow-xs flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110">
-                      {typeEmoji(meal.type_repas)}
+                      {emojiRecette(meal.titre, meal.type_repas)}
                     </span>
                   </div>
 

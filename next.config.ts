@@ -73,6 +73,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Ancienne page « Cuisiner avec mon frigo » : fusionnée dans /frigo
+  async redirects() {
+    return [{ source: '/vider-le-frigo', destination: '/frigo', permanent: true }];
+  },
   async headers() {
     return [
       {

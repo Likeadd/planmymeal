@@ -73,7 +73,7 @@ export function OptimiserBar({
             </div>
           </>
         )}
-        <div className="pointer-events-auto flex items-stretch gap-1.5">
+        <div data-tour="optimiser" className="pointer-events-auto flex items-stretch gap-1.5">
           <button onClick={() => lancer('equilibre')} disabled={loading}
             className="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-brand-500 rounded-full shadow-cta hover:bg-brand-600 disabled:opacity-60 transition-colors">
             {loading
@@ -111,7 +111,7 @@ export function OptimiserButton({
 
   return (
     <div className="relative">
-      <div className="flex items-stretch">
+      <div data-tour="optimiser" className="flex items-stretch">
         <button onClick={() => lancer('equilibre')} disabled={loading}
           className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase text-white bg-brand-500 rounded-l-full hover:bg-brand-600 disabled:opacity-60 transition-colors shadow-cta">
           {loading

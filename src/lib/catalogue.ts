@@ -40,65 +40,63 @@ export const SELECT_CATALOGUE = `
 export const PAGE = 1000;
 
 /**
+ * Pages du catalogue : 500 recettes (≈ 4 500 lignes d'ingrédients embarquées).
+ * À 1 000 par page et 6 pages simultanées, certaines requêtes dépassaient le
+ * délai maximal du rôle anonyme (statement timeout) une fois le catalogue
+ * passé à 5 000 recettes — la page affichait alors 0 recette.
+ */
+const PAGE_CATALOGUE = 500;
+/** Pages demandées en même temps (au-delà, la base sature). */
+const PARALLELE = 4;
+
+/**
  * Charge TOUT le catalogue public.
  *
- * Deux exigences :
- *
- * 1. Paginer : PostgREST plafonne chaque réponse à 1000 lignes. Sans
- *    pagination, les 138 dernières recettes (11 % du catalogue) n'auraient
- *    jamais été affichées, alors que la page en annonce fièrement le nombre.
- *    Le second critère `order('id')` est indispensable : deux recettes peuvent
- *    porter le même titre, et un ordre non total ferait chevaucher deux pages
- *    — une recette en double, une autre jamais atteinte.
- * 2. Paralléliser : un compte exact d'abord (requête « head », aucun octet de
- *    données) donne le nombre de pages, puis toutes les pages partent EN
- *    MÊME TEMPS. L'ancienne boucle séquentielle ajoutait un aller-retour
- *    réseau par page de plus — le premier rendu de /recettes attendait deux
- *    RTT au lieu d'un.
+ * 1. Paginer : PostgREST plafonne chaque réponse à 1000 lignes. Tri sur la clé
+ *    primaire seule (`id`) : ordre total, et l'offset suit l'index — trier par
+ *    titre obligeait la base à trier tout le catalogue pour chaque page.
+ * 2. Paralléliser par vagues : un compte exact d'abord (requête « head »),
+ *    puis les pages partent par groupes de PARALLELE.
+ * 3. Une page en échec (délai dépassé, réseau) est retentée une fois.
  */
 export async function chargerCatalogue(
   supabase: SupabaseClient<Database>
 ): Promise<MealCatalogueEmbed[]> {
+  const page = async (n: number): Promise<MealCatalogueEmbed[]> => {
+    for (let essai = 0; ; essai++) {
+      const { data, error } = await supabase
+        .from('meals')
+        .select(SELECT_CATALOGUE)
+        .eq('is_public', true)
+        .order('id')
+        .range(n * PAGE_CATALOGUE, (n + 1) * PAGE_CATALOGUE - 1);
+      if (!error) return (data ?? []) as unknown as MealCatalogueEmbed[];
+      if (essai >= 1) throw new Error(error.message);
+    }
+  };
+
   const { count, error: erreurCompte } = await supabase
     .from('meals')
     .select('id', { count: 'exact', head: true })
     .eq('is_public', true);
   if (!erreurCompte && count && count > 0) {
-    const nbPages = Math.ceil(count / PAGE);
-    const lots = await Promise.all(
-      Array.from({ length: nbPages }, (_, page) =>
-        supabase
-          .from('meals')
-          .select(SELECT_CATALOGUE)
-          .eq('is_public', true)
-          .order('titre')
-          .order('id')
-          .range(page * PAGE, (page + 1) * PAGE - 1)
-      )
-    );
+    const nbPages = Math.ceil(count / PAGE_CATALOGUE);
     const lignes: MealCatalogueEmbed[] = [];
-    for (const lot of lots) {
-      if (lot.error) throw new Error(lot.error.message);
-      lignes.push(...((lot.data ?? []) as unknown as MealCatalogueEmbed[]));
+    for (let debut = 0; debut < nbPages; debut += PARALLELE) {
+      const lots = await Promise.all(
+        Array.from({ length: Math.min(PARALLELE, nbPages - debut) }, (_, i) => page(debut + i))
+      );
+      for (const lot of lots) lignes.push(...lot);
     }
     return lignes;
   }
 
-  // Repli séquentiel : compte indisponible (quota, réseau instable…) → la
-  // boucle historique reste correcte, seulement moins rapide.
+  // Repli séquentiel : compte indisponible (quota, réseau instable…).
   const lignes: MealCatalogueEmbed[] = [];
-  for (let debut = 0; ; debut += PAGE) {
-    const { data, error } = await supabase
-      .from('meals')
-      .select(SELECT_CATALOGUE)
-      .eq('is_public', true)
-      .order('titre')
-      .order('id')
-      .range(debut, debut + PAGE - 1);
-    if (error) throw new Error(error.message);
-    const lot = (data ?? []) as unknown as MealCatalogueEmbed[];
+  for (let n = 0; ; n++) {
+    const lot = await page(n);
     lignes.push(...lot);
-    if (lot.length < PAGE) break;
+    if (lot.length < PAGE_CATALOGUE) break;
   }
   return lignes;
 }

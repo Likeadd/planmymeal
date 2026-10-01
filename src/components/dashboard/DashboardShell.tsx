@@ -19,7 +19,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import {
   CalendarDays, Refrigerator, BookOpen, Star, Wallet,
-  Settings, Sparkles, Crown, Users, Home, History,
+  Settings, Sparkles, Crown, Users, Home, History, Compass,
 } from 'lucide-react';
 import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/components/AuthProvider';
@@ -30,6 +30,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { prechaufferCatalogue } from '@/lib/catalogue-cache';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
+import { VisiteGuidee, lancerVisiteGuidee } from '@/components/VisiteGuidee';
 
 export function DashboardShell({
   children,
@@ -87,6 +88,9 @@ export function DashboardShell({
 
       {/* ── Mobile : bottom-nav 4 onglets ────────────────────────────── */}
       <BottomNav />
+
+      {/* Parcours d'intégration : étapes sur tous les écrans de l'app */}
+      <VisiteGuidee />
     </div>
   );
 }
@@ -146,7 +150,7 @@ function NavLink({ item }: { item: NavItem }) {
   // soulignement animé au survol (`lienNavSouligne`, même helper qu'elle) —
   // actif = terracotta souligné en permanence, survol = le trait grandit.
   return (
-    <Link href={item.href}
+    <Link href={item.href} data-tour={`nav-${item.href.slice(1)}`}
       className={cn(lienNavSouligne(active), 'whitespace-nowrap')}>
       {item.label}
     </Link>
@@ -172,6 +176,7 @@ function UserMenu() {
         { href: '/planning', label: 'Historique des semaines', icon: History },
         { href: '/budget', label: 'Budget', icon: Wallet },
       ]}
+      actions={[{ label: 'Visite guidée', icon: Compass, onClick: lancerVisiteGuidee }]}
       surDeconnexion={async () => {
         await signOut();
         router.push('/');
@@ -250,7 +255,7 @@ function BottomNav() {
             const active = item.match.some(m => pathname.startsWith(m));
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href}
+              <Link key={item.href} href={item.href} data-tour={`nav-${item.href.slice(1)}`}
                 className={cn(
                   // min-w-[44px] : 5 onglets → chaque cible reste tactile (audit)
                   'flex flex-col items-center gap-0.5 min-w-[44px] px-2 py-1 rounded-xl text-[11px] font-bold transition-colors',

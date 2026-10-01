@@ -78,7 +78,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Routes protégées : login requis
-  const protectedPaths = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget', '/vider-le-frigo'];
+  const protectedPaths = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget'];
   const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p));
 
   if (isProtected && !user) {

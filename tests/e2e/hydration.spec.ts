@@ -26,7 +26,6 @@ const PAGES_PUBLIQUES = [
   '/mentions-legales',
   '/contact',
   '/recettes',
-  '/vider-le-frigo',
 ];
 
 /** React signale le mismatch en clair (« Hydration failed because… ») */

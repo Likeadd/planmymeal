@@ -354,16 +354,16 @@ function DashboardInner() {
               {/* Accent lavande : action secondaire. Mesure mobile réelle (390px) :
                   le libellé complet faisait passer la rangée sur DEUX lignes
                   (+42px avant le 1er repas) → icône seule < sm, texte ≥ sm. */}
-              <Link href="/vider-le-frigo" title="Cuisiner avec mon frigo"
+              <Link href="/frigo" title="Mon frigo — cuisiner avec ce qu’il reste"
                 className="flex items-center gap-1.5 w-11 h-11 justify-center sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 text-[11px] font-semibold tracking-[0.14em] uppercase text-accent-700 bg-accent-100 rounded-full hover:bg-accent-200 transition-colors shrink-0 shadow-card">
                 <Refrigerator className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Cuisiner avec mon frigo</span>
+                <span className="hidden sm:inline">Mon frigo</span>
               </Link>
             </div>
           </div>
 
           {/* ── Barre de résumé fine : Économies · Budget · Temps · Anti-gaspi ── */}
-          <SummaryBar days={days} />
+          <div data-tour="resume"><SummaryBar days={days} /></div>
           {/* L'action CENTRALE (audit UX) : le libellé et la promesse disent ce
               que le moteur fait — arbitrer budget, goûts, temps, stock, restes,
               nutrition et gaspillage — au lieu d'un simple « régénérer ».
@@ -383,7 +383,7 @@ function DashboardInner() {
             {[{ key: 'planning' as const, icon: <ChefIcon className="w-4 h-4" />, label: 'Planning' },
               { key: 'courses' as const, icon: <ShoppingCart className="w-4 h-4" />, label: 'Liste de courses' }]
               .map(t => (
-                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                <button key={t.key} onClick={() => setActiveTab(t.key)} data-tour={t.key === 'courses' ? 'onglet-courses' : undefined}
                   className={`flex items-center gap-2 px-4 min-h-[40px] rounded-full text-sm font-medium transition-all ${activeTab === t.key ? 'bg-white text-brand-600 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}>
                   {t.icon}{t.label}
                 </button>
@@ -399,15 +399,19 @@ function DashboardInner() {
             </div>
             {/* Desktop ≥ md : grille 7 colonnes ; mobile < md : onglets de
                 jours (LUN 7…) + liste verticale fluide du jour sélectionné */}
+            <div data-tour="semaine">
             <WeekColumns days={days} semaineDebut={semaineDebut} dragOver={dragOver} moving={moving} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots} nbDesserts={recup.desserts}
               onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
               onDrop={handleDrop} onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
               onCustom={setRepasLibre} onVider={viderCreneau}
               onToggleRestes={toggleRestes} restesToggling={restesToggling} estSemaineCourante={estSemaineCourante} />
+            </div>
+            <div data-tour="semaine">
             <WeekDayTabs days={days} semaineDebut={semaineDebut} estSemaineCourante={estSemaineCourante} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots}
               onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
               onCustom={setRepasLibre} onVider={viderCreneau}
               onToggleRestes={toggleRestes} restesToggling={restesToggling} />
+            </div>
           </>)}
 
           {activeTab === 'courses' && (

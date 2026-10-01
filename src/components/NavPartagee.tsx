@@ -61,6 +61,13 @@ export function nomAffiche(
 }
 
 /** Une entrée du menu utilisateur. */
+/** Entrée du menu qui déclenche une action (et non une navigation). */
+export interface ActionMenuUtilisateur {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}
+
 export interface LienMenuUtilisateur {
   href: string;
   label: string;
@@ -84,6 +91,7 @@ export function MenuUtilisateur({
   nom,
   email,
   liens,
+  actions = [],
   surDeconnexion,
   nomToujoursVisible = false,
 }: {
@@ -91,6 +99,8 @@ export function MenuUtilisateur({
   nom: string;
   email: string | null | undefined;
   liens: LienMenuUtilisateur[];
+  /** Entrées d'action (ex. « Visite guidée »), affichées sous les liens */
+  actions?: ActionMenuUtilisateur[];
   /** Déconnexion (async autorisé) — le bouton se désactive pendant l'appel */
   surDeconnexion: () => void | Promise<void>;
   /** true = prénom toujours visible ; false = caché sous xl (topbar dashboard) */
@@ -131,7 +141,7 @@ export function MenuUtilisateur({
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open}
+      <button onClick={() => setOpen(v => !v)} aria-haspopup="menu" aria-expanded={open} data-tour="menu-user"
         className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full border border-transparent hover:border-gray-200 hover:bg-white transition-colors">
         {/* Avatar : initiale du prénom */}
         <span className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold uppercase shrink-0 shadow-xs">
@@ -170,6 +180,13 @@ export function MenuUtilisateur({
                 </Link>
               );
             })}
+            {actions.map(({ label, icon: Icon, onClick }) => (
+              <button key={label} role="menuitem" onClick={() => { setOpen(false); onClick(); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-colors">
+                <Icon className="w-4 h-4 text-gray-500" />
+                <span>{label}</span>
+              </button>
+            ))}
           </nav>
 
           {/* Déconnexion */}

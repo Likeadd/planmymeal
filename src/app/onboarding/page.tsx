@@ -9,6 +9,7 @@ import { BrandMark } from '@/components/BrandMark';
 import { toast } from 'sonner';
 import { enregistrerProfil } from '@/lib/profil-client';
 import { useAuth } from '@/components/AuthProvider';
+import { programmerVisiteGuidee } from '@/components/VisiteGuidee';
 import type { Objectif, NiveauCuisine, Regime } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
@@ -151,6 +152,8 @@ export default function OnboardingPage() {
       // fire-and-forget : on ne retarde pas la navigation vers le dashboard)
       fetch('/api/welcome', { method: 'POST' }).catch(() => { /* best-effort */ });
 
+      // Déclenche la visite guidée sur la page d'accueil (une seule fois)
+      if (user) programmerVisiteGuidee(user.id);
       toast.success('✨ Profil enregistré !');
       router.push('/aujourdhui');
     } catch (err) {

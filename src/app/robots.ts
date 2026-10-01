@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         // Espace connecté (redirige vers /login) et API : rien à explorer.
         // /login et /signup restent explorables pour que leur `noindex` soit lu.
         disallow: [
-          '/aujourdhui', '/dashboard', '/planning', '/frigo', '/vider-le-frigo',
+          '/aujourdhui', '/dashboard', '/planning', '/frigo',
           '/favoris', '/budget', '/compte', '/onboarding', '/offline', '/auth/', '/api/',
         ],
       },

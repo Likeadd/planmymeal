@@ -3,10 +3,11 @@
 // ============================================================================
 // Mon frigo — garde-manger persistant
 //
-// Complète « Vider le frigo » (recherche ponctuelle, sans mémoire) par un
-// inventaire PERSISTANT : ce que tu as chez toi est enregistré, le moteur en
+// Inventaire PERSISTANT : ce que tu as chez toi est enregistré, le moteur en
 // tient compte à la génération (léger boost des recettes concernées) et la
 // liste de courses en déduit automatiquement les quantités disponibles.
+// L'utilisateur coche les aliments qu'il veut écouler : /api/vider-le-frigo
+// propose alors 3 recettes, affichées sous l'inventaire.
 //
 // À chaque ajout ou retrait, /api/frigo recalcule la liste de courses de la
 // semaine en cours : l'inventaire et les courses ne peuvent pas diverger.
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Refrigerator, Loader2, Plus, Trash2, Sparkles, Check, Zap, AlertTriangle, X, Minus,
+  Clock, ShoppingCart, RefreshCw,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -26,7 +28,9 @@ import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { ALIMENTS_FRIGO, cleNomIngredient } from '@/lib/frigo';
 import { getMonday } from '@/lib/dates';
 import { DICT_FR } from '@/lib/i18n/fr';
-import { errorMessage, cn } from '@/lib/utils';
+import { errorMessage, cn, formatMinutes } from '@/lib/utils';
+import { formatPrix } from '@/lib/budget';
+import { recetteHref } from '@/lib/seo';
 
 /** Ligne de plan_meals avec l'embed minimal nécessaire au comptage frigo */
 interface PlanMealFrigo {
@@ -34,6 +38,20 @@ interface PlanMealFrigo {
   repas_type: string;
   meals: { meal_ingredients: { ingredient_id: number }[] } | null;
 }
+
+/** Recette proposée par /api/vider-le-frigo */
+interface RecetteFrigo {
+  id: number;
+  titre: string;
+  temps_total: number;
+  prix_portion: number | null;
+  couverture: number;
+  nb_manquants: number;
+  manquants: string[];
+}
+
+/** Plafond d'ingrédients accepté par /api/vider-le-frigo */
+const MAX_SELECTION = 15;
 
 /** Un aliment d'ajout rapide résolu contre le catalogue réel, en attente d'ajout. */
 interface AlimentPanier {
@@ -117,6 +135,11 @@ export default function FrigoPage() {
   /** Modale « Ajouter un article » — repliée par défaut (nouveau design) */
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
   const reduceMotion = useReducedMotion();
+  /** Aliments cochés (ingredient_id) pour la recherche de recettes */
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [recettes, setRecettes] = useState<RecetteFrigo[] | null>(null);
+  const [recherche, setRecherche] = useState(false);
+  const [erreurRecettes, setErreurRecettes] = useState('');
 
   const semaine = getMonday();
 
@@ -308,6 +331,62 @@ export default function FrigoPage() {
     }
   }, [panier, semaine]);
 
+  /** Sélection réellement valide : un article retiré du frigo sort du lot. */
+  const selectionValide = useMemo(
+    () => Array.from(selection).filter(id => frigoIds.has(id)),
+    [selection, frigoIds]
+  );
+
+  const basculerSelection = useCallback((ingredientId: number) => {
+    setRecettes(null); // nouvelle sélection → résultats périmés
+    setErreurRecettes('');
+    setSelection(prev => {
+      const next = new Set(prev);
+      if (next.has(ingredientId)) next.delete(ingredientId);
+      else if (next.size < MAX_SELECTION) next.add(ingredientId);
+      else toast.info(`${MAX_SELECTION} aliments maximum par recherche`);
+      return next;
+    });
+  }, []);
+
+  /** Tout cocher : les produits qui périment d'abord, puis le reste. */
+  const toutSelectionner = useCallback(() => {
+    setRecettes(null);
+    setErreurRecettes('');
+    const urgents = aUtiliser.map(u => u.item.ingredient_id);
+    const autres = items.map(i => i.ingredient_id).filter(id => !urgents.includes(id));
+    setSelection(new Set([...urgents, ...autres].slice(0, MAX_SELECTION)));
+  }, [items, aUtiliser]);
+
+  const toutDecocher = useCallback(() => {
+    setSelection(new Set());
+    setRecettes(null);
+    setErreurRecettes('');
+  }, []);
+
+  const trouverRecettes = useCallback(async () => {
+    if (selectionValide.length === 0) return;
+    setRecherche(true);
+    setErreurRecettes('');
+    try {
+      const res = await fetch('/api/vider-le-frigo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredient_ids: selectionValide }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`);
+      setRecettes(json.recettes ?? []);
+      if (!json.recettes?.length) {
+        setErreurRecettes('Aucune recette rapide ne correspond à ta sélection — coche un aliment de plus.');
+      }
+    } catch (e) {
+      setErreurRecettes(errorMessage(e, 'Impossible de chercher des recettes'));
+    } finally {
+      setRecherche(false);
+    }
+  }, [selectionValide]);
+
   const retirer = useCallback(async (id: number) => {
     try {
       const res = await fetch(`/api/frigo?id=${id}&semaine_debut=${semaine}`, { method: 'DELETE' });
@@ -401,12 +480,67 @@ export default function FrigoPage() {
           </div>
         </div>
 
-        {/* CTA recette, séparé des stats pour rester lisible sur petit écran */}
+        {/* CTA recette : agit sur les aliments cochés dans l'inventaire ci-dessous */}
         {items.length > 0 && (
-          <Link href="/vider-le-frigo" title="Recettes rapides avec ce que tu as"
-            className="mb-6 flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-sm font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 transition-colors">
-            <Sparkles className="w-4 h-4" /> Trouver une recette avec ce frigo
-          </Link>
+          <div className="mb-6">
+            <button onClick={trouverRecettes} disabled={recherche || selectionValide.length === 0}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-sm font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+              {recherche
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> On cherche dans ton frigo…</>
+                : <><Sparkles className="w-4 h-4" />
+                    {selectionValide.length === 0
+                      ? 'Coche des aliments pour trouver des recettes'
+                      : `Trouver des recettes avec ma sélection (${selectionValide.length})`}</>}
+            </button>
+            {erreurRecettes && (
+              <p className="mt-3 bg-sable-50 border border-sable-200 rounded-2xl p-3 text-sm text-sable-700 text-center">
+                {erreurRecettes}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Recettes proposées avec les aliments cochés */}
+        {recettes && recettes.length > 0 && (
+          <div className="mb-6">
+            <h2 className="font-bold text-gray-900 text-lg mb-3">✨ {recettes.length} idées avec ta sélection</h2>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {recettes.map((r, idx) => (
+                <Link key={r.id} href={recetteHref(r)}
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-brand-200 transition-all group">
+                  <div className="relative bg-brand-50 h-24 flex items-center justify-center">
+                    <span className="text-4xl transition-transform duration-300 group-hover:scale-110" aria-hidden>🧑‍🍳</span>
+                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 rounded-full text-[11px] font-bold text-brand-600">
+                      #{idx + 1} · {r.couverture}%
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2 group-hover:text-brand-600 transition-colors">{r.titre}</h3>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatMinutes(r.temps_total)}</span>
+                      {r.prix_portion != null && (
+                        <span className="font-semibold text-sauge-700 bg-sauge-50 px-1.5 rounded-full">{formatPrix(r.prix_portion)}</span>
+                      )}
+                    </div>
+                    {r.nb_manquants > 0 ? (
+                      <p className="text-[11px] text-sable-600 flex items-start gap-1">
+                        <ShoppingCart className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>À acheter : {r.manquants.join(', ')}{r.nb_manquants > 4 ? '…' : ''}</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-sauge-600 font-medium">✅ Tout est déjà dans ton frigo !</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <p className="text-center text-xs text-gray-500 mt-3">
+              Une autre idée ? Change ta sélection, ou{' '}
+              <button onClick={trouverRecettes} className="text-brand-600 font-medium hover:underline inline-flex items-center gap-1">
+                <RefreshCw className="w-3 h-3" /> relance la recherche
+              </button>
+            </p>
+          </div>
         )}
 
         {/* À utiliser rapidement : péremption ≤ 3 jours (audit #18 — la priorité
@@ -443,9 +577,27 @@ export default function FrigoPage() {
         {/* Inventaire — groupé par rayon (nouveau design : lecture par famille
             au lieu d'une liste plate, qui devenait illisible passé 15 articles) */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
-          <h2 className="font-semibold text-gray-900 text-sm mb-4">
-            Mon garde-manger <span className="text-gray-500 font-normal">({items.length})</span>
-          </h2>
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <h2 className="font-semibold text-gray-900 text-sm">
+              Mon garde-manger <span className="text-gray-500 font-normal">({items.length})</span>
+            </h2>
+            {items.length > 0 && (
+              selectionValide.length > 0 ? (
+                <button onClick={toutDecocher}
+                  className="text-xs text-gray-500 hover:text-red-500 transition-colors min-h-[32px]">
+                  Tout décocher
+                </button>
+              ) : (
+                <button onClick={toutSelectionner}
+                  className="text-xs font-medium text-brand-600 hover:underline min-h-[32px]">
+                  Tout cocher
+                </button>
+              )
+            )}
+          </div>
+          {items.length > 0 && (
+            <p className="text-[11px] text-gray-500 mb-4">Coche ce qu’il te reste pour obtenir des idées de recettes.</p>
+          )}
 
           {items.length === 0 ? (
             <div className="py-10 text-center">
@@ -469,7 +621,20 @@ export default function FrigoPage() {
                   <ul className="divide-y divide-gray-50 rounded-xl border border-gray-50">
                     {groupe.items.map(item => (
                       <li key={item.id} className="px-3 py-2.5 flex items-center justify-between gap-3">
-                        <div className="min-w-0">
+                        <button type="button" role="checkbox" aria-checked={selection.has(item.ingredient_id)}
+                          onClick={() => basculerSelection(item.ingredient_id)}
+                          aria-label={`Utiliser ${item.ingredient?.nom ?? 'cet aliment'} dans la recherche de recettes`}
+                          className="flex items-center justify-center w-11 h-11 -ml-2 shrink-0">
+                          <span className={cn(
+                            'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors',
+                            selection.has(item.ingredient_id)
+                              ? 'bg-brand-500 border-brand-500 text-white'
+                              : 'border-gray-300 bg-white'
+                          )}>
+                            {selection.has(item.ingredient_id) && <Check className="w-3.5 h-3.5" />}
+                          </span>
+                        </button>
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-gray-800 truncate">
                             {item.ingredient?.nom ?? `Ingrédient #${item.ingredient_id}`}
                           </p>

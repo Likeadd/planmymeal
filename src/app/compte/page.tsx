@@ -4,12 +4,13 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Crown, Users, Check, Loader2, LogOut, Settings,
+  Crown, Users, Check, Loader2, LogOut, Settings, Compass,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { lancerVisiteGuidee } from '@/components/VisiteGuidee';
 import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
 import { PlanCard } from '@/components/compte/PlanCard';
 import { MaCuisineSettings } from '@/components/compte/MaCuisineSettings';
@@ -127,6 +128,18 @@ function AccountContent() {
               Déconnexion
             </button>
           </div>
+
+          {/* Relance du parcours d'intégration (seul accès sur mobile) */}
+          <button onClick={lancerVisiteGuidee}
+            className="w-full flex items-center gap-3 px-4 py-3 min-h-[52px] text-left bg-white border border-gray-200 rounded-2xl hover:border-brand-300 hover:bg-brand-50/40 transition-colors">
+            <span className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0" aria-hidden>
+              <Compass className="w-4 h-4 text-brand-500" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-gray-900">Visite guidée</span>
+              <span className="block text-xs text-gray-500">Revoir en une minute les différentes parties de l’application</span>
+            </span>
+          </button>
 
           {/* Messages Stripe */}
           {success && (

@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { ArrowRight, Check, Crown, Loader2, Users } from 'lucide-react';
-import { STRIPE_ENABLED, STRIPE_PLANS, type PlanType } from '@/lib/stripe';
+import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
 
 export function PlanCard({
   plan,
@@ -54,12 +54,7 @@ export function PlanCard({
       </ul>
 
       {/* CTA */}
-      {!STRIPE_ENABLED && !isCurrent ? (
-        // Paiement pas encore ouvert : état honnête plutôt qu'un clic mort.
-        <span className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-semibold text-sm bg-gray-100 text-gray-500">
-          Bientôt disponible
-        </span>
-      ) : (
+      {(
         <button
           onClick={() => onUpgrade(plan)}
           disabled={isLoading || isCurrent}

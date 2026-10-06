@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Heart, Mail } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { anneeParis } from '@/lib/dates';
 import { BrandMark } from '@/components/BrandMark';
 import { CATEGORIES_SEO } from '@/lib/categories-seo';
@@ -14,7 +14,8 @@ const FOOTER_LINKS = [
   ['Contact', '/contact'],
 ];
 
-export default function LandingFooter() {
+/** `sansNewsletter` : pages connexion / inscription, où l'inscription à la newsletter n'a pas lieu d'être. */
+export default function LandingFooter({ sansNewsletter = false }: { sansNewsletter?: boolean }) {
   const [email, setEmail] = useState('');
   const [statut, setStatut] = useState<'idle' | 'envoi' | 'ok' | 'erreur'>('idle');
 
@@ -36,8 +37,9 @@ export default function LandingFooter() {
 
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid md:grid-cols-3 gap-10 items-start">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${sansNewsletter ? 'py-10' : 'py-16'}`}>
+        <div className={sansNewsletter ? 'flex justify-center' : 'grid md:grid-cols-3 gap-10 items-start'}>
+          {!sansNewsletter && (<>
           {/* Rejoindre */}
           <div>
             <h3 className="font-display text-2xl font-bold text-gray-900">
@@ -64,6 +66,7 @@ export default function LandingFooter() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="ADRESSE EMAIL"
+                  aria-label="Votre adresse email"
                   className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-hidden uppercase"
                 />
                 <button type="submit" aria-label="S’inscrire" disabled={statut === 'envoi'}
@@ -76,26 +79,18 @@ export default function LandingFooter() {
               <p className="text-red-600 text-xs mt-2">Une erreur est survenue, réessayez.</p>
             )}
           </div>
+          </>)}
 
-          {/* Liens + social */}
-          <div className="flex flex-col items-start md:items-end gap-4">
-            <ul className="flex flex-wrap gap-x-6 gap-y-2">
-              {FOOTER_LINKS.map(([label, href]) => (
-                <li key={label}>
-                  <Link href={href} className="text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-3">
-              {/* Pas de compte Instagram actif pour l'instant — pas de lien mort ("#") */}
-              <a href="mailto:contact@getplanmymeal.com" aria-label="Nous contacter par email"
-                className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-700 hover:text-brand-600 hover:border-brand-400 transition-colors">
-                <Mail className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
+          {/* Liens */}
+          <ul className={`flex flex-wrap gap-x-6 gap-y-2 ${sansNewsletter ? 'justify-center' : 'md:justify-end'}`}>
+            {FOOTER_LINKS.map(([label, href]) => (
+              <li key={label}>
+                <Link href={href} className="text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
@@ -119,7 +114,7 @@ export default function LandingFooter() {
           {/* Année ancrée sur Europe/Paris : `new Date().getFullYear()` était
               évalué au BUILD (page statique) → « 2026 » figé et mismatch au
               passage à l'année suivante. */}
-          © {anneeParis()} PlanMyMeal — Fait maison avec <Heart className="w-3 h-3 inline text-brand-500" /> pour les foodies indécis
+          © {anneeParis()} PlanMyMeal
         </p>
       </div>
     </footer>

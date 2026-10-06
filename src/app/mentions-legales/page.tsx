@@ -139,7 +139,6 @@ export default function MentionsLegalesPage() {
           </div>
           {/* Décorative uniquement : sur un hero mobile court, elle finit
               derrière le texte au lieu de rester dans un coin vide. */}
-          <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
             <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 text-balance">

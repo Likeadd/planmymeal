@@ -18,7 +18,7 @@ import { Reveal } from '@/components/Reveal';
 import { ChiffresCles } from '@/components/ChiffresCles';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
-import { STRIPE_ENABLED, STRIPE_PLANS } from '@/lib/stripe';
+import { STRIPE_PLANS } from '@/lib/stripe';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
 import { IMPORTS_GRATUITS_PAR_MOIS, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE, REMPLACEMENTS_GRATUITS_PAR_SEMAINE } from '@/lib/limites';
 
@@ -71,7 +71,7 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2">
         {/* Côté gauche : texte */}
-        <div className="flex items-center px-6 sm:px-12 py-16 lg:py-24">
+        <div className="flex items-center px-4 sm:px-12 py-16 lg:py-24">
           {/* Au-dessus de la ligne de flottaison : animation CSS (joue sans
               JavaScript ni IntersectionObserver). Avec Reveal, le titre H1 était
               servi en opacity:0 et restait invisible tant que le JS n'avait pas
@@ -164,7 +164,7 @@ function HeroMealCard() {
           <div key={m.t} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
             <span className="w-9 h-9 rounded-full bg-white shadow-xs flex items-center justify-center text-lg shrink-0">{m.e}</span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-gray-900 truncate">{m.t}</div>
+              <div className="text-sm font-semibold text-gray-900 leading-snug">{m.t}</div>
               <div className="text-[11px] text-gray-500">{m.meta}</div>
             </div>
           </div>
@@ -274,10 +274,10 @@ function Features() {
 
         {/* Mobile : cartes compactes (icône + titre, description repliée) —
             la grille complète doublait la hauteur de la page sur téléphone. */}
-        <div className="mt-10 sm:mt-14 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        <div className="mt-10 sm:mt-14 grid grid-cols-2 lg:grid-cols-8 gap-3 sm:gap-5">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 4) * 0.08} y={16}
-              className="group bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-100 hover:border-brand-200 hover:shadow-pop transition-all">
+              className={`group lg:col-span-2 ${i === 4 ? 'lg:col-start-2' : ''} ${i === FEATURES.length - 1 ? 'max-lg:col-span-2' : ''} bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-100 hover:border-brand-200 hover:shadow-pop transition-all`}>
               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${f.accent} group-hover:scale-105 transition-transform`}>
                 <f.icon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
@@ -348,8 +348,8 @@ function Collection() {
               </div>
               {/* Footer budget : la promesse prix, dès la landing */}
               <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs font-semibold text-green-700">{p.prix}</span>
-                <span className="text-[11px] tracking-[0.14em] uppercase text-gray-500">Prix estimé</span>
+                <span className="text-xs font-semibold text-green-700 whitespace-nowrap">{p.prix}</span>
+                <span className="text-[11px] tracking-[0.1em] uppercase text-gray-500 whitespace-nowrap">estimé</span>
               </div>
             </Reveal>
           ))}
@@ -438,9 +438,9 @@ const TESTIMONIAL = {
  *  - 1 clic   → bouton « Optimiser ma semaine » du dashboard
  */
 const PROMO_STATS = [
-  { value: '21 jours', label: 'de mémoire de rotation' },
-  { value: '14 repas', label: 'planifiés en un clic' },
-  { value: '1 clic', label: 'pour optimiser la semaine' },
+  { value: '21 jours', label: 'de rotation' },
+  { value: '14 repas', label: 'planifiés' },
+  { value: '1 clic', label: 'pour optimiser' },
 ];
 
 function Promo() {
@@ -502,20 +502,16 @@ function Promo() {
           ) : (
             <>
               {/* Pas encore de vrai avis : statistiques produit à la place */}
-              <div className="flex flex-col sm:flex-row gap-8 sm:gap-10">
+              <div className="grid grid-cols-3 gap-4 sm:gap-6">
                 {PROMO_STATS.map(s => (
                   <div key={s.label} className="flex flex-col items-center">
-                    <span className="font-display text-3xl font-bold text-brand-600">{s.value}</span>
-                    <span className="mt-1.5 text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-600 max-w-[110px] leading-relaxed">{s.label}</span>
+                    <span className="font-sans text-2xl font-bold text-brand-600 whitespace-nowrap">{s.value}</span>
+                    <span className="mt-1.5 text-[11px] font-semibold tracking-[0.1em] uppercase text-gray-600 leading-snug">{s.label}</span>
                   </div>
                 ))}
               </div>
             </>
           )}
-          <Link href="/recettes"
-            className="mt-6 inline-flex items-center min-h-[44px] text-sm font-semibold text-gray-900 underline underline-offset-4 decoration-accent-400 hover:text-brand-600 transition-colors">
-            Voir les recettes
-          </Link>
         </div>
       </Reveal>
     </section>
@@ -546,13 +542,13 @@ const PLANS = [
     name: 'Pro', price: '5,99', emoji: '👨‍🍳',
     desc: 'Votre semaine complète, sans limite',
     features: [...STRIPE_PLANS.pro.features],
-    cta: STRIPE_ENABLED ? 'Passer à Pro' : 'Commencer gratuitement', highlighted: true,
+    cta: 'Passer à Pro', highlighted: true,
   },
   {
     name: 'Famille', price: '9,99', emoji: '👨‍👩‍👧‍👦',
     desc: 'Pour toute la famille',
     features: [...STRIPE_PLANS.famille.features],
-    cta: STRIPE_ENABLED ? 'Passer à Famille' : 'Commencer gratuitement', highlighted: false,
+    cta: 'Passer à Famille', highlighted: false,
   },
 ];
 
@@ -613,7 +609,7 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
       {/* Replié par défaut : le tableau (16 lignes) doublait la hauteur de la
           section tarifs, surtout sur mobile. */}
       <details className="group mt-6">
-        <summary className="mx-auto w-fit list-none cursor-pointer select-none inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:border-brand-300 hover:text-brand-600 transition-colors [&::-webkit-details-marker]:hidden">
+        <summary className="mx-auto w-fit list-none cursor-pointer select-none flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:border-brand-300 hover:text-brand-600 transition-colors [&::-webkit-details-marker]:hidden">
           <span className="group-open:hidden">Voir le comparatif détaillé</span>
           <span className="hidden group-open:inline">Masquer le comparatif</span>
           <ArrowRight className="w-4 h-4 rotate-90 group-open:-rotate-90 transition-transform" />
@@ -641,27 +637,20 @@ function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'fam
                       viewport={{ once: true, margin: '-80px' }}
                       transition={reduceMotion ? { duration: 0 } : { duration: 0.45, delay: c.key === 'famille' ? 0.35 : 0, ease: 'easeOut' }}
                     >
-                    {STRIPE_ENABLED ? (
-                      <button
-                        type="button"
-                        onClick={() => onUpgrade(c.key as 'pro' | 'famille')}
-                        disabled={loadingPlan !== null}
-                        className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-full text-white text-xs font-semibold transition-colors disabled:opacity-60 ${
-                          c.accent ? 'bg-brand-500 hover:bg-brand-600' : 'bg-accent-500 hover:bg-accent-600'
-                        }`}
-                      >
-                        {loadingPlan === c.key ? (
-                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirection…</>
-                        ) : (
-                          <>Choisir {c.name} <ArrowRight className="w-3.5 h-3.5" /></>
-                        )}
-                      </button>
-                    ) : (
-                      // Paiement pas encore ouvert : pas de clic mort, un état honnête.
-                      <span className="inline-flex items-center justify-center w-full px-3 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
-                        Bientôt disponible
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => onUpgrade(c.key as 'pro' | 'famille')}
+                      disabled={loadingPlan !== null}
+                      className={`inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-full text-white text-xs font-semibold transition-colors disabled:opacity-60 ${
+                        c.accent ? 'bg-brand-500 hover:bg-brand-600' : 'bg-accent-500 hover:bg-accent-600'
+                      }`}
+                    >
+                      {loadingPlan === c.key ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirection…</>
+                      ) : (
+                        <>Choisir {c.name} <ArrowRight className="w-3.5 h-3.5" /></>
+                      )}
+                    </button>
                     </motion.div>
                   )}
                 </th>
@@ -751,19 +740,22 @@ function Pricing() {
                 ))}
               </ul>
 
-              {!STRIPE_ENABLED && plan.name !== 'Gratuit' && (
-                <p className={`mb-3 text-center text-xs font-semibold ${plan.highlighted ? 'text-white/80' : 'text-gray-500'}`}>
-                  Abonnement disponible très bientôt
-                </p>
+              {plan.name === 'Gratuit' ? (
+                <Link href="/signup"
+                  className="block text-center py-3 rounded-full font-semibold text-sm transition-all border-2 border-brand-500 text-brand-600 hover:bg-brand-50">
+                  {plan.cta}
+                </Link>
+              ) : (
+                // Connecté : paiement direct ; visiteur : inscription d'abord (handleUpgrade)
+                <button type="button" onClick={() => handleUpgrade(plan.name === 'Pro' ? 'pro' : 'famille')} disabled={loadingPlan !== null}
+                  className={`block w-full text-center py-3 rounded-full font-semibold text-sm transition-all disabled:opacity-60 ${
+                    plan.highlighted
+                      ? 'bg-white text-brand-700 hover:bg-gray-50'
+                      : 'border-2 border-brand-500 text-brand-600 hover:bg-brand-50'
+                  }`}>
+                  {loadingPlan === (plan.name === 'Pro' ? 'pro' : 'famille') ? 'Redirection…' : plan.cta}
+                </button>
               )}
-              <Link href="/signup"
-                className={`block text-center py-3 rounded-full font-semibold text-sm transition-all ${
-                  plan.highlighted
-                    ? 'bg-white text-brand-700 hover:bg-gray-50'
-                    : 'border-2 border-brand-500 text-brand-600 hover:bg-brand-50'
-                }`}>
-                {plan.cta}
-              </Link>
             </Reveal>
           ))}
         </div>

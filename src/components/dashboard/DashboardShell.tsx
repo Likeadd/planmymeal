@@ -50,7 +50,8 @@ export function DashboardShell({
     return (
       <div className="min-h-screen bg-gray-50">
         <LandingHeader />
-        <main>{children}</main>
+        {/* Même largeur que l'en-tête du site : logo et titres alignés */}
+        <main className="[&_.container-app]:max-w-7xl">{children}</main>
         <LandingFooter />
       </div>
     );

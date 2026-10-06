@@ -15,6 +15,7 @@ import type { RythmeDesserts } from '@/lib/rotation-engine';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import { REGIMES_CHOIX } from '@/lib/regimes';
 import { getMonday } from '@/lib/dates';
+import { ChargementPlanning, type EtapeChargement } from '@/components/ChargementPlanning';
 import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES } from '@/lib/exclusions-alimentaires';
 
 /** Libellés du récapitulatif (étape 9) */
@@ -73,8 +74,8 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  /** Message affiché pendant l'enregistrement final (profil puis première semaine) */
-  const [etapeFinale, setEtapeFinale] = useState('');
+  /** Étape du chargement plein écran (profil puis première semaine) */
+  const [etapeFinale, setEtapeFinale] = useState<EtapeChargement>('profil');
   const [form, setForm] = useState<OnboardingForm>({
     nb_personnes: 2, objectif: 'maintien', allergies: [], dislikes: [],
     regimes: [], cuisines_preferees: [], temps_max_semaine: 30, temps_max_weekend: 60, niveau_cuisine: 'intermediaire',
@@ -117,6 +118,7 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     if (!user) return;
+    setEtapeFinale('profil');
     setSaving(true);
 
     try {
@@ -157,16 +159,19 @@ export default function OnboardingPage() {
 
       // Première semaine composée tout de suite : l'utilisateur arrive sur SON
       // planning (2 jours visibles en gratuit, le reste à débloquer).
-      setEtapeFinale('Composition de votre première semaine…');
+      setEtapeFinale('semaine');
       await fetch('/api/generate-week', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ semaine_debut: getMonday() }),
       }).catch(() => { /* le planning proposera de générer */ });
 
+      // Barre à 100 % un instant : l'utilisateur voit que le planning est prêt
+      setEtapeFinale('fin');
+      await new Promise(r => setTimeout(r, 900));
+
       // Déclenche la visite guidée (une seule fois)
       if (user) programmerVisiteGuidee(user.id);
-      toast.success('✨ Votre semaine est prête !');
       router.push('/dashboard');
     } catch (err) {
       toast.error('Erreur lors de la sauvegarde : ' + errorMessage(err));
@@ -185,6 +190,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
+      {saving && <ChargementPlanning etape={etapeFinale} />}
       <header className="bg-gray-50 border-b border-gray-200">
         <div className="container-app py-4 flex items-center justify-between">
           {/* Identité verrouillée : BrandMark (wordmark gris comme la landing,
@@ -584,7 +590,7 @@ export default function OnboardingPage() {
             <button onClick={() => step === STEPS.length - 1 ? handleComplete() : setStep(s => s + 1)} disabled={saving} className="inline-flex items-center gap-2 px-8 py-3 bg-brand-500 text-white font-semibold rounded-xl hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed shadow-cta">
               {/* Le dernier bouton enregistre le profil, compose la première
                   semaine puis ouvre le planning. */}
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> {etapeFinale || 'Enregistrement…'}</> : step === STEPS.length - 1 ? <><Sparkles className="w-4 h-4" /> Créer mon profil et optimiser</> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement…</> : step === STEPS.length - 1 ? <><Sparkles className="w-4 h-4" /> Créer mon profil et optimiser</> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
             </button>
           </div>
         </div>

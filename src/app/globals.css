@@ -130,6 +130,8 @@
   html { scroll-behavior: smooth; }
   body { @apply bg-gray-50 text-gray-900 antialiased; font-family: var(--font-inter), 'Inter', system-ui, sans-serif; }
   h1, h2, h3, h4, h5, h6 { @apply font-display; }
+  /* Titres de page équilibrés : pas de mot isolé avant un soulignement */
+  h1, h2 { text-wrap: balance; }
   /* Ancres de navigation (/#tarifs…) : les sections de la landing portent
      déjà 80–112px de padding interne (py-20/py-28) — la marge ne doit couvrir
      QUE le rabat sous le header collant, pas s'y ajouter. Avec 24px, le titre

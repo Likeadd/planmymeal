@@ -589,15 +589,15 @@ export default function RecettesPage() {
                     </h3>
                   </Link>
 
-                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}</span>
-                      <span className="flex items-center gap-1"><Flame className="w-3 h-3" /> {formatCalories(meal.calories_par_portion)}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-4">
+                      <span className="flex items-center gap-1 whitespace-nowrap"><Clock className="w-3 h-3" /> {formatMinutes(meal.temps_preparation + (meal.temps_cuisson || 0))}</span>
+                      <span className="flex items-center gap-1 whitespace-nowrap"><Flame className="w-3 h-3" /> {formatCalories(meal.calories_par_portion)}</span>
                       {meal.proteines != null && (
-                        <span className="flex items-center gap-1" title="Protéines par portion">
+                        <span className="flex items-center gap-1 whitespace-nowrap" title="Protéines par portion">
                           <Beef className="w-3 h-3" /> {Math.round(meal.proteines)} g
                         </span>
                       )}
-                      <span className="flex items-center gap-1"><ChefIcon className="w-3 h-3" /> {meal.difficulte}</span>
+                      <span className="flex items-center gap-1 whitespace-nowrap"><ChefIcon className="w-3 h-3" /> {meal.difficulte}</span>
                     </div>
 
                     {/* Badges */}

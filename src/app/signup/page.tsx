@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 import { LoadingButton } from '@/components/LoadingButton';
 
 const BENEFITS = [
-  'Votre première semaine de menus offerte',
-  'Sans carte bancaire, annulable à tout moment',
+  'Votre première semaine composée dès l’inscription',
+  'Inscription gratuite, sans carte bancaire',
   'Menus adaptés à vos goûts et vos régimes',
 ];
 
@@ -145,7 +145,6 @@ export default function SignupPage() {
           {/* Décorative uniquement, pensée pour l'espace vide du calage 2
               colonnes desktop : en pile mobile, elle atterrissait au hasard
               en dessous du formulaire. */}
-          <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid lg:grid-cols-2 gap-14 items-center">
             {/* Texte */}
@@ -158,8 +157,8 @@ export default function SignupPage() {
                 <Underlined color="#C4552C">compte.</Underlined>
               </h1>
               <p className="mt-6 text-gray-600 text-lg leading-relaxed">
-                Gratuit, sans carte bancaire. Votre première semaine de menus
-                est offerte — testez avant de choisir.
+                Gratuit, sans carte bancaire. Répondez à quelques questions et
+                votre semaine de menus sur mesure est composée aussitôt.
               </p>
 
               <ul className="mt-8 space-y-3.5">
@@ -359,7 +358,7 @@ export default function SignupPage() {
           </div>
         </section>
       </main>
-      <LandingFooter />
+      <LandingFooter sansNewsletter />
     </div>
   );
 }

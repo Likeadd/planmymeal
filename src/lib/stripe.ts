@@ -3,12 +3,10 @@
 // ============================================================================
 
 /**
- * Interrupteur des paiements : activé par NEXT_PUBLIC_STRIPE_ENABLED=true sur
- * le déploiement, une fois les clés, les prix et le webhook Stripe en place.
- * Tant qu'il est faux, aucun bouton ne déclenche de checkout : le paywall
- * s'affiche mais indique que l'abonnement ouvre bientôt.
+ * Paiements ouverts. Coupe-circuit : NEXT_PUBLIC_STRIPE_ENABLED=false sur le
+ * déploiement désactive tous les boutons d'abonnement (maintenance Stripe).
  */
-export const STRIPE_ENABLED = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true';
+export const STRIPE_ENABLED = process.env.NEXT_PUBLIC_STRIPE_ENABLED !== 'false';
 
 // Features alignées sur la landing (src/app/page.tsx) : les deux écrans
 // vendent le même produit — toute divergence serait un signal de méfiance.

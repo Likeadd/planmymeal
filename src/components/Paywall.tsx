@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { EVENEMENT_PAYWALL, type DetailPaywall } from '@/lib/paywall';
 import { estPayant, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, type RaisonPaywall } from '@/lib/limites';
-import { STRIPE_ENABLED, STRIPE_PLANS, type PlanType } from '@/lib/stripe';
+import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { cn } from '@/lib/utils';
 
@@ -127,7 +127,7 @@ export function Paywall() {
             ))}
           </ul>
 
-          {STRIPE_ENABLED ? (
+          {(
             <>
               <button ref={bouton} onClick={essayer} disabled={chargement}
                 className="mt-6 w-full inline-flex items-center justify-center gap-2 min-h-[48px] text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 shadow-cta disabled:opacity-60 transition-colors">
@@ -137,10 +137,6 @@ export function Paywall() {
                 Paiement sécurisé par Stripe. Sans engagement, résiliable à tout moment depuis votre compte.
               </p>
             </>
-          ) : (
-            <p className="mt-6 rounded-2xl bg-gray-50 border border-gray-200 px-4 py-3 text-center text-sm text-gray-600">
-              L’abonnement ouvre très bientôt.
-            </p>
           )}
 
           <button onClick={continuerGratuit}

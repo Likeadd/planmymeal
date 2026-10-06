@@ -139,7 +139,6 @@ function LoginForm() {
           {/* Décorative uniquement, pensée pour l'espace vide du calage 2
               colonnes desktop : en pile mobile, elle atterrissait au hasard
               au niveau de « Retour à l'accueil », en dessous du formulaire. */}
-          <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid lg:grid-cols-2 gap-14 items-center">
             {/* Texte */}
@@ -260,7 +259,7 @@ function LoginForm() {
           </div>
         </section>
       </main>
-      <LandingFooter />
+      <LandingFooter sansNewsletter />
     </div>
   );
 }

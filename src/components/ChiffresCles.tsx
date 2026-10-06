@@ -52,7 +52,7 @@ export function ChiffresCles() {
       <div className="max-w-5xl mx-auto px-4 py-10 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
         {items.map((it, i) => (
           <div key={it.label} data-reveal style={{ '--i': i } as React.CSSProperties}>
-            <p className="font-display text-3xl sm:text-4xl font-bold text-gray-900">
+            <p className="font-sans tabular-nums text-3xl sm:text-4xl font-bold text-gray-900">
               <CountUp value={it.valeur} format={v => `${Math.round(v).toLocaleString('fr-FR')}${it.suffixe}`} />
             </p>
             <p className="mt-1 text-xs sm:text-sm text-gray-500">{it.label}</p>

@@ -14,7 +14,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         q: 'Comment ça marche ?',
-        a: 'En 3 étapes : 1) vous renseignez vos préférences (goûts, régimes, objectif, niveau de cuisine), 2) l’IA génère votre semaine complète de déjeuners et dîners, 3) vous récupérez la liste de courses triée par rayon et les fiches recettes.',
+        a: 'En 3 étapes : 1) vous renseignez vos préférences (goûts, régimes, objectif, niveau de cuisine), 2) le moteur génère votre semaine complète de déjeuners et dîners, 3) vous récupérez la liste de courses triée par rayon et les fiches recettes.',
       },
       {
         q: 'Est-ce vraiment gratuit ?',
@@ -30,8 +30,8 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     label: 'Génération & contenu',
     items: [
       {
-        q: 'Comment l’IA choisit mes repas ?',
-        a: 'Elle s’appuie sur votre profil : mémoire des goûts (vos favoris et les plats que vous avez aimés), régime alimentaire, objectif, niveau de cuisine et préférence pour le batch cooking.',
+        q: 'Comment sont choisis mes repas ?',
+        a: 'Le moteur s’appuie sur votre profil : mémoire des goûts (vos favoris et les plats que vous avez aimés), régime alimentaire, objectif, niveau de cuisine et préférence pour le batch cooking.',
       },
       {
         q: 'Puis-je régénérer ma semaine ?',
@@ -39,7 +39,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         q: 'À quoi servent les favoris ?',
-        a: 'Cliquez sur l’étoile d’une carte repas pour l’ajouter à vos favoris : l’IA la réutilisera plus volontiers et vous pourrez la retrouver sur la page Favoris.',
+        a: 'Cliquez sur l’étoile d’une carte repas pour l’ajouter à vos favoris : elle reviendra plus souvent dans vos semaines et vous pourrez la retrouver sur la page Favoris.',
       },
       {
         q: 'C’est quoi le batch cooking ?',
@@ -47,7 +47,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         q: 'Les recettes sont-elles adaptées à mon régime ?',
-        a: 'Oui : végétarien, vegan, sans gluten, sans lactose, hyperprotéiné… Indiquez vos régimes pendant l’inscription et l’IA les respectera dans toutes vos semaines.',
+        a: 'Oui : végétarien, vegan, sans gluten, sans lactose, hyperprotéiné… Indiquez vos régimes pendant l’inscription : ils sont respectés dans toutes vos semaines.',
       },
     ],
   },
@@ -56,7 +56,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     items: [
       {
         q: 'Quels sont les plans disponibles ?',
-        a: 'Trois plans : Gratuit (une semaine de menus), Pro (semaines illimitées, IA avancée, mémoire des goûts complète) et Famille (plusieurs profils et menus adaptés à toute la maisonnée).',
+        a: 'Trois plans : Gratuit (4 optimisations de semaine par 7 jours), Pro (optimisations illimitées, prix max par portion, imports de recettes illimités) et Famille (plusieurs profils et menus adaptés à toute la maisonnée).',
       },
       {
         q: 'Puis-je annuler à tout moment ?',
@@ -85,7 +85,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         q: 'Comment supprimer mon compte et mes données ?',
-        a: 'Écrivez-nous depuis la page Compte ou par email : nous supprimons votre compte, vos plannings et vos données personnelles sous 7 jours.',
+        a: 'Depuis la page Compte, vous pouvez supprimer votre compte : vos plannings et vos données personnelles sont effacés. Pour toute question, écrivez-nous via la page Contact.',
       },
     ],
   },

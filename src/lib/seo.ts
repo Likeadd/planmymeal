@@ -1,6 +1,6 @@
 // Données structurées schema.org (JSON-LD) — PlanMyMeal
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://planmymeal.app').replace(/\/$/, '');
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com').replace(/\/$/, '');
 
 /** Sérialise pour une balise <script type="application/ld+json"> : `<` échappé
  *  pour qu'un titre de recette ne puisse jamais fermer la balise. */

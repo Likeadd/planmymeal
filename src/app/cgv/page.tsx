@@ -117,7 +117,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
 
 export const metadata: Metadata = {
   title: 'Conditions générales de vente',
-  description: 'Les conditions générales de vente et d’abonnement de PlanMyMeal.',
+  description: 'Conditions générales de vente et d’abonnement de PlanMyMeal : offres, prix, paiement, rétractation, résiliation et responsabilité.',
   alternates: { canonical: '/cgv' },
 };
 
@@ -138,9 +138,6 @@ export default function CgvPage() {
           <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-brand-600 mb-5">
-              Conditions générales de vente
-            </p>
             <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 text-balance">
               Nos{' '}
               <Underlined color="#C4552C">CGV.</Underlined>

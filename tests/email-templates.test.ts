@@ -6,7 +6,7 @@ import { weeklyDigestEmailHtml, weeklyDigestSubject, welcomeEmailHtml } from '..
 // que l'app (titreRecette) ; welcome inchangé ; sujets sans titre de plat.
 // ============================================================================
 
-const BASE = 'https://planmymeal.app';
+const BASE = 'https://getplanmymeal.com';
 
 describe('weeklyDigestEmailHtml — aperçu Au menu', () => {
   it('liste les plats en casse de phrase', () => {

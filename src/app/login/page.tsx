@@ -143,10 +143,7 @@ function LoginForm() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 grid lg:grid-cols-2 gap-14 items-center">
             {/* Texte */}
             <div>
-              <span className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-                Espace membre
-              </span>
-              <h1 className="mt-5 font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-[1.06]">
+              <h1 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-[1.06]">
                 Bon{' '}
                 <Underlined color="#7C5FBF">retour !</Underlined>
               </h1>

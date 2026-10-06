@@ -16,7 +16,7 @@ const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!;
 const STRIPE_PRICE_ID_PRO = Deno.env.get('STRIPE_PRICE_ID_PRO')!;
 const STRIPE_PRICE_ID_FAMILLE = Deno.env.get('STRIPE_PRICE_ID_FAMILLE')!;
 // URL de retour fixe (jamais l'en-tête Origin, falsifiable) — secret APP_URL
-const APP_URL = (Deno.env.get('APP_URL') ?? 'https://planmymeal.app').replace(/\/$/, '');
+const APP_URL = (Deno.env.get('APP_URL') ?? 'https://getplanmymeal.com').replace(/\/$/, '');
 
 /** Erreur dont le message peut être montré à l'utilisateur. */
 class PublicError extends Error {}

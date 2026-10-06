@@ -71,7 +71,7 @@ export const ENV_SPECS: EnvSpec[] = [
   {
     key: 'NEXT_PUBLIC_SITE_URL',
     severity: 'recommended',
-    usage: 'URL canonique (sitemap, robots, OG — fallback https://planmymeal.app)',
+    usage: 'URL canonique (sitemap, robots, OG — fallback https://getplanmymeal.com)',
   },
   {
     key: 'ANTHROPIC_API_KEY',

@@ -16,7 +16,6 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
 import {
   CalendarDays, Refrigerator, BookOpen, Star, Wallet,
   Settings, Sparkles, Crown, Users, Home, History, Compass,
@@ -26,8 +25,6 @@ import { useAuth } from '@/components/AuthProvider';
 import { MenuUtilisateur, lienNavSouligne, nomAffiche } from '@/components/NavPartagee';
 import { OptimiserButton } from '@/components/dashboard/OptimiserBar';
 import { cn } from '@/lib/utils';
-import { createBrowserClient } from '@/lib/supabase';
-import { prechaufferCatalogue } from '@/lib/catalogue-cache';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { VisiteGuidee, lancerVisiteGuidee } from '@/components/VisiteGuidee';
@@ -44,25 +41,6 @@ export function DashboardShell({
   regenerating?: boolean;
   showRegenerate?: boolean;
 }) {
-  // Préchauffage du catalogue /recettes : au repos (navigateur idle), une fois
-  // par session, et UNIQUEMENT si aucun cache local n'existe encore — jamais de
-  // double téléchargement. Quand l'utilisateur clique « Recettes », la page
-  // s'affiche alors instantanément depuis le cache au lieu d'attendre ~900 ko.
-  // La promesse est partagée (catalogue-cache) : même depuis /recettes elle-même,
-  // une seule requête part.
-  const prechauffe = useRef(false);
-  useEffect(() => {
-    if (prechauffe.current) return;
-    prechauffe.current = true;
-    const lancer = () => prechaufferCatalogue(createBrowserClient());
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(lancer, { timeout: 4000 });
-    } else {
-      const t = window.setTimeout(lancer, 3000);
-      return () => window.clearTimeout(t);
-    }
-  }, []);
-
   // Visiteur NON connecté (pages publiques : catalogue, fiches recettes) :
   // en-tête et pied de page du site, pas la navigation de l'application —
   // ses onglets (Planning, Frigo, Compte) ne mènent qu'à la page de connexion.

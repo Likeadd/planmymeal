@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     const dryRun = request.nextUrl.searchParams.get('dry_run') === '1';
     const supabase = getSupabaseAdmin();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://planmymeal.app';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com';
 
     const { data: abonnes, error: erreurAbonnes } = await supabase
       .from('newsletter_subscribers')

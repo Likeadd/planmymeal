@@ -3,18 +3,12 @@
 // ============================================================================
 // Catalogue de recettes — /recettes
 //
-// Performance (deux chantiers, pour que la page « se lance » vite) :
-//
-// 1. Réseau : le catalogue passe par `chargerCatalogueCached` — rendu
-//    INSTANTANÉ depuis le cache local (localStorage, stale-while-revalidate :
-//    revalidation silencieuse au-delà d'une heure), requêtes paginées
-//    parallélisées côté `chargerCatalogue`, et préchauffage au repos depuis le
-//    dashboard (`prechaufferCatalogue`).
-// 2. Rendu : squelette pendant le premier chargement (pas d'écran vide),
-//    grille rendue PAR TRANCHES de 48 (« Afficher plus ») — 1 100+ cartes
-//    d'un coup coûtaient plusieurs centaines de ms de render pur, pour des
-//    recettes que personne ne fait défiler d'emblée. Le compteur du sous-titre
-//    reste le catalogue ENTIER (un test e2e le vérifie).
+// Performance : pagination, filtres et tris sont faits CÔTÉ SERVEUR
+// (`/api/recettes`, index en mémoire — voir lib/catalogue-index.ts). Le
+// navigateur ne reçoit que 48 cartes à la fois (≈ 60 ko) au lieu des ≈ 10 Mo du
+// catalogue entier ; « Afficher plus » demande la tranche suivante. Squelette
+// pendant la première réponse. Le compteur du sous-titre reste le catalogue
+// ENTIER (un test e2e le vérifie).
 //
 // Filtres : type, recherche (titre + ingrédients, insensible aux accents),
 // équipement, difficulté, cuisine, saison, temps total max, calories max,
@@ -25,8 +19,7 @@
 // exclues du select).
 // ============================================================================
 
-import { useState, useEffect, useMemo } from 'react';
-import { prixParPortion } from '@/lib/budget';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Clock, Flame, ChefHat as ChefIcon, AlertTriangle,
@@ -35,10 +28,7 @@ import {
 } from 'lucide-react';
 import type { TypeRepas, Equipement, Saison, Regime } from '@/types';
 import { EQUIPEMENTS } from '@/types';
-import { createBrowserClient } from '@/lib/supabase';
-import { chargerCatalogueCached } from '@/lib/catalogue-cache';
-import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
-import { recetteServable, normaliserNom, type IngredientPourRegime } from '@/lib/regimes';
+import type { MealCatalogue } from '@/lib/db-rows';
 import { formatMinutes, formatCalories, formatTypeRepas, titreRecette, emojiRecette } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
@@ -67,14 +57,6 @@ const TRI_OPTIONS: { value: TriChamp; label: string }[] = [
 
 /** En dessous de ce nombre de recettes, un filtre n'est pas proposé (bruit) */
 const SEUIL_FILTRE = 10;
-
-/** Rang pseudo-aléatoire d'une recette, stable pendant une semaine ISO */
-function melangeSemaine(id: number): number {
-  const semaine = Math.floor(Date.now() / (7 * 24 * 3600 * 1000));
-  let h = (id * 2654435761 + semaine * 40503) >>> 0;
-  h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0; h ^= h >>> 13;
-  return h;
-}
 
 const DIFFICULTES: { value: 'toutes' | 'facile' | 'moyen' | 'difficile'; label: string }[] = [
   { value: 'toutes', label: 'Toutes difficultés' },
@@ -143,26 +125,18 @@ const BATCH_MIN_JOURS = 3;
  */
 const PROTEINES_MIN_G = 25;
 
-/** Ingrédients d'une recette au format du filtre régimes (avec rayon). */
-function ingredientsRegime(m: MealCatalogue): IngredientPourRegime[] {
-  return m.ingredients.map(li => ({
-    id: li.ingredient.id,
-    nom: li.ingredient.nom,
-    rayon: li.ingredient.rayon,
-    est_optionnel: li.est_optionnel,
-  }));
-}
-
-/** Données pré-calculées par recette : le filtrage ne recompte plus rien. */
-interface StatsRecette {
-  /** temps_preparation + temps_cuisson */
-  temps: number;
-  kcal: number | null;
-  prix: number | null;
-  /** protéines par portion (g) — tri « le plus protéiné » + filtre « riche » */
-  proteines: number | null;
-  /** titre + noms d'ingrédients, normalisés (recherche insensible aux accents) */
-  haystack: string;
+/** Compteurs globaux des filtres, renvoyés par l'API (voir `Facettes` côté serveur) */
+interface Facettes {
+  total: number;
+  cuisines: string[];
+  types: Record<string, number>;
+  equipements: Record<string, number>;
+  temps: Record<number, number>;
+  kcal: Record<number, number>;
+  prix: Record<number, number>;
+  batch: number;
+  proteines: number;
+  regimes: Record<string, number>;
 }
 
 /** Puce de filtre (mêmes couleurs que les rangées de type / équipement) */
@@ -217,7 +191,10 @@ function CarteSquelette() {
 
 export default function RecettesPage() {
   const [meals, setMeals] = useState<MealCatalogue[]>([]);
+  const [total, setTotal] = useState(0);
+  const [facettes, setFacettes] = useState<Facettes | null>(null);
   const [loading, setLoading] = useState(true);
+  const [chargementPlus, setChargementPlus] = useState(false);
   const [error, setError] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeRepas | 'tous'>('tous');
   const [search, setSearch] = useState('');
@@ -247,144 +224,79 @@ export default function RecettesPage() {
     return r ? [r as Regime] : [];
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [nbAffichees, setNbAffichees] = useState(TRANCHE_GRILLE);
   const [cuisineFilter, setCuisineFilter] = useState<string>(() => paramsInitiaux().get('cuisine') ?? 'toutes');
 
-  const supabase = createBrowserClient();
+  const [recherche, setRecherche] = useState('');
 
+  // Recherche différée : une requête par pause de frappe, pas par touche.
   useEffect(() => {
-    let cancelled = false;
+    const t = setTimeout(() => setRecherche(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const construireParams = (offset: number) => {
+    const q = new URLSearchParams({ tri, offset: String(offset), limite: String(TRANCHE_GRILLE) });
+    if (typeFilter !== 'tous') q.set('type', typeFilter);
+    if (recherche) q.set('q', recherche);
+    if (equipementFilter !== 'tous') q.set('equipement', equipementFilter);
+    if (difficulteFilter !== 'toutes') q.set('difficulte', difficulteFilter);
+    if (cuisineFilter !== 'toutes') q.set('cuisine', cuisineFilter);
+    if (saisonFilter !== 'toutes') q.set('saison', saisonFilter);
+    if (tempsMax != null) q.set('tempsMax', String(tempsMax));
+    if (kcalMax != null) q.set('kcalMax', String(kcalMax));
+    if (prixMax != null) q.set('prixMax', String(prixMax));
+    if (batchOnly) q.set('batch', '1');
+    if (proteinesOnly) q.set('proteines', '1');
+    if (regimes.length > 0) q.set('regimes', regimes.join(','));
+    return q;
+  };
+
+  // Chaque changement de filtre / tri repart de la première tranche. La
+  // requête précédente encore en vol est annulée (pas de résultat périmé).
+  const signature = construireParams(0).toString();
+  useEffect(() => {
+    const ctrl = new AbortController();
     (async () => {
-      setLoading(true);
       setError('');
       try {
-        // Cache local d'abord (rendu instantané), réseau seulement si le
-        // cache manque ou a plus d'une heure — revalidation silencieuse alors.
-        const { rows, revalidation } = await chargerCatalogueCached(supabase);
-        if (cancelled) return;
-        // Normalisation indispensable : les pastilles lisent `meal.ingredients`,
-        // absent des lignes brutes tant que `toMealCatalogue` n'a pas tourné.
-        setMeals(rows.map(toMealCatalogue));
+        const res = await fetch(`/api/recettes?${signature}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error('Chargement du catalogue impossible.');
+        const json = await res.json() as { total: number; items: MealCatalogue[]; facettes?: Facettes };
+        setMeals(json.items);
+        setTotal(json.total);
+        if (json.facettes) setFacettes(json.facettes);
         setLoading(false);
-        revalidation?.then(fraiches => {
-          if (!cancelled) setMeals(fraiches.map(toMealCatalogue));
-        });
       } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Chargement du catalogue impossible.');
-          setLoading(false);
-        }
+        if (ctrl.signal.aborted) return;
+        setError(e instanceof Error ? e.message : 'Chargement du catalogue impossible.');
+        setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [supabase]);
+    return () => ctrl.abort();
+  }, [signature]);
 
-  // Cuisines disponibles (pour le filtre déroulant)
-  const cuisines = useMemo(
-    () => Array.from(new Set(meals.map(m => m.cuisine).filter(Boolean))).sort() as string[],
-    [meals]
-  );
-
-  // Temps / kcal / prix / chaîne de recherche pré-calculés UNE fois par
-  // catalogue reçu : chaque frappe et chaque changement de filtre relit une
-  // Map au lieu de recalculer prix et normalisations pour 1 100+ recettes.
-  const stats = useMemo(() => {
-    const map = new Map<number, StatsRecette>();
-    for (const m of meals) {
-      map.set(m.id, {
-        temps: m.temps_preparation + (m.temps_cuisson || 0),
-        kcal: m.calories_par_portion,
-        prix: prixParPortion(m),
-        proteines: m.proteines,
-        haystack: `${normaliserNom(m.titre)} ${m.ingredients.map(li => normaliserNom(li.ingredient.nom)).join(' ')}`,
-      });
+  const afficherPlus = async () => {
+    setChargementPlus(true);
+    try {
+      const res = await fetch(`/api/recettes?${construireParams(meals.length)}`);
+      if (!res.ok) throw new Error();
+      const json = await res.json() as { total: number; items: MealCatalogue[] };
+      setMeals(prev => [...prev, ...json.items.filter(i => !prev.some(m => m.id === i.id))]);
+      setTotal(json.total);
+    } catch {
+      setError('Chargement des recettes suivantes impossible.');
+    } finally {
+      setChargementPlus(false);
     }
-    return map;
-  }, [meals]);
+  };
 
-  // Éligibilité PAR régime (une puce affiche combien de recettes elle garde).
-  // Calculé seulement quand le panneau est ouvert (ou un régime actif) : c'est
-  // le calcul le plus cher du filtrage, inutile tant que personne ne le lit.
-  const panelActif = showAdvanced || regimes.length > 0;
-  const eligibiliteRegimes = useMemo(() => {
-    if (!panelActif) return null;
-    const map = new Map<Regime, Set<number>>();
-    for (const { value } of REGIMES_FILTRES) {
-      const set = new Set<number>();
-      for (const m of meals) {
-        if (recetteServable(ingredientsRegime(m), [value])) set.add(m.id);
-      }
-      map.set(value, set);
-    }
-    return map;
-  }, [panelActif, meals]);
-
-  // Filtrage + tri. Régimes multi-sélectionnés : `recetteServable` reçoit la
-  // liste COMPLÈTE (compatibles avec TOUS les régimes choisis), pas une
-  // intersection de comptages pris un par un.
-  const filteredMeals = useMemo(() => {
-    const q = normaliserNom(search.trim());
-    const result = meals.filter(m => {
-      if (typeFilter !== 'tous' && m.type_repas !== typeFilter) return false;
-      const s = stats.get(m.id);
-      if (q && !(s?.haystack ?? '').includes(q)) return false;
-      if (equipementFilter !== 'tous' &&
-          !(m.ustensiles || []).some(u => u === equipementFilter || u.startsWith(equipementFilter))) return false;
-      if (difficulteFilter !== 'toutes' && m.difficulte !== difficulteFilter) return false;
-      if (cuisineFilter !== 'toutes' && m.cuisine !== cuisineFilter) return false;
-      if (saisonFilter !== 'toutes' && m.saison !== saisonFilter) return false;
-      if (tempsMax != null && (s?.temps ?? Number.POSITIVE_INFINITY) > tempsMax) return false;
-      if (kcalMax != null && (s?.kcal ?? Number.POSITIVE_INFINITY) > kcalMax) return false;
-      if (prixMax != null && (s?.prix ?? Number.POSITIVE_INFINITY) > prixMax) return false;
-      if (batchOnly && !(m.conservation_jours != null && m.conservation_jours >= BATCH_MIN_JOURS)) return false;
-      if (proteinesOnly && !((s?.proteines ?? 0) >= PROTEINES_MIN_G)) return false;
-      if (regimes.length > 0 && !recetteServable(ingredientsRegime(m), regimes)) return false;
-      return true;
-    });
-    const prix = (m: MealCatalogue) => stats.get(m.id)?.prix ?? Number.POSITIVE_INFINITY;
-    return result.sort((a, b) => {
-      const sa = stats.get(a.id);
-      const sb = stats.get(b.id);
-      switch (tri) {
-        case 'temps': return (sa?.temps ?? 0) - (sb?.temps ?? 0) || a.titre.localeCompare(b.titre, 'fr');
-        case 'calories': return (a.calories_par_portion || 9999) - (b.calories_par_portion || 9999) || a.titre.localeCompare(b.titre, 'fr');
-        case 'prix': return prix(a) - prix(b) || a.titre.localeCompare(b.titre, 'fr');
-        case 'proteines':
-          // DESCENDANT : les plus protéinées d'abord. Valeur inconnue (null) →
-          // en FIN de liste, même convention que les autres tris (9999/∞).
-          return (b.proteines ?? -1) - (a.proteines ?? -1) || a.titre.localeCompare(b.titre, 'fr');
-        case 'nom': return a.titre.localeCompare(b.titre, 'fr');
-        // « Idées de la semaine » : ordre mélangé, stable pendant la semaine,
-        // différent la suivante (plus de « Ananas frais en dés » en tête).
-        default: return melangeSemaine(a.id) - melangeSemaine(b.id);
-      }
-    });
-  }, [meals, stats, typeFilter, search, equipementFilter, difficulteFilter, cuisineFilter, saisonFilter, tempsMax, kcalMax, prixMax, batchOnly, proteinesOnly, regimes, tri]);
-
-  // Nouvelle recherche / nouveaux filtres → on repart du haut de la grille.
-  // Ajustement de state PENDANT le rendu (pattern React « you might not need
-  // an effect ») : pas de rendu cascade, contrairement à un useEffect.
-  const signatureFiltres = [
-    typeFilter, search, equipementFilter, difficulteFilter, cuisineFilter,
-    saisonFilter, tempsMax, kcalMax, prixMax, batchOnly, proteinesOnly, tri, regimes.join(','),
-  ].join('|');
-  const [derniereSignature, setDerniereSignature] = useState(signatureFiltres);
-  if (derniereSignature !== signatureFiltres) {
-    setDerniereSignature(signatureFiltres);
-    setNbAffichees(TRANCHE_GRILLE);
-  }
-
-  const visibles = useMemo(
-    () => filteredMeals.slice(0, nbAffichees),
-    [filteredMeals, nbAffichees]
-  );
-
-  // Compteurs des puces du panneau (coût trivial : lectures de `stats`)
-  const compteurTemps = (v: number) => meals.filter(m => (stats.get(m.id)?.temps ?? Number.POSITIVE_INFINITY) <= v).length;
-  const compteurKcal = (v: number) => meals.filter(m => (stats.get(m.id)?.kcal ?? Number.POSITIVE_INFINITY) <= v).length;
-  const compteurPrix = (v: number) => meals.filter(m => (stats.get(m.id)?.prix ?? Number.POSITIVE_INFINITY) <= v).length;
-  const compteurBatch = meals.filter(m => (m.conservation_jours ?? 0) >= BATCH_MIN_JOURS).length;
-  const compteurProteines = meals.filter(m => (stats.get(m.id)?.proteines ?? 0) >= PROTEINES_MIN_G).length;
+  const cuisines = facettes?.cuisines ?? [];
+  const visibles = meals;
+  const compteTemps = (v: number) => facettes?.temps[v] ?? 0;
+  const compteKcal = (v: number) => facettes?.kcal[v] ?? 0;
+  const comptePrix = (v: number) => facettes?.prix[v] ?? 0;
+  const compteurBatch = facettes?.batch ?? 0;
+  const compteurProteines = facettes?.proteines ?? 0;
 
   const nbFiltresAvances =
     (tempsMax != null ? 1 : 0) + (kcalMax != null ? 1 : 0) + (prixMax != null ? 1 : 0) +
@@ -430,7 +342,7 @@ export default function RecettesPage() {
           <p className="text-gray-500 mt-2">
             {loading
               ? 'Chargement du catalogue...'
-              : `${meals.length} recette${meals.length > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
+              : `${facettes?.total ?? 0} recette${(facettes?.total ?? 0) > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
           </p>
           {/* Sélections prêtes à l'emploi (pages catégories) */}
           <div className="mt-3 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto sm:flex-wrap [scrollbar-width:none]">
@@ -459,7 +371,7 @@ export default function RecettesPage() {
         )}
 
         {/* Filtres */}
-        {!error && !loading && meals.length > 0 && (
+        {!error && !loading && facettes && (
           <>
             <div className="relative mb-3 max-w-md">
               <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -473,9 +385,7 @@ export default function RecettesPage() {
             </div>
             <div className="flex flex-wrap gap-1.5 mb-3">
               {TYPE_FILTERS.map(f => {
-                const count = f.value === 'tous'
-                  ? meals.length
-                  : meals.filter(m => m.type_repas === f.value).length;
+                const count = f.value === 'tous' ? facettes.total : (facettes.types[f.value] ?? 0);
                 if (f.value !== 'tous' && count < SEUIL_FILTRE && typeFilter !== f.value) return null;
                 return (
                   <button key={f.value} onClick={() => setTypeFilter(f.value)}
@@ -534,7 +444,7 @@ export default function RecettesPage() {
               )}
 
               {/* Compteur résultats */}
-              <span className="ml-auto text-xs text-gray-500">{filteredMeals.length} résultat{filteredMeals.length > 1 ? 's' : ''}</span>
+              <span className="ml-auto text-xs text-gray-500">{total} résultat{total > 1 ? 's' : ''}</span>
             </div>
 
             {/* Panneau de filtres avancés */}
@@ -549,7 +459,7 @@ export default function RecettesPage() {
                 🍳 Tout appareil
               </button>
               {EQUIPEMENTS.map(eq => {
-                const count = meals.filter(m => (m.ustensiles || []).some(u => u === eq || u.startsWith(eq))).length;
+                const count = facettes.equipements[eq] ?? 0;
                 if (count < SEUIL_FILTRE && equipementFilter !== eq) return null;
                 return (
                   <button key={eq} onClick={() => setEquipementFilter(eq)}
@@ -583,7 +493,7 @@ export default function RecettesPage() {
                   {TEMPS_MAX_OPTIONS.map(o => (
                     <PuceFiltre key={o.value} actif={tempsMax === o.value}
                       onClick={() => setTempsMax(prev => (prev === o.value ? null : o.value))}
-                      compteur={compteurTemps(o.value)}>
+                      compteur={compteTemps(o.value)}>
                       {o.label}
                     </PuceFiltre>
                   ))}
@@ -593,7 +503,7 @@ export default function RecettesPage() {
                   {KCAL_MAX_OPTIONS.map(o => (
                     <PuceFiltre key={o.value} actif={kcalMax === o.value}
                       onClick={() => setKcalMax(prev => (prev === o.value ? null : o.value))}
-                      compteur={compteurKcal(o.value)}>
+                      compteur={compteKcal(o.value)}>
                       {o.label}
                     </PuceFiltre>
                   ))}
@@ -603,7 +513,7 @@ export default function RecettesPage() {
                   {PRIX_MAX_OPTIONS.map(o => (
                     <PuceFiltre key={o.value} actif={prixMax === o.value}
                       onClick={() => setPrixMax(prev => (prev === o.value ? null : o.value))}
-                      compteur={compteurPrix(o.value)}>
+                      compteur={comptePrix(o.value)}>
                       {o.label}
                     </PuceFiltre>
                   ))}
@@ -627,7 +537,7 @@ export default function RecettesPage() {
                   {REGIMES_FILTRES.map(r => (
                     <PuceFiltre key={r.value} actif={regimes.includes(r.value)}
                       onClick={() => basculerRegime(r.value)}
-                      compteur={eligibiliteRegimes?.get(r.value)?.size ?? 0}>
+                      compteur={facettes?.regimes[r.value] ?? 0}>
                       {r.label}
                     </PuceFiltre>
                   ))}
@@ -639,11 +549,11 @@ export default function RecettesPage() {
         )}
 
         {/* Aucun résultat */}
-        {!error && !loading && meals.length > 0 && filteredMeals.length === 0 && (
+        {!error && !loading && facettes && total === 0 && (
           <div className="text-center py-16">
             <UtensilsCrossed className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 mb-4">
-              {search ? `Aucune recette (ni ingrédient) ne correspond à « ${search} ».` : 'Aucune recette ne correspond à ces filtres.'}
+              {recherche ? `Aucune recette (ni ingrédient) ne correspond à « ${recherche} ».` : 'Aucune recette ne correspond à ces filtres.'}
             </p>
             <button onClick={reinitialiser}
               className="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
@@ -718,11 +628,11 @@ export default function RecettesPage() {
             </div>
 
             {/* Afficher plus : la tranche suivante de la grille */}
-            {filteredMeals.length > visibles.length && (
+            {total > visibles.length && (
               <div className="text-center mt-8">
-                <button onClick={() => setNbAffichees(n => n + TRANCHE_GRILLE)}
-                  className="px-6 py-2.5 text-sm font-semibold text-brand-600 bg-white border border-brand-200 rounded-full hover:bg-brand-50 transition-colors">
-                  Afficher plus ({filteredMeals.length - visibles.length} restante{filteredMeals.length - visibles.length > 1 ? 's' : ''})
+                <button onClick={afficherPlus} disabled={chargementPlus}
+                  className="px-6 py-2.5 text-sm font-semibold text-brand-600 bg-white border border-brand-200 rounded-full hover:bg-brand-50 transition-colors disabled:opacity-60">
+                  {chargementPlus ? 'Chargement…' : `Afficher plus (${total - visibles.length} restante${total - visibles.length > 1 ? 's' : ''})`}
                 </button>
               </div>
             )}

@@ -107,7 +107,7 @@ async function telechargerPage(url: URL): Promise<string> {
       signal: controller.signal,
       redirect: 'manual', // pas de suivi : un redirect vers une IP interne est un contournement SSRF
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PlanMyMealBot/1.0; +https://planmymeal.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; PlanMyMealBot/1.0; +https://getplanmymeal.com)',
         'Accept': 'text/html,application/xhtml+xml',
       },
     });

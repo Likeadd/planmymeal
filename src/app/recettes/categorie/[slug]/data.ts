@@ -1,7 +1,6 @@
 import { cache } from 'react';
-import { getSupabaseAdmin } from '@/lib/supabase';
-import { chargerCatalogue } from '@/lib/catalogue';
-import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
+import { getIndex } from '@/lib/catalogue-index';
+import type { MealCatalogue } from '@/lib/db-rows';
 
 /**
  * Catalogue public complet, lu côté serveur pour les pages catégories SEO.
@@ -11,9 +10,7 @@ import { toMealCatalogue, type MealCatalogue } from '@/lib/db-rows';
  */
 export const getCatalogueSeo = cache(async (): Promise<MealCatalogue[]> => {
   try {
-    const supabase = getSupabaseAdmin();
-    const lignes = await chargerCatalogue(supabase);
-    return lignes.map(toMealCatalogue);
+    return (await getIndex()).entrees.map(e => e.m);
   } catch {
     return [];
   }

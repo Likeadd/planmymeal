@@ -15,7 +15,7 @@ import { sendEmail, sendEmailsBatch, type SendEmailInput } from '@/lib/email';
 import { welcomeEmailHtml, weeklyDigestEmailHtml, weeklyDigestSubject } from '@/lib/email-templates';
 import { formatWeekRange, getMondayWithOffset } from '@/lib/dates';
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://planmymeal.app').replace(/\/$/, '');
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com').replace(/\/$/, '');
 
 // ─── Bienvenue (idempotent) ─────────────────────────────────────────────────
 

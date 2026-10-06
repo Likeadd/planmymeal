@@ -34,7 +34,7 @@ export default function ConfidentialitePage() {
             <p className="text-gray-600 text-sm leading-relaxed">
               PlanMyMeal est un service de planification de repas. Le responsable de traitement est
               l&apos;exploitant du site (ci-après « PlanMyMeal »). Pour toute question relative à vos
-              données : <strong>privacy@planmymeal.app</strong>.
+              données : <strong>privacy@getplanmymeal.com</strong>.
             </p>
           </section>
 
@@ -95,7 +95,7 @@ export default function ConfidentialitePage() {
               préférences). Aucune question posée.
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Pour les autres droits : <strong>privacy@planmymeal.app</strong> — réponse sous 30 jours.
+              Pour les autres droits : <strong>privacy@getplanmymeal.com</strong> — réponse sous 30 jours.
               Vous pouvez également saisir la CNIL (cnil.fr).
             </p>
           </section>

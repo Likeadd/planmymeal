@@ -22,15 +22,27 @@ export default function ContactPage() {
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const [piege, setPiege] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = encodeURIComponent(
-      `Nom : ${name}\nEmail : ${email}\n\n${message}`
-    );
-    window.location.href = `mailto:contact@getplanmymeal.com?subject=${encodeURIComponent(
-      `[PlanMyMeal] ${subject}`
-    )}&body=${body}`;
-    setSent(true);
+    setEnvoi(true);
+    setErreur('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message, site: piege }),
+      });
+      if (res.ok) setSent(true);
+      else setErreur((await res.json().catch(() => ({}))).error || 'Envoi impossible pour le moment.');
+    } catch {
+      setErreur('Connexion impossible. Réessayez dans un instant.');
+    } finally {
+      setEnvoi(false);
+    }
   };
 
   return (
@@ -49,9 +61,6 @@ export default function ContactPage() {
           <div className="hidden lg:block absolute bottom-8 left-8 w-24 h-24 rounded-full bg-brand-100/70" aria-hidden />
 
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <p className="text-[11px] font-semibold tracking-[0.22em] uppercase text-brand-600 mb-5">
-              Contact
-            </p>
             <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 text-balance">
               Parlons{' '}
               <Underlined color="#7C5FBF">en.</Underlined>
@@ -74,12 +83,11 @@ export default function ContactPage() {
                     <Mail className="w-6 h-6 text-brand-600" />
                   </div>
                   <h2 className="font-display text-2xl font-bold text-gray-900">
-                    Votre message est prêt !
+                    Message envoyé
                   </h2>
                   <p className="mt-3 text-gray-600 text-sm leading-relaxed max-w-sm mx-auto">
-                    Votre messagerie vient de s’ouvrir avec le message
-                    pré-rempli — il ne reste plus qu’à l’envoyer. Merci de nous
-                    avoir écrit !
+                    Merci de nous avoir écrit. Nous vous répondons par email,
+                    en général sous 48 h ouvrées.
                   </p>
                   <button
                     onClick={() => { setSent(false); setName(''); setEmail(''); setMessage(''); }}
@@ -89,6 +97,8 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  <input type="text" name="site" value={piege} onChange={e => setPiege(e.target.value)}
+                    tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>
                       <label htmlFor="name" className="block text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-700 mb-2">
@@ -152,10 +162,12 @@ export default function ContactPage() {
 
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 px-7 py-3 bg-brand-500 text-white font-semibold text-sm rounded-full hover:bg-brand-600 transition-colors shadow-cta">
-                    Envoyer le message
+                    disabled={envoi}
+                    className="inline-flex items-center gap-2 px-7 py-3 disabled:opacity-60 bg-brand-500 text-white font-semibold text-sm rounded-full hover:bg-brand-600 transition-colors shadow-cta">
+                    {envoi ? 'Envoi…' : 'Envoyer le message'}
                     <Send className="w-4 h-4" />
                   </button>
+                  {erreur && <p role="alert" className="text-sm text-red-600">{erreur}</p>}
                 </form>
               )}
             </div>

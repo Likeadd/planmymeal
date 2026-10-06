@@ -1,9 +1,16 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Carrot, House, LayoutDashboard } from 'lucide-react';
 
 // ============================================================================
 // 404 — PlanMyMeal : page introuvable, même design que le reste de l'appli.
 // ============================================================================
+
+export const metadata: Metadata = {
+  title: 'Page introuvable',
+  description: 'Cette page n’existe pas ou a été déplacée.',
+  robots: { index: false, follow: false },
+};
 
 export default function NotFoundPage() {
   return (
@@ -12,10 +19,7 @@ export default function NotFoundPage() {
         <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-6">
           <Carrot className="w-8 h-8 text-brand-500" />
         </div>
-        <p className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-          Erreur 404
-        </p>
-        <h1 className="font-display text-2xl font-bold text-gray-900 mt-3">
+        <h1 className="font-display text-2xl font-bold text-gray-900">
           Cette page a quitté la cuisine
         </h1>
         <p className="text-gray-500 mt-3 leading-relaxed">

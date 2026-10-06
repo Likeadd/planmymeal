@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowRight, BadgeEuro, Brain, Check, ChefHat, Heart, Loader2, Minus,
+  ArrowRight, BadgeEuro, Brain, Check, ChefHat, Loader2, Minus,
   Package, Plus, Refrigerator, ShoppingCart, Sparkles, Users, UtensilsCrossed,
   CalendarDays,
 } from 'lucide-react';
@@ -77,17 +77,11 @@ function Hero() {
               servi en opacity:0 et restait invisible tant que le JS n'avait pas
               tourné (aperçus de partage, robots, JS lent). */}
           <div className="max-w-xl animate-hero-in">
-            {isLoggedIn ? (
-              <p className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-                Bonjour {userName} — vous êtes connecté
-              </p>
-            ) : (
-              <span className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-                Planification de repas
-              </span>
+            {isLoggedIn && (
+              <p className="text-sm font-medium text-gray-600">Bonjour {userName}</p>
             )}
 
-            <h1 className="mt-5 font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
+            <h1 className="mt-3 font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
               Mangez mieux.
               <br />
               <Underlined color="#7C5FBF">Planifiez moins.</Underlined>
@@ -143,17 +137,6 @@ function Hero() {
               <div className="absolute inset-0 translate-x-1.5 translate-y-2 rotate-1 bg-white/60 rounded-4xl shadow-sm" aria-hidden />
               <HeroMealCard />
             </Reveal>
-            {/* Badge circulaire : flotte dans l'espace à droite de la carte,
-                qui n'existe qu'à partir de lg (le calage lg:grid-cols-2 passe
-                cette colonne en pleine largeur en dessous) — en dessous, la
-                carte remplit tout l'espace et le badge se retrouvait à
-                cheval dessus, cachant « Optimisé pour vous ». */}
-            <div className="hidden lg:flex absolute bottom-10 right-10 w-28 h-28 rounded-full bg-gray-50 border border-gray-200 shadow-lg flex-col items-center justify-center text-center">
-              <Heart className="w-5 h-5 text-brand-600" />
-              <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-gray-700 mt-1.5 leading-tight px-2">
-                Fait maison avec amour
-              </span>
-            </div>
           </div>
         </div>
       </div>
@@ -193,9 +176,9 @@ function HeroMealCard() {
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-500">Liste de courses prête 🛒</span>
+        <span className="text-xs text-gray-500">Liste de courses prête</span>
         <span className="text-[11px] font-semibold tracking-wide bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full">
-          Optimisé pour vous ✨
+          Optimisé pour vous
         </span>
       </div>
     </div>
@@ -243,18 +226,18 @@ function IconsBanner() {
 const FEATURES = [
   {
     icon: Sparkles, accent: 'text-brand-600 bg-brand-100',
-    title: 'Votre semaine optimisée en un clic',
-    desc: 'Budget, goûts, temps, stock, restes, nutrition, gaspillage : un bouton et le moteur arbitre les sept dimensions de votre semaine — déjeuners, dîners et desserts. Adieu la page blanche du dimanche soir.',
+    title: 'Votre semaine en un clic',
+    desc: 'Budget, goûts, temps, stock, restes, nutrition, gaspillage : un bouton et le moteur arbitre les sept dimensions de votre semaine — déjeuners, dîners et desserts.',
   },
   {
     icon: Brain, accent: 'text-accent-600 bg-accent-100',
-    title: 'Une mémoire qui cuisine comme vous',
-    desc: 'Vos favoris reviennent, vos déceptions disparaissent : aucun plat ne se représente avant 21 jours. Chaque semaine est meilleure que la précédente.',
+    title: 'Une rotation sur 21 jours',
+    desc: 'Vos favoris reviennent, les plats écartés disparaissent, et aucun plat ne se représente avant 21 jours.',
   },
   {
     icon: Refrigerator, accent: 'text-green-700 bg-green-100',
-    title: 'Zéro gaspillage, zéro culpabilité',
-    desc: 'Déclarez le contenu de votre frigo : les recettes qui l’utilisent passent en tête et ses ingrédients sortent de votre liste de courses. Votre poubelle vous dira merci.',
+    title: 'Moins de gaspillage',
+    desc: 'Déclarez le contenu de votre frigo : les recettes qui l’utilisent passent en tête et ses ingrédients sortent de votre liste de courses.',
   },
   {
     icon: UtensilsCrossed, accent: 'text-orange-700 bg-orange-100',
@@ -268,13 +251,13 @@ const FEATURES = [
   },
   {
     icon: BadgeEuro, accent: 'text-brand-700 bg-brand-100',
-    title: 'Le budget sous contrôle, sans y penser',
+    title: 'Un budget maîtrisé',
     desc: 'Prix par portion, cap « prix max » et total de la semaine : vos menus respectent votre portefeuille. Calories, protéines et lipides vérifiés sur chaque fiche.',
   },
   {
     icon: Users, accent: 'text-rose-700 bg-rose-100',
-    title: 'Toute la famille à table, vraiment',
-    desc: 'Jusqu’à 5 profils, allergies et dégoûts de chacun respectés : le moteur négocie LA semaine qui fera l’unanimité à table.',
+    title: 'Toute la famille à table',
+    desc: 'Jusqu’à 5 profils, allergies et dégoûts de chacun respectés : le moteur compose une semaine qui convient à tout le monde.',
   },
 ];
 
@@ -283,14 +266,13 @@ function Features() {
     <section id="fonctionnalites" className="py-20 sm:py-28 bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto">
-          <span className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">Fonctionnalités</span>
-          <h2 className="mt-5 font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
             Tout pour bien manger,{' '}
             <Underlined color="#7C5FBF">au même endroit.</Underlined>
           </h2>
           <p className="mt-6 text-gray-600 text-lg leading-relaxed">
-            Sept dimensions arbitérées en même temps, à chaque optimisation :
-            budget, goûts, temps, stock, restes, nutrition, gaspillage. Vous n’avez plus qu’à déguster.
+            Sept critères pris en compte à chaque optimisation :
+            budget, goûts, temps, stock, restes, nutrition, gaspillage.
           </p>
         </Reveal>
 
@@ -327,22 +309,19 @@ function Collection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-14 items-center">
         {/* Texte */}
         <Reveal>
-          <span className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-            Notre collection
-          </span>
-          <h2 className="mt-5 font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
             Des menus qui{' '}
             <Underlined color="#C4552C">vous ressemblent.</Underlined>
           </h2>
           <p className="mt-6 text-gray-600 text-lg leading-relaxed max-w-md">
             Optimisés pour vos goûts, vos allergies, votre rythme et votre
-            budget. Fait pour votre peau… enfin, votre assiette — et la planète.
+            budget.
           </p>
-          <a href="#tarifs"
+          <Link href="/recettes"
             className="mt-7 inline-flex items-center min-h-[44px] gap-2 text-sm font-semibold text-brand-600 underline underline-offset-4 decoration-brand-300 hover:text-brand-700 transition-colors">
-            Découvrir les menus
+            Voir les recettes
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </Reveal>
 
         {/* Cartes produits */}
@@ -406,11 +385,8 @@ function NouveautesMonde() {
         <Reveal className="bg-white rounded-3xl border border-gray-200 shadow-xs p-5 sm:p-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
-              <span className="text-accent-600 text-[11px] font-semibold tracking-[0.28em] uppercase">
-                Nouveautés du monde
-              </span>
-              <h3 className="mt-3 font-display text-2xl sm:text-3xl font-bold text-gray-900">
-                Chaque mois, une nouvelle cuisine s’invite dans votre semaine.
+              <h3 className="font-display text-2xl sm:text-3xl font-bold text-gray-900">
+                Les cuisines du monde
               </h3>
               <p className="mt-2 text-gray-600">
                 Mezzés libanais, pho vietnamien, paella légère, feijoada…
@@ -479,20 +455,14 @@ function Promo() {
       <Reveal className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 overflow-hidden rounded-3xl shadow-xs">
         {/* Bloc terracotta */}
         <div className="relative bg-brand-600 p-10 sm:p-12">
-          <span className="text-white/70 text-[11px] tracking-[0.28em] uppercase">
-            Rituels simplifiés
-          </span>
-          <h3 className="mt-4 font-display text-3xl font-bold text-white leading-snug">
-            Chaque semaine est un bon jour pour bien manger.
+          <h3 className="font-display text-3xl font-bold text-white leading-snug">
+            Cuisinez moins souvent, mangez mieux.
           </h3>
-          <p className="mt-4 text-white/80 leading-relaxed">
-            Des rituels qui font du bien et qui font du bien à faire.
-          </p>
-          <a href="#tarifs"
+          <Link href="/recettes"
             className="mt-6 inline-flex items-center min-h-[44px] gap-2 text-sm font-semibold text-white underline underline-offset-4 decoration-white/50 hover:decoration-white transition-colors">
-            Découvrir le batch cooking
+            Voir les recettes
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
 
         {/* Bloc central : la semaine */}
@@ -544,13 +514,12 @@ function Promo() {
                   </div>
                 ))}
               </div>
-              <p className="mt-6 text-xs text-gray-500">La rotation mémoire et l’optimisation en un clic</p>
             </>
           )}
-          <a href="#collection"
+          <Link href="/recettes"
             className="mt-6 inline-flex items-center min-h-[44px] text-sm font-semibold text-gray-900 underline underline-offset-4 decoration-accent-400 hover:text-brand-600 transition-colors">
-            Découvrir les menus
-          </a>
+            Voir les recettes
+          </Link>
         </div>
       </Reveal>
     </section>
@@ -760,24 +729,16 @@ function Pricing() {
     <section id="tarifs" className="py-20 sm:py-28 bg-gray-50 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto">
-          <span className="text-brand-600 text-[11px] font-semibold tracking-[0.28em] uppercase">Tarifs</span>
-          <h2 className="mt-5 font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
+          <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
             Simple et{' '}
             <Underlined color="#7C5FBF">transparent.</Underlined>
           </h2>
           <p className="mt-6 text-gray-600 text-lg">
-            Commencez gratuitement, évoluez seulement si le produit vous sert au quotidien.
+            Commencez gratuitement, passez à un plan payant quand vous le souhaitez.
           </p>
         </Reveal>
 
-        {/* Ruban offre : rappel au moment de la décision */}
-        <div className="mt-10 flex justify-center">
-          <span className="inline-flex items-center gap-2 bg-brand-50 border border-brand-200 rounded-full px-4 py-1.5 text-xs font-semibold text-brand-700">
-            🎁 Gratuit pour toujours — sans carte bancaire
-          </span>
-        </div>
-
-        <div className="mt-8 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="mt-10 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PLANS.map((plan, i) => (
             <Reveal key={plan.name} delay={i * 0.08}
               className={`relative flex flex-col rounded-2xl p-8 ${
@@ -785,12 +746,6 @@ function Pricing() {
                   ? 'bg-brand-600 text-white shadow-cta md:-translate-y-2'
                   : 'bg-white border border-gray-200'
               }`}>
-              {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent-500 text-white text-[11px] font-bold tracking-[0.14em] uppercase px-4 py-1 rounded-full">
-                  Le plus populaire
-                </div>
-              )}
-
               <div className="text-3xl mb-3">{plan.emoji}</div>
               <h3 className={`font-display text-xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>
                 {plan.name}

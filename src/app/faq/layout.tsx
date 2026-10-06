@@ -5,7 +5,7 @@ import { FAQ_CATEGORIES } from './faq-data';
 // Métadonnées de la page (page.tsx est un composant client).
 export const metadata: Metadata = {
   title: "Questions fréquentes",
-  description: "Tout savoir sur PlanMyMeal : menus, liste de courses, budget, abonnement.",
+  description: "Réponses aux questions sur PlanMyMeal : génération des menus, liste de courses, frigo, budget, allergies, abonnement et données personnelles.",
   alternates: { canonical: '/faq' },
 };
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -19,7 +20,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { STRIPE_ENABLED, STRIPE_PLANS } from '@/lib/stripe';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
-import { IMPORTS_GRATUITS_PAR_MOIS } from '@/lib/limites';
+import { IMPORTS_GRATUITS_PAR_MOIS, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE, REMPLACEMENTS_GRATUITS_PAR_SEMAINE } from '@/lib/limites';
 
 // SoftwareApplication schema.org : type d'app, plateforme et offres tarifaires
 const jsonLdApp = {
@@ -63,9 +64,8 @@ export default function LandingPage() {
 // ─── Hero scindé avec vague ─────────────────────────────────────────────────
 
 function Hero() {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const isLoggedIn = !loading && !!user;
-  const userName = (profile?.full_name?.trim() || user?.email?.split('@')[0] || '');
 
   return (
     <section className="relative overflow-hidden">
@@ -77,11 +77,7 @@ function Hero() {
               servi en opacity:0 et restait invisible tant que le JS n'avait pas
               tourné (aperçus de partage, robots, JS lent). */}
           <div className="max-w-xl animate-hero-in">
-            {isLoggedIn && (
-              <p className="text-sm font-medium text-gray-600">Bonjour {userName}</p>
-            )}
-
-            <h1 className="mt-3 font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
+            <h1 className="font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
               Mangez mieux.
               <br />
               <Underlined color="#7C5FBF">Planifiez moins.</Underlined>
@@ -94,9 +90,9 @@ function Hero() {
             </p>
 
             <div className="mt-9">
-              <Link href={isLoggedIn ? '/aujourdhui' : '/signup'}
+              <Link href={isLoggedIn ? '/dashboard' : '/signup'}
                 className="group inline-flex items-center gap-2.5 px-8 py-4 bg-brand-500 text-white font-semibold text-sm tracking-[0.12em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
-                {isLoggedIn ? 'Retourner à mes repas' : 'Planifier ma semaine'}
+                {isLoggedIn ? 'Voir ma semaine' : 'Optimiser ma semaine'}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
@@ -114,7 +110,7 @@ function Hero() {
               ))}
             </ul>
             <p className="mt-3 text-xs text-gray-500">
-              Gratuit pour toujours · sans carte bancaire
+              Inscription gratuite · sans carte bancaire
             </p>
           </div>
         </div>
@@ -368,14 +364,14 @@ function Collection() {
 // Comptes issus du seed world healthy (scripts/seed-world-healthy.ts) —
 // ne pas augmenter sans lancer le seed correspondant.
 const NOUVEAUTES = [
-  { flag: '🇱🇧', nom: 'Libanaise', n: 48 },
-  { flag: '🇬🇷', nom: 'Grecque', n: 48 },
-  { flag: '🇻🇳', nom: 'Vietnamienne', n: 30 },
-  { flag: '🇪🇸', nom: 'Espagnole', n: 30 },
-  { flag: '🇧🇷', nom: 'Brésilienne', n: 30 },
-  { flag: '🇰🇷', nom: 'Coréenne', n: 40 },
-  { flag: '🇪🇹', nom: 'Éthiopienne', n: 64 },
-  { flag: '🇯🇵', nom: 'Japonaise', n: 62 },
+  { flag: 'lb.svg', nom: 'Libanaise', n: 48 },
+  { flag: 'gr.svg', nom: 'Grecque', n: 48 },
+  { flag: 'vn.svg', nom: 'Vietnamienne', n: 30 },
+  { flag: 'es.png', nom: 'Espagnole', n: 30 },
+  { flag: 'br.svg', nom: 'Brésilienne', n: 30 },
+  { flag: 'kr.svg', nom: 'Coréenne', n: 40 },
+  { flag: 'et.svg', nom: 'Éthiopienne', n: 64 },
+  { flag: 'jp.svg', nom: 'Japonaise', n: 62 },
 ];
 
 function NouveautesMonde() {
@@ -405,7 +401,7 @@ function NouveautesMonde() {
               <Link key={c.nom} href={`/recettes?cuisine=${encodeURIComponent(c.nom)}`}
                 title={`Voir les recettes ${c.nom.toLowerCase()}s`}
                 className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 hover:border-brand-300 hover:bg-brand-50 transition-colors">
-                <span className="text-2xl" aria-hidden>{c.flag}</span>
+                <Image src={`/flags/${c.flag}`} alt="" width={28} height={21} unoptimized className="w-7 h-[21px] rounded-[3px] border border-gray-200 object-cover shrink-0" />
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-gray-900 truncate">{c.nom}</span>
                   <span className="block text-[11px] text-gray-500">{c.n} recettes</span>
@@ -538,33 +534,24 @@ const PLANS = [
     name: 'Gratuit', price: '0', emoji: '🎁',
     desc: 'Pour découvrir, sans carte bancaire',
     features: [
-      '4 optimisations de semaine / 7 jours',
-      'Planning déjeuner + dîner complet',
-      'Desserts planifiés (rythme équilibré)',
-      'Liste de courses automatique, triée par rayon',
-      'Budget & dépense de la semaine',
+      'Votre semaine composée sur mesure',
+      `Aperçu de ${JOURS_VISIBLES_GRATUIT} jours sur 7 et de la liste de courses`,
+      `${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} optimisation de semaine / 7 jours`,
+      'Catalogue de plus de 6 000 recettes',
+      'Inventaire du frigo',
     ],
     cta: 'Commencer gratuitement', highlighted: false,
   },
   {
     name: 'Pro', price: '5,99', emoji: '👨‍🍳',
-    desc: 'Pour les foodies exigeants',
-    features: [
-      'Optimisations illimitées',
-      'Rythme desserts Gourmand (5-6 soirs)',
-      'Prix max par portion',
-      'Imports de recettes illimités',
-    ],
+    desc: 'Votre semaine complète, sans limite',
+    features: [...STRIPE_PLANS.pro.features],
     cta: STRIPE_ENABLED ? 'Passer à Pro' : 'Commencer gratuitement', highlighted: true,
   },
   {
     name: 'Famille', price: '9,99', emoji: '👨‍👩‍👧‍👦',
-    desc: 'Pour toute la tribu',
-    features: [
-      'Tout le plan Pro',
-      '5 profils avec allergies & dégoûts',
-      'Menus de compromis négociés par le moteur',
-    ],
+    desc: 'Pour toute la famille',
+    features: [...STRIPE_PLANS.famille.features],
     cta: STRIPE_ENABLED ? 'Passer à Famille' : 'Commencer gratuitement', highlighted: false,
   },
 ];
@@ -581,22 +568,21 @@ const PLANS = [
 type CelluleComparatif = boolean | string;
 
 const COMPARATIF: { label: string; gratuit: CelluleComparatif; pro: CelluleComparatif; famille: CelluleComparatif }[] = [
-  { label: 'Optimisations de semaine', gratuit: '4 / 7 jours', pro: 'Illimitées', famille: 'Illimitées' },
-  { label: 'Déjeuners & dîners planifiés', gratuit: true, pro: true, famille: true },
-  { label: 'Desserts planifiés (rythme équilibré)', gratuit: true, pro: true, famille: true },
-  { label: 'Rythme desserts Gourmand (5-6 soirs)', gratuit: false, pro: true, famille: true },
-  { label: 'Batch cooking & restes', gratuit: true, pro: true, famille: true },
-  { label: 'Liste de courses automatique', gratuit: true, pro: true, famille: true },
-  { label: 'Liste triée par rayon', gratuit: true, pro: true, famille: true },
+  { label: 'Optimisations de semaine', gratuit: `${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} / 7 jours`, pro: 'Illimitées', famille: 'Illimitées' },
+  { label: 'Jours de la semaine accessibles', gratuit: `${JOURS_VISIBLES_GRATUIT} / 7`, pro: '7 / 7', famille: '7 / 7' },
+  { label: 'Desserts planifiés (léger à Gourmand)', gratuit: false, pro: true, famille: true },
+  { label: 'Changements automatiques de repas', gratuit: `${REMPLACEMENTS_GRATUITS_PAR_SEMAINE} / 7 jours`, pro: 'Illimités', famille: 'Illimités' },
+  { label: 'Optimisations Budget, Temps, Anti-gaspi', gratuit: false, pro: true, famille: true },
+  { label: 'Semaines planifiées automatiquement', gratuit: false, pro: true, famille: true },
+  { label: 'Liste de courses automatique, triée par rayon', gratuit: 'Aperçu', pro: 'Complète', famille: 'Complète' },
   { label: 'Budget & dépense de la semaine', gratuit: true, pro: true, famille: true },
   { label: 'Prix max par portion', gratuit: false, pro: true, famille: true },
   { label: 'Macros détaillées (kcal, protéines…)', gratuit: true, pro: true, famille: true },
+  { label: 'Recettes avec mon frigo', gratuit: `${RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE} / 7 jours`, pro: 'Illimitées', famille: 'Illimitées' },
   { label: 'Imports de recettes (IA)', gratuit: `${IMPORTS_GRATUITS_PAR_MOIS} / mois`, pro: 'Illimités', famille: 'Illimités' },
-  { label: 'Frigo anti-gaspi', gratuit: true, pro: true, famille: true },
-  { label: 'Profils', gratuit: '1', pro: '1', famille: '5' },
-  { label: 'Allergies & dégoûts par membre', gratuit: false, pro: false, famille: true },
+  { label: 'Profils avec allergies & goûts', gratuit: '1', pro: '1', famille: '5' },
   { label: 'Menus de compromis famille', gratuit: false, pro: false, famille: true },
-  { label: 'Foyer partagé entre plusieurs comptes', gratuit: true, pro: true, famille: true },
+  { label: 'Foyer partagé entre plusieurs comptes', gratuit: false, pro: false, famille: true },
 ];
 
 function CellulePlan({ value }: { value: CelluleComparatif }) {

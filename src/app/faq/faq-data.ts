@@ -18,7 +18,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         q: 'Est-ce vraiment gratuit ?',
-        a: 'Oui. Le plan Gratuit l’est pour toujours, sans carte bancaire : génération de la semaine (4 par 7 jours), liste de courses, budget, batch cooking et frigo anti-gaspi. Les plans Pro et Famille ajoutent des générations illimitées, les profils par membre du foyer et quelques réglages avancés.',
+        a: 'Le plan Gratuit est gratuit pour toujours, sans carte bancaire : votre semaine composée sur mesure avec un aperçu de 2 jours et de la liste de courses, une optimisation tous les 7 jours et tout le catalogue de recettes. Les plans Pro et Famille débloquent la semaine complète et toute la liste de courses, les optimisations illimitées, les desserts, les changements de repas illimités, les optimisations Budget, Temps et Anti-gaspi et, pour Famille, les profils de chaque membre.',
       },
       {
         q: 'Sur quels appareils puis-je utiliser PlanMyMeal ?',
@@ -56,7 +56,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     items: [
       {
         q: 'Quels sont les plans disponibles ?',
-        a: 'Trois plans : Gratuit (4 optimisations de semaine par 7 jours), Pro (optimisations illimitées, prix max par portion, imports de recettes illimités) et Famille (plusieurs profils et menus adaptés à toute la maisonnée).',
+        a: 'Trois plans : Gratuit (une optimisation de semaine tous les 7 jours, sans desserts), Pro à 5,99 €/mois (tout illimité, desserts, optimisations ciblées, semaines planifiées automatiquement) et Famille à 9,99 €/mois (tout Pro, plus 5 profils avec les allergies et les goûts de chacun et le foyer partagé).',
       },
       {
         q: 'Puis-je annuler à tout moment ?',

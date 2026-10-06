@@ -14,6 +14,7 @@ import type { Objectif, NiveauCuisine, Regime } from '@/types';
 import type { RythmeDesserts } from '@/lib/rotation-engine';
 import { caloriesRecommandees, profilEffectif, kcalValide, BORNES, type Sexe } from '@/lib/nutrition';
 import { REGIMES_CHOIX } from '@/lib/regimes';
+import { getMonday } from '@/lib/dates';
 import { GROUPES_ALLERGIES, TOUTES_ALLERGIES, DETESTES } from '@/lib/exclusions-alimentaires';
 
 /** Libellés du récapitulatif (étape 9) */
@@ -72,6 +73,8 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  /** Message affiché pendant l'enregistrement final (profil puis première semaine) */
+  const [etapeFinale, setEtapeFinale] = useState('');
   const [form, setForm] = useState<OnboardingForm>({
     nb_personnes: 2, objectif: 'maintien', allergies: [], dislikes: [],
     regimes: [], cuisines_preferees: [], temps_max_semaine: 30, temps_max_weekend: 60, niveau_cuisine: 'intermediaire',
@@ -152,10 +155,19 @@ export default function OnboardingPage() {
       // fire-and-forget : on ne retarde pas la navigation vers le dashboard)
       fetch('/api/welcome', { method: 'POST' }).catch(() => { /* best-effort */ });
 
-      // Déclenche la visite guidée sur la page d'accueil (une seule fois)
+      // Première semaine composée tout de suite : l'utilisateur arrive sur SON
+      // planning (2 jours visibles en gratuit, le reste à débloquer).
+      setEtapeFinale('Composition de votre première semaine…');
+      await fetch('/api/generate-week', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semaine_debut: getMonday() }),
+      }).catch(() => { /* le planning proposera de générer */ });
+
+      // Déclenche la visite guidée (une seule fois)
       if (user) programmerVisiteGuidee(user.id);
-      toast.success('✨ Profil enregistré !');
-      router.push('/aujourdhui');
+      toast.success('✨ Votre semaine est prête !');
+      router.push('/dashboard');
     } catch (err) {
       toast.error('Erreur lors de la sauvegarde : ' + errorMessage(err));
       setSaving(false);
@@ -489,11 +501,11 @@ export default function OnboardingPage() {
                       AVANT l'enregistrement que la semaine tournera en équilibré
                       (le moteur dégrade, cf. rotation-engine) — pas de surprise,
                       et une porte d'upgrade naturelle. */}
-                  {form.rythme_desserts === 'gourmand' && (
+                  {form.rythme_desserts !== 'aucun' && (
                     <p className="mt-2 text-xs text-accent-700 bg-accent-100 border border-accent-200 rounded-lg px-3 py-2">
-                      👑 Le rythme Gourmand est inclus dans les plans <strong>Pro</strong> et
-                      Famille. Sans abonnement, vos semaines tourneront au rythme Équilibré —
-                      modifiable plus tard dans Mon compte.
+                      👑 Les desserts sont inclus dans les plans <strong>Pro</strong> et Famille.
+                      Avec la version gratuite, vos semaines sont
+                      sans dessert : votre choix sera appliqué dès que vous passerez à Pro.
                     </p>
                   )}
                   <p className="text-[11px] text-gray-500 mt-2">
@@ -570,11 +582,9 @@ export default function OnboardingPage() {
               <ArrowLeft className="w-4 h-4" /> Précédent
             </button>
             <button onClick={() => step === STEPS.length - 1 ? handleComplete() : setStep(s => s + 1)} disabled={saving} className="inline-flex items-center gap-2 px-8 py-3 bg-brand-500 text-white font-semibold rounded-xl hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed shadow-cta">
-              {/* Le dernier bouton N'A JAMAIS généré de semaine : handleComplete
-                  enregistre le profil puis redirige vers /aujourdhui — le libellé
-                  « Générer ma première semaine » mentait. Il dit maintenant ce
-                  qui se passe vraiment, dans le vocabulaire de la promesse. */}
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement...</> : step === STEPS.length - 1 ? <><Sparkles className="w-4 h-4" /> Créer mon profil et optimiser</> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
+              {/* Le dernier bouton enregistre le profil, compose la première
+                  semaine puis ouvre le planning. */}
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> {etapeFinale || 'Enregistrement…'}</> : step === STEPS.length - 1 ? <><Sparkles className="w-4 h-4" /> Créer mon profil et optimiser</> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
             </button>
           </div>
         </div>

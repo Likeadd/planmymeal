@@ -1,5 +1,6 @@
 'use client';
 
+import { gererPaywall, ErreurPaywall } from '@/lib/paywall';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import { getMondayWithOffset, JOURS_NOMS } from '@/lib/dates';
@@ -334,6 +335,7 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
         body: JSON.stringify({ semaine_debut: semaineDebut, intention }),
       });
 
+      if (await gererPaywall(res)) return;
       if (!res.ok) {
         const { error: apiError } = await res.json();
         throw new Error(apiError || `Erreur ${res.status}`);
@@ -366,6 +368,7 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
         }),
       });
 
+      if (await gererPaywall(res)) throw new ErreurPaywall();
       if (!res.ok) {
         const { error: apiError } = await res.json();
         throw new Error(apiError || `Erreur ${res.status}`);
@@ -374,7 +377,7 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
       // Recharger le planning depuis la DB
       await loadPlan();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la régénération');
+      if (!(err instanceof ErreurPaywall)) setError(err instanceof Error ? err.message : 'Erreur lors de la régénération');
       // Rethrow : l'appelant affiche un toast d'erreur (et pas « Nouveau repas ✓ »)
       throw err;
     } finally {
@@ -444,6 +447,7 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
         }),
       });
 
+      if (await gererPaywall(res)) return;
       if (!res.ok) {
         const { error: apiError } = await res.json();
         throw new Error(apiError || `Erreur ${res.status}`);

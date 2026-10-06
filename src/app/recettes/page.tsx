@@ -31,6 +31,7 @@ import { EQUIPEMENTS } from '@/types';
 import type { MealCatalogue } from '@/lib/db-rows';
 import { formatMinutes, formatCalories, formatTypeRepas, titreRecette, emojiRecette } from '@/lib/utils';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { DemandeRecette } from '@/components/DemandeRecette';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { recetteHref } from '@/lib/seo';
 import { CATEGORIES_SEO } from '@/lib/categories-seo';
@@ -352,6 +353,7 @@ export default function RecettesPage() {
                 {cat.court}
               </Link>
             ))}
+            <DemandeRecette className="shrink-0" />
           </div>
         </div>
 
@@ -373,7 +375,7 @@ export default function RecettesPage() {
         {/* Filtres */}
         {!error && !loading && facettes && (
           <>
-            <div className="relative mb-3 max-w-md">
+            <div className="relative mb-3 max-w-md" data-tour="recettes-recherche">
               <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -400,7 +402,7 @@ export default function RecettesPage() {
             </div>
 
             {/* Tri + difficulté + cuisine + saison + panneau avancé */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-2 mb-3" data-tour="recettes-filtres">
               {/* Tri */}
               <label className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                 <ArrowUpDown className="w-3.5 h-3.5 text-gray-500" />
@@ -555,10 +557,13 @@ export default function RecettesPage() {
             <p className="text-gray-500 mb-4">
               {recherche ? `Aucune recette (ni ingrédient) ne correspond à « ${recherche} ».` : 'Aucune recette ne correspond à ces filtres.'}
             </p>
-            <button onClick={reinitialiser}
-              className="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
-              Tout réinitialiser
-            </button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button onClick={reinitialiser}
+                className="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
+                Tout réinitialiser
+              </button>
+              <DemandeRecette titreInitial={recherche} libelle="Demander cette recette" />
+            </div>
           </div>
         )}
 

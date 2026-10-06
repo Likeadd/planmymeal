@@ -11,6 +11,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { reponsePaywall } from '@/lib/paywall-serveur';
 import { getAuthUserAndClient } from '@/lib/api-auth';
 import { publicErrorMessage, UserError } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
@@ -124,6 +125,10 @@ export async function POST(request: NextRequest) {
 
     switch (body.action) {
       case 'inviter': {
+        const { data: profil } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle();
+        if (profil?.plan !== 'famille') {
+          return reponsePaywall('foyer-partage', 'Partager votre foyer avec d’autres comptes est inclus dans le plan Famille.');
+        }
         const jours = body.jours != null ? Number(body.jours) : 7;
         if (!Number.isInteger(jours) || jours < 1 || jours > 30) {
           return NextResponse.json({ error: 'Durée invalide (1 à 30 jours)' }, { status: 400 });

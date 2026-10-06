@@ -7,8 +7,8 @@
 // dans un effet.
 // ============================================================================
 
+import { ouvrirPaywall } from '@/lib/paywall';
 import { useState } from 'react';
-import Link from 'next/link';
 import { Check, Crown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
@@ -105,22 +105,19 @@ export function MaCuisineSettings() {
         <div role="radiogroup" aria-label="Rythme des desserts" className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-2">
           {RYTHMES.map(r => {
             const actif = rythmeDesserts === r.value;
-            const verrouille = r.pro === true && gateGourmand;
+            const verrouille = r.value !== 'aucun' && gateGourmand;
             return (
               <button key={r.value} type="button" role="radio" aria-checked={actif}
-                disabled={verrouille}
-                title={verrouille ? 'Rythme Gourmand réservé aux plans Pro et Famille' : undefined}
-                onClick={() => { setRythmeDesserts(r.value); setDirty(true); }}
+                title={verrouille ? 'Desserts inclus dans les plans Pro et Famille' : undefined}
+                onClick={() => { if (verrouille) { ouvrirPaywall('desserts'); return; } setRythmeDesserts(r.value); setDirty(true); }}
                 className={`relative text-left px-3 py-2.5 rounded-xl border-2 transition-all ${
                   actif ? 'bg-brand-500 border-brand-500 text-white'
-                    : verrouille ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed'
+                    : verrouille ? 'bg-gray-50 border-gray-200 text-gray-500 hover:border-accent-300'
                       : 'bg-white border-gray-200 text-gray-700 hover:border-brand-300'}`}>
                 {verrouille && (
-                  <Link href="/compte#tarifs" title="Passer Pro pour débloquer le rythme Gourmand"
-                    onClick={e => e.stopPropagation()}
-                    className="absolute top-1.5 right-1.5 p-1 text-accent-500 hover:text-accent-600">
+                  <span aria-hidden className="absolute top-1.5 right-1.5 p-1 text-accent-500">
                     <Crown className="w-3.5 h-3.5" />
-                  </Link>
+                  </span>
                 )}
                 <span className="block text-sm font-semibold flex items-center gap-1">
                   {actif && <Check className="w-3.5 h-3.5" />}{r.label}

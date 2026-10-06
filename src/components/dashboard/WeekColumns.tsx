@@ -8,6 +8,7 @@
 // sous le repas. Glisser-déposer conservé entre créneaux.
 // ============================================================================
 
+import { CarteVerrouillee } from '@/components/dashboard/Verrou';
 import Link from 'next/link';
 import { CalendarDays, Loader2, Check } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
@@ -22,9 +23,11 @@ import { useChangerCreneau, repasDuCreneau, type ActionsCreneau } from '@/compon
 
 export function WeekColumns({
   days, semaineDebut, dragOver, moving, mealStatuses, regeneratingSlots, onDragStart, onDragOver, onDragLeave, onDrop,
-  estSemaineCourante, nbDesserts, ...actions
+  estSemaineCourante, nbDesserts, verrouilles, ...actions
 }: ActionsCreneau & {
   days: DayPlan[];
+  /** Jours verrouillés (plan gratuit) : repas floutés */
+  verrouilles?: Set<number>;
   nbDesserts?: number;
   /** Lundi de la semaine affichée (YYYY-MM-DD) */
   semaineDebut: string;
@@ -164,8 +167,11 @@ export function WeekColumns({
                 </span>
                 {batchJour === day.jourIndex && <span className="mt-1 text-[11px] font-semibold">🍳 Batch</span>}
               </div>
-              {cellule(day, 'dejeuner')}
-              {cellule(day, 'diner')}
+              {verrouilles?.has(day.jourIndex) ? (
+                <><CarteVerrouillee /><CarteVerrouillee /></>
+              ) : (
+                <>{cellule(day, 'dejeuner')}{cellule(day, 'diner')}</>
+              )}
             </div>
           );
         })}

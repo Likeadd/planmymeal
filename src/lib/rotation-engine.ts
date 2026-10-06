@@ -418,9 +418,10 @@ export async function generateWeeklyPlan(
   // aurait réussi à écrire 'gourmand' (client patché, RLS permissive) retombe
   // sur « Équilibré » — le moteur est la dernière ligne de défense, l'UI
   // verrouille déjà le choix en amont.
-  if (rythme === 'gourmand' && (profile as { plan?: string } | null)?.plan === 'gratuit') {
-    rythme = 'equilibre';
-  }
+  // Desserts : avantage des plans payants (lib/limites.ts) — un compte
+  // gratuit a des semaines sans dessert, quel que soit le rythme enregistré.
+  const planProfil = (profile as { plan?: string } | null)?.plan;
+  if (planProfil !== 'pro' && planProfil !== 'famille') rythme = 'aucun';
   const cible = RYTHME_DESSERTS[rythme];
   if (cible.soirs != null) {
     days = assignerDesserts(days, desserts, cible.soirs, 'dessert', rng);
@@ -739,7 +740,9 @@ export async function buildCandidates(
   ]);
   if (profileError || !profileRow) throw new UserError('Profil introuvable');
   const profile: Profile = toProfile(profileRow);
-  const famille = await chargerFamille(userId, supabase, profile.poids_famille);
+  const familleChargee = await chargerFamille(userId, supabase, profile.poids_famille);
+  // Profils des membres du foyer : avantage du plan Famille
+  const famille = profile.plan === 'famille' ? familleChargee : { ...familleChargee, membres: [] };
   const frigoIds = ingredientIdsFrigo(frigoRes.data ?? []);
 
   // 2. Allergies + dislikes + régimes
@@ -962,7 +965,7 @@ export async function buildCandidates(
       let rythme = validerRythmeDesserts(
         (profile as unknown as { rythme_desserts?: unknown }).rythme_desserts
       );
-      if (rythme === 'gourmand' && profile.plan === 'gratuit') rythme = 'equilibre';
+      if (profile.plan !== 'pro' && profile.plan !== 'famille') rythme = 'aucun';
       const cibleDesserts = RYTHME_DESSERTS[rythme];
       const nbRepasReel = NB_REPAS_PRINCIPAUX + (cibleDesserts.soirs ?? 0) + (cibleDesserts.midis ?? 0);
       for (const c of candidats) {

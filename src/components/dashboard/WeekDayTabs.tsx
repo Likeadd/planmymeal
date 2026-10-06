@@ -9,9 +9,10 @@
 // horizontal = jour précédent / suivant.
 // ============================================================================
 
+import { BoutonDebloquer, CarteVerrouillee } from '@/components/dashboard/Verrou';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Loader2, Package, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Package, Check, Lock } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
 import { formatMinutes, cn, titreRecette, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
@@ -24,9 +25,11 @@ import { useChangerCreneau, repasDuCreneau } from '@/components/dashboard/useCha
 
 export function WeekDayTabs({
   days, semaineDebut, estSemaineCourante, mealStatuses, regeneratingSlots,
-  onMarkStatus, onSwap, onRegenerate, onCustom, onVider, onToggleRestes, restesToggling,
+  onMarkStatus, onSwap, onRegenerate, onCustom, onVider, onToggleRestes, restesToggling, verrouilles,
 }: {
   days: DayPlan[];
+  /** Jours verrouillés (plan gratuit) : repas floutés */
+  verrouilles?: Set<number>;
   /** Lundi de la semaine affichée (YYYY-MM-DD) */
   semaineDebut: string;
   estSemaineCourante: boolean;
@@ -111,7 +114,17 @@ export function WeekDayTabs({
 
       <FamilleLegende className="mt-4 mb-0" />
 
-      {/* ── Ce midi / Ce soir ── */}
+      {/* ── Ce midi / Ce soir ── (jour verrouillé : repas floutés + déblocage) */}
+      {verrouilles?.has(day.jourIndex) ? (
+        <div className="mt-5 relative">
+          <div className="grid gap-5 sm:grid-cols-2"><CarteVerrouillee grande /><CarteVerrouillee grande /></div>
+          <div className="mt-4 rounded-3xl border border-brand-200 bg-brand-50 p-4 text-center">
+            <p className="font-semibold text-gray-900">Ce jour fait partie de votre semaine complète</p>
+            <p className="mt-1 text-sm text-gray-600">Vous voyez {7 - verrouilles.size} jours sur 7.</p>
+            <BoutonDebloquer raison="semaine" className="mt-3 w-full" />
+          </div>
+        </div>
+      ) : (
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         {(['dejeuner', 'diner'] as const).map(slot => {
           const meal = repasDe(slot);
@@ -195,6 +208,7 @@ export function WeekDayTabs({
           );
         })}
       </div>
+      )}
 
       {/* ── Pastilles des jours ── */}
       <div role="tablist" aria-label="Jours de la semaine" className="mt-6 flex justify-between gap-1" data-no-swipe>
@@ -208,7 +222,7 @@ export function WeekDayTabs({
                 actif ? 'bg-brand-500 border-brand-500 text-white shadow-cta'
                   : auj ? 'bg-brand-50 border-brand-300 text-brand-600'
                   : 'bg-white border-gray-200 text-gray-600')}>
-              {d.jour.charAt(0)}
+              {verrouilles?.has(d.jourIndex) && !actif ? <Lock className="w-3.5 h-3.5 mx-auto text-gray-400" aria-hidden /> : d.jour.charAt(0)}
             </button>
           );
         })}

@@ -1,5 +1,6 @@
 'use client';
 
+import { ConnexionGoogle } from '@/components/ConnexionGoogle';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -181,6 +182,7 @@ function LoginForm() {
                   </div>
                 )}
 
+                <ConnexionGoogle />
                 <form onSubmit={handleLogin} className="space-y-5">
                   {/* Email */}
                   <div>

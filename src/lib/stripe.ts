@@ -3,28 +3,30 @@
 // ============================================================================
 
 /**
- * Interrupteur temporaire : les paiements Stripe ne sont pas encore prêts
- * (clés non configurées sur le déploiement). Tant que c'est `false`, aucun
- * bouton de l'app ne déclenche de checkout ni n'appelle Stripe — l'app tourne
- * sans qu'aucune variable Stripe (clé secrète, clé publique, ID de prix) soit
- * définie côté Vercel. Repasser à `true` une fois les clés en place.
+ * Interrupteur des paiements : activé par NEXT_PUBLIC_STRIPE_ENABLED=true sur
+ * le déploiement, une fois les clés, les prix et le webhook Stripe en place.
+ * Tant qu'il est faux, aucun bouton ne déclenche de checkout : le paywall
+ * s'affiche mais indique que l'abonnement ouvre bientôt.
  */
-export const STRIPE_ENABLED = false;
+export const STRIPE_ENABLED = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true';
 
 // Features alignées sur la landing (src/app/page.tsx) : les deux écrans
 // vendent le même produit — toute divergence serait un signal de méfiance.
-// Rappel des gates réels : générations 4/7j en gratuit (api/generate-week),
-// prix max par portion refusé en 403 si gratuit (api/budget).
+// Limites du plan gratuit : lib/limites.ts (contrôlées côté serveur).
 export const STRIPE_PLANS = {
   pro: {
     name: 'Pro',
     price: 5.99,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO || 'price_pro',
     features: [
-      'Générations illimitées',
-      'Rythme desserts Gourmand (5-6 soirs)',
-      'Prix max par portion',
-      'Imports de recettes illimités',
+      'Votre semaine complète et toute la liste de courses',
+      'Optimisations de semaine illimitées',
+      'Desserts planifiés, du rythme léger au Gourmand',
+      'Changements de repas illimités',
+      'Optimisations Budget, Gain de temps et Anti-gaspi',
+      'Recettes avec votre frigo illimitées',
+      'Semaines planifiées automatiquement chaque dimanche',
+      'Prix max par portion et imports de recettes illimités',
     ],
     cta: 'Passer à Pro',
   },
@@ -34,8 +36,9 @@ export const STRIPE_PLANS = {
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_FAMILLE || 'price_famille',
     features: [
       'Tout le plan Pro',
-      '5 profils avec allergies & dégoûts',
-      'Menus de compromis négociés par le moteur',
+      '5 profils avec allergies et goûts de chacun',
+      'Menus de compromis pour toute la famille',
+      'Foyer partagé entre plusieurs comptes',
     ],
     cta: 'Passer à Famille',
   },

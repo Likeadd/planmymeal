@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
+import { gererPaywall } from '@/lib/paywall';
 import type { FridgeItem, Ingredient } from '@/types';
 import { createBrowserClient } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -374,6 +375,7 @@ export default function FrigoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ingredient_ids: selectionValide }),
       });
+      if (await gererPaywall(res)) return;
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`);
       setRecettes(json.recettes ?? []);
@@ -445,7 +447,7 @@ export default function FrigoPage() {
               </p>
             </div>
           </div>
-          <button onClick={() => setAjoutOuvert(true)}
+          <button data-tour="frigo-ajouter" onClick={() => setAjoutOuvert(true)}
             className="flex items-center gap-2 px-5 py-3 min-h-[44px] text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 shadow-cta transition-colors shrink-0">
             <Plus className="w-4 h-4" /> Ajouter un article
           </button>
@@ -482,7 +484,7 @@ export default function FrigoPage() {
 
         {/* CTA recette : agit sur les aliments cochés dans l'inventaire ci-dessous */}
         {items.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6" data-tour="frigo-recettes">
             <button onClick={trouverRecettes} disabled={recherche || selectionValide.length === 0}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] text-sm font-semibold text-white bg-sauge-600 rounded-full hover:bg-sauge-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
               {recherche

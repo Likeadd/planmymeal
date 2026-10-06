@@ -188,6 +188,11 @@ export async function orchestrerAutoPlan(
       parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'auto-génération désactivée' });
       continue;
     }
+    // Planification automatique des semaines : avantage des plans payants
+    if (profil.plan !== 'pro' && profil.plan !== 'famille') {
+      parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'plan gratuit — pas de planification automatique' });
+      continue;
+    }
     if (!eligible(profil.id)) {
       parProfil.set(profil.id, { userId: profil.id, status: 'existant', message: 'compte inactif — non planifié' });
       continue;

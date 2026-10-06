@@ -17,7 +17,9 @@
 // ============================================================================
 
 import { useState } from 'react';
-import { ChevronDown, Check, Sparkles } from 'lucide-react';
+import { ChevronDown, Check, Crown, Sparkles } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
+import { estPayant } from '@/lib/limites';
 import { cn } from '@/lib/utils';
 import type { IntentionOptimisation } from '@/lib/rotation-engine';
 
@@ -38,6 +40,7 @@ export function OptimiserBar({
   loading: boolean;
 }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const payant = estPayant(useAuth().profile?.plan);
 
   const lancer = (v: IntentionOptimisation | 'equilibre') => {
     setMenuOuvert(false);
@@ -67,7 +70,9 @@ export function OptimiserBar({
                     <span className="block text-sm font-semibold text-gray-900">{it.label}</span>
                     <span className="block text-xs text-gray-500">{it.sous}</span>
                   </span>
-                  {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />}
+                  {it.value === 'equilibre'
+                    ? <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />
+                    : !payant && <Crown className="w-4 h-4 text-accent-500 shrink-0" aria-label="Pro" />}
                 </button>
               ))}
             </div>
@@ -103,6 +108,7 @@ export function OptimiserButton({
   loading: boolean;
 }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
+  const payant = estPayant(useAuth().profile?.plan);
 
   const lancer = (v: IntentionOptimisation | 'equilibre') => {
     setMenuOuvert(false);
@@ -139,7 +145,9 @@ export function OptimiserButton({
                   <span className="block text-sm font-semibold text-gray-900">{it.label}</span>
                   <span className="block text-xs text-gray-500">{it.sous}</span>
                 </span>
-                {it.value === 'equilibre' && <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />}
+                {it.value === 'equilibre'
+                    ? <Check className="w-4 h-4 text-brand-500 shrink-0" aria-label="défaut" />
+                    : !payant && <Crown className="w-4 h-4 text-accent-500 shrink-0" aria-label="Pro" />}
               </button>
             ))}
           </div>

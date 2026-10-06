@@ -18,6 +18,8 @@
 // transaction. L'écran ne peut donc pas laisser un membre « à moitié enregistré ».
 // ============================================================================
 
+import { ouvrirPaywall } from '@/lib/paywall';
+import { useAuth } from '@/components/AuthProvider';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Users, Loader2, Plus, Trash2, Save, ChevronDown, Search, Scale, X, Info,
@@ -76,6 +78,7 @@ function nouveauMembre(): MembreDraft {
 const MAX_RESULTATS = 8;
 
 export function FamilleSettings() {
+  const { profile } = useAuth();
   const supabase = createBrowserClient();
 
   const [membres, setMembres] = useState<MembreDraft[]>([]);
@@ -392,7 +395,7 @@ export function FamilleSettings() {
       ) : (
         membres.length < maxMembres && (
           <button
-            onClick={() => setAjout(nouveauMembre())}
+            onClick={() => (profile?.plan === 'famille' ? setAjout(nouveauMembre()) : ouvrirPaywall('famille'))}
             className="mt-4 flex items-center gap-2 px-4 py-2 text-sm font-semibold text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors"
           >
             <Plus className="w-4 h-4" /> Ajouter un membre

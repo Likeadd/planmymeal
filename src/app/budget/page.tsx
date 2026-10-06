@@ -1,9 +1,9 @@
 'use client';
 
+import { ouvrirPaywall } from '@/lib/paywall';
 import { errorMessage } from '@/lib/utils';
 
 import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
 import {
   Wallet, Loader2, PiggyBank, TrendingDown, TrendingUp,
   Pencil, Check, X, History,
@@ -433,10 +433,10 @@ export default function BudgetPage() {
                   </div>
                 )
               ) : (
-                <Link href="/compte"
+                <button onClick={() => ouvrirPaywall('prix-max')}
                   className="px-4 py-2 text-sm font-medium text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition-colors">
                   Débloquer avec Pro
-                </Link>
+                </button>
               )}
             </div>
             {isPro && data?.prix_max_portion != null && (

@@ -4,6 +4,7 @@
 //   npx tsx scripts/ajouter-recettes-generees.ts               (aperçu + stats)
 //   npx tsx scripts/ajouter-recettes-generees.ts --appliquer   (insère)
 //   … --classiques : plats classiques 100 % produits bruts (classiques-bruts.ts)
+//   … --francaises : recettes françaises rédigées à la main (recettes-francaises.ts)
 //
 // 1. Macros CALCULÉES depuis la composition (lib/macros).
 // 2. Filtres : plat ≥ 20 g de protéines (≥ 16 g végétarien), 300–850 kcal ;
@@ -21,9 +22,12 @@ import type { PoidsUnites } from '../src/lib/unites';
 import { deduireSaison, genererDescription } from '../src/lib/nettoyage-recettes';
 import { genererRecettes, estVege } from './data/generateur-recettes';
 import { genererClassiques, estVegeClassique } from './data/classiques-bruts';
+import { RECETTES_FRANCAISES } from './data/recettes-francaises';
+import { FAMILLES_FRANCAISES, FAMILLES_FRANCAISES_2 } from './data/recettes-francaises-familles';
 
 const APPLIQUER = process.argv.includes('--appliquer');
-const CLASSIQUES = process.argv.includes('--classiques');
+const FRANCAISES = process.argv.includes('--francaises');
+const CLASSIQUES = FRANCAISES || process.argv.includes('--classiques');
 /** Classiques : une protéine différente suffit à distinguer deux plats. */
 const SEUIL_JACCARD = CLASSIQUES ? 0.85 : 0.8;
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -58,13 +62,20 @@ const jaccard = (a: Set<number>, b: Set<number>) => {
   }
   const titres = new Set(existants.map(e => e.titre));
 
-  const recettes = CLASSIQUES ? genererClassiques() : genererRecettes();
+  const recettes = FRANCAISES ? [...RECETTES_FRANCAISES, ...FAMILLES_FRANCAISES, ...FAMILLES_FRANCAISES_2] : CLASSIQUES ? genererClassiques() : genererRecettes();
   const retenues: { r: (typeof recettes)[number]; m: { cal: number; p: number; g: number; l: number }; sig: Set<number> }[] = [];
   const rejets: Record<string, number> = {};
   const rejet = (k: string) => { rejets[k] = (rejets[k] ?? 0) + 1; };
   const inconnus = new Set<string>();
 
   for (const r of recettes) {
+    // Un même ingrédient listé deux fois (base + variante) est fusionné.
+    const fusion = new Map<string, (typeof r.ingredients)[number]>();
+    for (const l of r.ingredients) {
+      const k = l[0].toLowerCase(), deja = fusion.get(k);
+      if (deja && deja[2] === l[2]) deja[1] += l[1]; else if (!deja) fusion.set(k, [...l] as typeof l);
+    }
+    r.ingredients = [...fusion.values()];
     const manquants = r.ingredients.filter(([nom]) => !parNom.has(nom.toLowerCase())).map(([nom]) => nom);
     if (manquants.length) { manquants.forEach(n => inconnus.add(n)); rejet('ingrédient inconnu'); continue; }
     if (titres.has(r.titre.toLowerCase())) { rejet('titre existant'); continue; }
@@ -74,7 +85,7 @@ const jaccard = (a: Set<number>, b: Set<number>) => {
       return { quantite, unite, poidsUnites: i.poids_unites, coefficients: i.calories_pour_100g == null ? null : {
         cal: i.calories_pour_100g, proteines: i.proteines_pour_100g ?? 0, glucides: i.glucides_pour_100g ?? 0, lipides: i.lipides_pour_100g ?? 0 } };
     }), r.portions);
-    if (!res.ok) { rejet(`macros : ${res.raison} (${res.detail})`); continue; }
+    if (!res.ok) { rejet(`macros : ${res.raison} (${res.detail})`); if (FRANCAISES) console.log(`  ✗ ${r.titre} — ${res.detail}`); continue; }
     const m = res.macros;
     if (CLASSIQUES) {
       // Classiques : plats rassasiants (≥ 15 g de protéines, 10 g sans viande

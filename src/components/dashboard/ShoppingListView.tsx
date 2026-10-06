@@ -9,6 +9,7 @@
 // Le CSS global (globals.css) neutralise tout si prefers-reduced-motion.
 // ============================================================================
 
+import { BoutonDebloquer } from '@/components/dashboard/Verrou';
 import { useState } from 'react';
 import { ShoppingCart, RotateCcw, Route, ArrowDownAZ } from 'lucide-react';
 
@@ -33,9 +34,11 @@ const rangMagasin = (rayon: string) => {
 };
 
 export function ShoppingListView({
-  sections, onToggle, onUncheckAll,
+  sections, onToggle, onUncheckAll, limite,
 }: {
   sections: ShoppingSection[];
+  /** Plan gratuit : nombre d'articles visibles, le reste est verrouillé */
+  limite?: number;
   onToggle: (label: string, nom: string) => void;
   /** Tout décocher la liste (nouveau passage magasin) — fourni par le dashboard */
   onUncheckAll?: () => void;
@@ -113,7 +116,7 @@ export function ShoppingListView({
         </div>
       </div>
 
-      {sectionsTriees.map(section => {
+      {(limite != null ? tronquer(sectionsTriees, limite) : sectionsTriees).map(section => {
         const nbCoche = section.items.filter(it => it.checked).length;
         const tousCoche = nbCoche === section.items.length;
         const pct = section.items.length > 0 ? (nbCoche / section.items.length) * 100 : 0;
@@ -164,6 +167,36 @@ export function ShoppingListView({
           </div>
         );
       })}
+
+      {limite != null && totalItems > limite && (
+        <div className="relative rounded-2xl border border-gray-100 bg-white overflow-hidden">
+          <div className="divide-y divide-gray-50 blur-[3px] select-none" aria-hidden>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="flex items-center gap-3.5 px-5 py-4">
+                <span className="w-7 h-7 rounded-full border-2 border-gray-200" />
+                <span className="h-3 flex-1 max-w-[50%] rounded-full bg-gray-200" />
+                <span className="h-3 w-12 rounded-full bg-gray-100" />
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/60 p-4 text-center">
+            <p className="font-semibold text-gray-900">+ {totalItems - limite} articles dans votre liste complète</p>
+            <BoutonDebloquer raison="courses" libelle="Débloquer ma liste complète" />
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/** Garde les `limite` premiers articles, dans l'ordre des rayons. */
+function tronquer(sections: ShoppingSection[], limite: number): ShoppingSection[] {
+  const out: ShoppingSection[] = [];
+  let reste = limite;
+  for (const s of sections) {
+    if (reste <= 0) break;
+    out.push({ ...s, items: s.items.slice(0, reste) });
+    reste -= s.items.length;
+  }
+  return out;
 }

@@ -11,6 +11,9 @@ import {
 import { copyToClipboard, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
+import { ouvrirPaywall } from '@/lib/paywall';
+import { ARTICLES_COURSES_GRATUITS, estPayant } from '@/lib/limites';
+import { BandeauVerrou, useJoursVerrouilles } from '@/components/dashboard/Verrou';
 import { useWeeklyPlan, WEEK_OFFSET_MIN, WEEK_OFFSET_MAX } from '@/lib/useWeeklyPlan';
 import type { RepasSlot } from '@/types';
 import { useSearchParams } from 'next/navigation';
@@ -113,12 +116,22 @@ function DashboardInner() {
   /** Créneau survolé pendant un drag : clé "jourIndex-repas" (bordure + fond) */
   const [dragOver, setDragOver] = useState<string | null>(null);
 
+  const { profile } = useAuth();
+  /** Plan gratuit : jours de la semaine floutés (Verrou.tsx) */
+  const verrouilles = useJoursVerrouilles(estSemaineCourante);
   /** Lance une optimisation ET arme le toast de confirmation (décompte) —
       tous les déclencheurs de la page passent par ici. */
   const regenererAvecRecap = useCallback((intention?: IntentionOptimisation) => {
-    optimisationEnCours.current = true;
-    void regenerate(intention);
-  }, [regenerate]);
+    const lancer = () => {
+      optimisationEnCours.current = true;
+      void regenerate(intention);
+    };
+    if (estPayant(profile?.plan)) { lancer(); return; }
+    // Compte gratuit : optimisations ciblées réservées au payant ; sinon,
+    // proposition de l'abonnement avec « continuer en gratuit ».
+    if (intention) ouvrirPaywall('intentions');
+    else ouvrirPaywall('generation', lancer);
+  }, [regenerate, profile?.plan]);
   /** Déplacement en cours (évite les doubles drops + feedback bouton) */
   const [moving, setMoving] = useState(false);
 
@@ -133,7 +146,6 @@ function DashboardInner() {
   }, [days]);
 
   // Salutation personnalisée (« Bonjour Camille 👋 »)
-  const { profile } = useAuth();
   const prenom = (profile?.full_name || '').split(' ')[0] || '';
 
 
@@ -391,6 +403,7 @@ function DashboardInner() {
           </div>
 
           {activeTab === 'planning' && (<>
+            {verrouilles.size > 0 && <BandeauVerrou nbVerrouilles={verrouilles.size} className="mb-4" />}
             {/* Clé de lecture des pastilles du foyer — bandeau complet sur
                 mobile seulement : en desktop la version inline est fondue dans
                 l'en-tête du planning (WeekColumns), pas deux légendes empilées. */}
@@ -404,13 +417,13 @@ function DashboardInner() {
               onDragStart={handleDragStart} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
               onDrop={handleDrop} onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
               onCustom={setRepasLibre} onVider={viderCreneau}
-              onToggleRestes={toggleRestes} restesToggling={restesToggling} estSemaineCourante={estSemaineCourante} />
+              onToggleRestes={toggleRestes} restesToggling={restesToggling} estSemaineCourante={estSemaineCourante} verrouilles={verrouilles} />
             </div>
             <div data-tour="semaine">
             <WeekDayTabs days={days} semaineDebut={semaineDebut} estSemaineCourante={estSemaineCourante} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots}
               onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
               onCustom={setRepasLibre} onVider={viderCreneau}
-              onToggleRestes={toggleRestes} restesToggling={restesToggling} />
+              onToggleRestes={toggleRestes} restesToggling={restesToggling} verrouilles={verrouilles} />
             </div>
           </>)}
 
@@ -425,7 +438,8 @@ function DashboardInner() {
                   </p>
                 </div>
               )}
-              <ShoppingListView sections={shoppingSections} onToggle={toggleShoppingItem} onUncheckAll={uncheckAllShoppingItems} />
+              <ShoppingListView sections={shoppingSections} onToggle={toggleShoppingItem} onUncheckAll={uncheckAllShoppingItems}
+                limite={estPayant(profile?.plan) ? undefined : ARTICLES_COURSES_GRATUITS} />
             </>
           )}          {weekOffset !== 0 && (
             <p className="mt-8 text-center text-sm">

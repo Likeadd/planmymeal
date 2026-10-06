@@ -10,6 +10,7 @@
 // /api/foyer-partage, qui les expose telles quelles.
 // ============================================================================
 
+import { gererPaywall, ErreurPaywall } from '@/lib/paywall';
 import { useEffect, useState } from 'react';
 import { Check, Copy, Crown, Loader2, LogOut, UserMinus, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ async function appelerAction(body: object) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (await gererPaywall(res)) throw new ErreurPaywall();
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || `Erreur ${res.status}`);
   return json;
@@ -85,6 +87,7 @@ export function FoyerSettings() {
       if (succes) toast.success(succes);
       await charger();
     } catch (e) {
+      if (e instanceof ErreurPaywall) return;
       toast.error(errorMessage(e, "Une erreur est survenue"));
     } finally {
       setBusy(false);

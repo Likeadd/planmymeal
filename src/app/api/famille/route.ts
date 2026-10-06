@@ -19,6 +19,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { reponsePaywall } from '@/lib/paywall-serveur';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/rotation-engine';
@@ -137,6 +138,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Le prénom du membre est requis (1 à 40 caractères)' }, { status: 400 });
     }
 
+    if (payload.id == null) {
+      const { data: profil } = await admin.from('profiles').select('plan').eq('id', user.id).maybeSingle();
+      if (profil?.plan !== 'famille') {
+        return reponsePaywall('famille', 'Les profils des membres du foyer (allergies, goûts de chacun) sont inclus dans le plan Famille.');
+      }
+    }
     const membresExistants = await compterMembres(user.id);
     if (payload.id == null && membresExistants >= NB_MEMBRES_MAX) {
       return NextResponse.json(

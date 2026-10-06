@@ -16,7 +16,9 @@ import { recetteServable } from '@/lib/regimes';
 import { toRecetteFrigo } from '@/lib/db-rows';
 import { chargerPlatsRapides } from '@/lib/vider-le-frigo';
 import { publicErrorMessage } from '@/lib/utils';
-import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit, enforceUserRateLimit, rateLimit } from '@/lib/rate-limit';
+import { estPayant, RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE } from '@/lib/limites';
+import { reponsePaywall } from '@/lib/paywall-serveur';
 import type { Regime } from '@/types';
 
 /** Résultat scoré d'une recette « vider le frigo » */
@@ -59,6 +61,10 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+    const { data: profil } = await admin.from('profiles').select('plan').eq('id', user.id).maybeSingle();
+    if (!estPayant(profil?.plan) && !(await rateLimit(`frigo-recettes:${user.id}`, RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE, 7 * 24 * 3600 * 1000)).ok) {
+      return reponsePaywall('frigo', `Plan gratuit : ${RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE} recherches de recettes avec votre frigo par semaine.`);
+    }
 
     // 1. Recettes candidats (plats publics rapides) + leurs ingrédients
     // `select('*')` téléchargeait `instructions` (≈ 1 ko par recette, soit

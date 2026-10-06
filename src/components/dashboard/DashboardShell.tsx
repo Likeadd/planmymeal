@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { VisiteGuidee, lancerVisiteGuidee } from '@/components/VisiteGuidee';
+import { Paywall } from '@/components/Paywall';
 
 export function DashboardShell({
   children,
@@ -69,6 +70,8 @@ export function DashboardShell({
 
       {/* Parcours d'intégration : étapes sur tous les écrans de l'app */}
       <VisiteGuidee />
+      {/* Offre d'abonnement (limites du plan gratuit, fonctions réservées) */}
+      <Paywall />
     </div>
   );
 }

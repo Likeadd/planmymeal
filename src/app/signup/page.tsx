@@ -1,5 +1,6 @@
 'use client';
 
+import { ConnexionGoogle } from '@/components/ConnexionGoogle';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -232,6 +233,8 @@ export default function SignupPage() {
                     </div>
                   </form>
                 ) : (
+                <>
+                <ConnexionGoogle />
                 <form onSubmit={handleSignup} className="space-y-5">
                   {/* Honeypot : invisible et inaccessible pour un humain, rempli par les robots */}
                   <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
@@ -334,6 +337,7 @@ export default function SignupPage() {
                     <ArrowRight className="w-4 h-4" />
                   </LoadingButton>
                 </form>
+                </>
                 )}
 
                 {/* Lien login */}

@@ -27,6 +27,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { UserError, publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { IMPORTS_GRATUITS_PAR_MOIS } from '@/lib/limites';
+import { reponsePaywall } from '@/lib/paywall-serveur';
 import { getAIProvider, AIError } from '@/lib/ai/provider';
 import { validerRecetteExtraite, type RecetteExtraite } from '@/lib/ai/recette';
 
@@ -278,10 +279,7 @@ export async function POST(request: NextRequest) {
         .eq('created_by', user.id)
         .gte('created_at', depuis);
       if ((count ?? 0) >= IMPORTS_GRATUITS_PAR_MOIS) {
-        return NextResponse.json(
-          { error: `Plan gratuit : ${IMPORTS_GRATUITS_PAR_MOIS} imports de recettes par mois. Passez à Pro pour des imports illimités.` },
-          { status: 403 }
-        );
+        return reponsePaywall('imports', `Plan gratuit : ${IMPORTS_GRATUITS_PAR_MOIS} import de recette par mois. Passez à Pro pour des imports illimités.`);
       }
     }
 

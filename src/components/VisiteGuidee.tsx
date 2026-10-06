@@ -3,8 +3,8 @@
 // ============================================================================
 // Visite guidée — parcours d'intégration après l'inscription.
 //
-// Un pas à pas en 11 étapes qui traverse les écrans de l'app (Aujourd'hui,
-// Planning, Frigo, Recettes, compte) : chaque étape met en lumière un élément
+// Un pas à pas qui traverse les écrans de l'app (Aujourd'hui, Planning,
+// Frigo, Recettes, Favoris, Budget, compte) : chaque étape met en lumière un élément
 // réel de l'interface (attribut `data-tour`) et explique à quoi il sert, avec
 // une astuce. Une étape dont l'élément est absent (semaine vide, autre taille
 // d'écran) s'affiche au centre, sans casser le parcours.
@@ -12,6 +12,8 @@
 // Déclenchement :
 //   • automatique, une seule fois, à la fin de l'onboarding (drapeau
 //     « a-faire » posé par la page /onboarding) ;
+//   • automatique à la première connexion : compte créé il y a moins de 7
+//     jours et visite jamais faite ni écartée sur cet appareil ;
 //   • manuel, à tout moment : menu utilisateur → « Visite guidée », ou
 //     `lancerVisiteGuidee()`.
 //
@@ -61,7 +63,7 @@ interface Etape {
 const ETAPES: Etape[] = [
   { emoji: '👋', route: '/aujourdhui',
     titre: 'Bienvenue sur PlanMyMeal',
-    texte: 'En une minute, on vous montre où tout se trouve. Vous pouvez quitter la visite à tout moment et la relancer depuis le menu de votre compte.' },
+    texte: 'En 3 minutes, on vous montre où tout se trouve et comment obtenir votre première semaine de menus. Vous pouvez quitter la visite à tout moment et la relancer depuis le menu de votre compte.' },
   { emoji: '🏠', route: '/aujourdhui', cibles: ['nav-aujourdhui'],
     titre: 'Aujourd’hui : votre repas du jour',
     texte: 'Cette page est votre point de départ quotidien : le prochain repas à cuisiner, ce qu’il faut sortir du frigo et l’état de votre liste de courses.',
@@ -79,7 +81,7 @@ const ETAPES: Etape[] = [
     astuce: 'Sur ordinateur, glissez-déposez un repas sur un autre jour pour le déplacer.' },
   { emoji: '✨', route: '/dashboard', cibles: ['optimiser'],
     titre: 'Optimiser ma semaine',
-    texte: 'Le moteur compose vos menus en arbitrant budget, goûts, temps, frigo, restes et nutrition. Relancez-le autant que vous voulez : il ne repropose pas ce que vous avez cuisiné ces dernières semaines.',
+    texte: 'C’est le bouton principal : le moteur compose vos menus en arbitrant budget, goûts, temps, frigo, restes et nutrition. Relancez-le autant que vous voulez : il ne repropose pas ce que vous avez cuisiné ces dernières semaines.',
     astuce: 'Choisissez une intention : Équilibrée, Penser au budget, Gain de temps ou Anti-gaspi (utilise en priorité votre frigo).' },
   { emoji: '🛒', route: '/dashboard', cibles: ['onglet-courses'],
     titre: 'Votre liste de courses, prête',
@@ -87,19 +89,40 @@ const ETAPES: Etape[] = [
     astuce: 'Elle reste consultable sans réseau dans le magasin, une fois ouverte dans la semaine.' },
   { emoji: '🧊', route: '/frigo', cibles: ['nav-frigo'],
     titre: 'Frigo : cuisinez ce qu’il vous reste',
-    texte: 'Ajoutez ce que vous avez chez vous, puis cochez les aliments à écouler : on vous propose 3 recettes qui les utilisent. Ajouter un produit met aussi la liste de courses à jour.',
-    astuce: 'Indiquez les dates de péremption : les produits qui périment bientôt passent en priorité.' },
+    texte: 'Cette page est l’inventaire de ce que vous avez chez vous. Le moteur privilégie les recettes qui l’utilisent et retire ces produits de votre liste de courses.' },
+  { emoji: '➕', route: '/frigo', cibles: ['frigo-ajouter'],
+    titre: 'Ajoutez vos produits',
+    texte: 'Saisissez un produit, sa quantité et, si vous la connaissez, sa date de péremption. Vous pouvez aussi ajouter d’un coup tous les articles de votre liste de courses une fois les courses faites.',
+    astuce: 'Avec les dates de péremption, les produits qui périment bientôt passent en priorité.' },
+  { emoji: '🥘', route: '/frigo', cibles: ['frigo-recettes'],
+    titre: 'Des recettes avec ce qu’il reste',
+    texte: 'Cochez les aliments à écouler, puis touchez « Trouver des recettes » : on vous propose des plats qui utilisent votre sélection. Le bouton apparaît dès que votre frigo contient des produits.' },
   { emoji: '📖', route: '/recettes', cibles: ['nav-recettes'],
-    titre: 'Recettes : des milliers d’idées',
-    texte: 'Parcourez le catalogue, cherchez un plat ou un ingrédient, filtrez par temps, saison, régime ou appareil, et triez par prix ou par protéines.',
+    titre: 'Recettes : plus de 6 000 idées',
+    texte: 'Le catalogue complet : plats, entrées, desserts, cuisines du monde, recettes protéinées, rapides ou économiques. Touchez une recette pour voir les ingrédients, les étapes, les calories et le coût par portion.' },
+  { emoji: '🔎', route: '/recettes', cibles: ['recettes-recherche'],
+    titre: 'Cherchez un plat ou un ingrédient',
+    texte: 'Tapez « saumon », « curry » ou « courgette » : la recherche porte sur les titres et sur les ingrédients, sans tenir compte des accents.' },
+  { emoji: '🎚️', route: '/recettes', cibles: ['recettes-filtres'],
+    titre: 'Triez et filtrez',
+    texte: 'Triez par prix, temps, calories ou protéines, choisissez une cuisine, puis ouvrez « Plus de filtres » pour le temps de préparation, le budget, la saison, l’appareil de cuisson et vos régimes (végétarien, sans gluten, halal…).',
     astuce: 'Les raccourcis « Riches en protéines », « Recettes rapides » et « Batch cooking » sont en haut de la page.' },
-  { emoji: '⚙️', route: '/recettes', cibles: ['menu-user', 'nav-compte'],
+  { emoji: '💡', route: '/recettes', cibles: ['recettes-demande'],
+    titre: 'Une recette vous manque ?',
+    texte: 'Demandez-la ! Indiquez le nom du plat et quelques précisions : nous étudions chaque demande et ajoutons régulièrement de nouvelles recettes au catalogue.' },
+  { emoji: '♥', route: '/favoris',
+    titre: 'Vos favoris',
+    texte: 'Touchez le cœur d’une recette pour la retrouver ici. Plus vous aimez ou écartez de plats, mieux le moteur connaît vos goûts pour composer les prochaines semaines.' },
+  { emoji: '💶', route: '/budget',
+    titre: 'Votre budget',
+    texte: 'Suivez ce que coûtent vos semaines, fixez un budget cible et ajustez le prix des ingrédients à vos habitudes d’achat pour des estimations au plus près de la réalité.' },
+  { emoji: '⚙️', route: '/budget', cibles: ['menu-user', 'nav-compte'],
     titre: 'Votre compte et vos réglages',
-    texte: 'Profil, objectif nutritionnel, allergies et aliments détestés, foyer et membres de la famille, abonnement — mais aussi vos favoris, l’historique des semaines et le budget.',
+    texte: 'Dans ce menu : profil et objectif nutritionnel, régimes, allergies et aliments détestés, foyer et membres de la famille, abonnement, et la relance de cette visite.',
     astuce: 'Changez vos préférences quand vous voulez : la prochaine optimisation en tient compte.' },
   { emoji: '🎉', route: '/aujourdhui',
     titre: 'C’est à vous !',
-    texte: 'Lancez « Optimiser ma semaine » pour générer vos premiers menus. Un menu ne vous plaît pas ? Remplacez-le en un clic : plus vous notez vos repas, mieux le moteur vous connaît.',
+    texte: 'Lancez « Optimiser ma semaine » depuis le Planning pour générer vos premiers menus. Un menu ne vous plaît pas ? Remplacez-le en un clic. Bon appétit !',
     astuce: 'Relancez cette visite à tout moment depuis le menu de votre compte → « Visite guidée ».' },
 ];
 
@@ -143,6 +166,7 @@ export function VisiteGuidee() {
   const carteRef = useRef<HTMLDivElement>(null);
   const boutonRef = useRef<HTMLButtonElement>(null);
   const userId = user?.id;
+  const creeLe = user?.created_at;
 
   const terminer = useCallback(() => {
     try {
@@ -173,9 +197,11 @@ export function VisiteGuidee() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (enCours != null) { setIndex(enCours); return; }
     try {
-      if (localStorage.getItem(cleUtilisateur(userId)) === 'a-faire') aller(0);
+      const etat = localStorage.getItem(cleUtilisateur(userId));
+      const recent = Date.now() - new Date(creeLe ?? 0).getTime() < 7 * 24 * 3600 * 1000;
+      if (etat === 'a-faire' || (etat == null && recent)) aller(0);
     } catch { /* stockage indisponible */ }
-  }, [userId, aller]);
+  }, [userId, creeLe, aller]);
 
   useEffect(() => {
     const demarrer = () => aller(0);

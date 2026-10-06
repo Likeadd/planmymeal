@@ -70,7 +70,7 @@ function creerDb(repondre: (req: RequeteRecue) => unknown): AutoPlanDb & { reque
 // ─── Fixtures ───────────────────────────────────────────────────────────────
 
 const PROFILS = [
-  { id: 'u1', email: 'u1@test.fr', plan: 'gratuit', auto_generate: true },
+  { id: 'u1', email: 'u1@test.fr', plan: 'famille', auto_generate: true },
   { id: 'u2', email: 'u2@test.fr', plan: 'pro', auto_generate: true },
   { id: 'u3', email: 'u3@test.fr', plan: 'pro', auto_generate: false },
 ];
@@ -107,6 +107,18 @@ describe('orchestrerAutoPlan — semaine cible', () => {
       expect(result.semaineDebut).toBe(getMondayWithOffset(1));
       expect(result.semaineDebut).not.toBe(getMondayWithOffset(0));
     });
+  });
+});
+
+describe('orchestrerAutoPlan — plan gratuit', () => {
+  it('ne planifie pas automatiquement les comptes gratuits (avantage payant)', async () => {
+    const db = creerDb(req => req.table === 'profiles'
+      ? { data: [{ id: 'g1', email: 'g1@test.fr', plan: 'gratuit', auto_generate: true }], error: null }
+      : { data: [], error: null });
+    const generer = vi.fn(genererOk);
+    const result = await orchestrerAutoPlan(db, { generer });
+    expect(generer).not.toHaveBeenCalled();
+    expect(result.generes).toBe(0);
   });
 });
 

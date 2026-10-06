@@ -108,10 +108,15 @@ serve(async (req: Request) => {
         const customerId = subscription.customer as string;
         const status = subscription.status;
 
-        // Si l'abonnement est actif, on garde le plan (déjà défini au checkout)
-        // Si past_due/unpaid, on pourrait downgrader, mais on laisse Stripe gérer
+        // Abonnement actif : le plan (défini au checkout) est conservé.
+        // Impayé définitif : retour au gratuit.
         if (status === 'active') {
-          console.log(`✅ Abonnement actif pour customer ${customerId}`);
+          console.log(`✅ Abonnement ${status} pour customer ${customerId}`);
+        } else if (status === 'unpaid' || status === 'canceled' || status === 'incomplete_expired') {
+          await supabaseAdmin.from('profiles')
+            .update({ plan: 'gratuit', stripe_subscription_id: null })
+            .eq('stripe_customer_id', customerId);
+          console.log(`↩️ Customer ${customerId} → gratuit (${status})`);
         }
         break;
       }

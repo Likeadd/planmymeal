@@ -1,5 +1,6 @@
 'use client';
 
+import { gererPaywall } from '@/lib/paywall';
 import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import {
@@ -118,6 +119,7 @@ export function usePlanningHistory() {
         body: JSON.stringify({ semaine_debut: semaineDebut }),
       });
 
+      if (await gererPaywall(res)) return;
       if (!res.ok) {
         const { error: apiError } = await res.json();
         throw new Error(apiError || `Erreur ${res.status}`);

@@ -7,6 +7,7 @@
 // rendre une seule fois dans la vue.
 // ============================================================================
 
+import { ErreurPaywall } from '@/lib/paywall';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { DayPlan, RecettePlanning, RepasSlot } from '@/types';
@@ -57,7 +58,10 @@ export function useChangerCreneau(days: DayPlan[], a: ActionsCreneau) {
   };
 
   const avecToast = (action: () => Promise<void>, ok: string) => async () => {
-    try { await action(); toast.success(ok); } catch (e) { toast.error(errorMessage(e, 'Une erreur est survenue')); throw e; }
+    try { await action(); toast.success(ok); } catch (e) {
+      if (e instanceof ErreurPaywall) return; // le paywall est déjà affiché
+      toast.error(errorMessage(e, 'Une erreur est survenue')); throw e;
+    }
   };
 
   let sheet: React.ReactNode = null;

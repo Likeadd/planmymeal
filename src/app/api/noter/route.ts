@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { publicErrorMessage } from '@/lib/utils';
-import { enforceUserRateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { noterRepas, type NoteRepas } from '@/lib/memoire';
 import { RAISONS_NOTE, type RaisonNote } from '@/types';
 
@@ -11,6 +11,9 @@ import { RAISONS_NOTE, type RaisonNote } from '@/types';
  * dégustation, écrite côté serveur (historique + mémoire de la recette).
  */
 export async function POST(request: NextRequest) {
+  const ipLimited = await enforceRateLimit(request, { name: 'noter-ip', limit: 120, windowMs: 60_000 });
+  if (ipLimited) return ipLimited;
+
   try {
     const { user } = await getAuthUser(request);
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
@@ -25,9 +28,16 @@ export async function POST(request: NextRequest) {
     const raisons: string[] = RAISONS_NOTE.map(r => r.value);
     const raison = typeof body.raison === 'string' && raisons.includes(body.raison) ? (body.raison as RaisonNote) : null;
 
-    await noterRepas(user.id, mealId, note as NoteRepas, raison, getSupabaseAdmin());
+    const admin = getSupabaseAdmin();
+    // Clé admin : on restreint aux recettes publiques ou créées par l'utilisateur.
+    const { data: meal } = await admin.from('meals').select('id').eq('id', mealId)
+      .or(`is_public.eq.true,created_by.eq.${user.id}`).maybeSingle();
+    if (!meal) return NextResponse.json({ error: 'Recette introuvable' }, { status: 404 });
+
+    await noterRepas(user.id, mealId, note as NoteRepas, raison, admin);
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Erreur POST /api/noter:', error);
     return NextResponse.json({ error: publicErrorMessage(error) }, { status: 500 });
   }
 }

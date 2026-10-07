@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { chiffrerListeCourses } from '@/lib/budget';
 import { snapshotBudget, type ShoppingListItemWithIngredient } from '@/lib/rotation-engine';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (userLimited) return userLimited;
 
     const admin = getSupabaseAdmin();
-    const semaine_debut = request.nextUrl.searchParams.get('semaine_debut') || getMonday();
+    const semaine_debut = semaineOuLundi(request.nextUrl.searchParams.get('semaine_debut'));
 
     const { data: plan } = await admin.from('weekly_plans')
       .select('id').eq('user_id', user.id).eq('semaine_debut', semaine_debut).maybeSingle();
@@ -79,7 +79,7 @@ export async function PUT(request: NextRequest) {
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'prix', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({} as Record<string, unknown>));
     const prix = Number(body.prix_unitaire);
     const ingredientId = Number(body.ingredient_id);
     if (!Number.isFinite(prix) || prix < 0 || prix > 1000 || !Number.isInteger(ingredientId)) {
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest) {
     if (upsertError) throw new Error(upsertError.message);
 
     // Rafraîchir le snapshot budget de la semaine
-    const semaine_debut = body.semaine_debut || getMonday();
+    const semaine_debut = semaineOuLundi(body.semaine_debut);
     const { data: plan } = await admin.from('weekly_plans')
       .select('id').eq('user_id', user.id).eq('semaine_debut', semaine_debut).maybeSingle();
     if (plan) await snapshotBudget(user.id, semaine_debut, plan.id, admin);

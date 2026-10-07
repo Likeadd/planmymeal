@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/rotation-engine';
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'swap-meal', limit: 40, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
-    const body = await request.json();
-    const semaine_debut: string = body.semaine_debut || getMonday();
+    const body = await request.json().catch(() => ({} as Record<string, unknown>));
+    const semaine_debut: string = semaineOuLundi(body.semaine_debut);
     const jour = Number(body.jour_semaine);
     const repasType = String(body.repas_type ?? '');
     const mealId = Number(body.meal_id);

@@ -16,7 +16,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { publicErrorMessage } from '@/lib/utils';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { ajouterAuFrigo, chargerFrigo, supprimerDuFrigo, viderFrigo } from '@/lib/frigo';
 import { recomputeShoppingList } from '@/lib/rotation-engine';
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(ingredientId) || ingredientId <= 0) {
       return NextResponse.json({ error: 'Ingrédient invalide' }, { status: 400 });
     }
-    if (!Number.isFinite(quantite) || quantite <= 0) {
+    if (!Number.isFinite(quantite) || quantite <= 0 || quantite > 100_000) {
       return NextResponse.json({ error: 'Quantité invalide' }, { status: 400 });
     }
 
@@ -77,11 +77,11 @@ export async function POST(request: NextRequest) {
     await ajouterAuFrigo(user.id, {
       ingredient_id: ingredientId,
       quantite,
-      unite: typeof body.unite === 'string' ? body.unite : 'g',
-      expiration: typeof body.expiration === 'string' && body.expiration ? body.expiration : null,
+      unite: typeof body.unite === 'string' ? body.unite.slice(0, 20) : 'g',
+      expiration: typeof body.expiration === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.expiration) ? body.expiration : null,
     }, admin);
 
-    const semaine = typeof body.semaine_debut === 'string' ? body.semaine_debut : getMonday();
+    const semaine = semaineOuLundi(body.semaine_debut);
     const listeRecalculee = await rafraichirListeCourses(user.id, semaine, admin);
     const items = await chargerFrigo(user.id, admin);
 
@@ -115,7 +115,7 @@ export async function DELETE(request: NextRequest) {
       await supprimerDuFrigo(user.id, id, admin);
     }
 
-    const semaine = request.nextUrl.searchParams.get('semaine_debut') ?? getMonday();
+    const semaine = semaineOuLundi(request.nextUrl.searchParams.get('semaine_debut'));
     const listeRecalculee = await rafraichirListeCourses(user.id, semaine, admin);
     const items = await chargerFrigo(user.id, admin);
 

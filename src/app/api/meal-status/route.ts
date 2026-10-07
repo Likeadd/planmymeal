@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
 
     // La recette doit exister (publique ou créée par l'utilisateur)
     const { data: meal } = await admin.from('meals')
-      .select('id').eq('id', mealId).maybeSingle();
+      .select('id').eq('id', mealId)
+      .or(`is_public.eq.true,created_by.eq.${user.id}`).maybeSingle();
     if (!meal) {
       return NextResponse.json({ error: 'Recette introuvable' }, { status: 404 });
     }

@@ -6,6 +6,9 @@ const TAILLE_MAX_API = 1_000_000; // 1 Mo
 /** Durée de vie absolue d'une session : reconnexion obligatoire au-delà. */
 const SESSION_MAX_MS = 30 * 24 * 60 * 60_000; // 30 jours
 const METHODES_SURES = ['GET', 'HEAD', 'OPTIONS'];
+/** Pages réservées aux connectés, et pages de connexion (redirigées si déjà connecté). */
+const PAGES_PROTEGEES = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget'];
+const PAGES_AUTH = ['/login', '/signup'];
 
 /**
  * Garde des routes API (sans appel réseau) :
@@ -43,6 +46,14 @@ export async function proxy(request: NextRequest) {
     return gardeApi(request) ?? NextResponse.next();
   }
 
+  // Pages publiques (accueil, recettes, FAQ…) : aucune décision d'auth ici et
+  // aucune ne lit la session côté serveur → pas d'appel réseau à Supabase Auth
+  // (getUser) à chaque navigation ni à chaque préchargement de lien.
+  const p = request.nextUrl.pathname;
+  if (![...PAGES_PROTEGEES, ...PAGES_AUTH].some(r => p.startsWith(r))) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -78,8 +89,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Routes protégées : login requis
-  const protectedPaths = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget'];
-  const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p));
+  const isProtected = PAGES_PROTEGEES.some(p => request.nextUrl.pathname.startsWith(p));
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -115,8 +125,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Routes auth : rediriger si déjà connecté → page d'accueil quotidienne
-  const authPaths = ['/login', '/signup'];
-  const isAuthPage = authPaths.some(p => request.nextUrl.pathname.startsWith(p));
+  const isAuthPage = PAGES_AUTH.some(p => request.nextUrl.pathname.startsWith(p));
   if (isAuthPage && user) {
     return NextResponse.redirect(new URL('/aujourdhui', request.url));
   }

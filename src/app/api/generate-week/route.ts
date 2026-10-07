@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { generateWeeklyPlan, regeneratePlanSlots, saveWeeklyPlan, toggleRestes, validerIntention, type PlanSlot, type Db } from '@/lib/rotation-engine';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit, rateLimit } from '@/lib/rate-limit';
 import { estPayant, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, REMPLACEMENTS_GRATUITS_PAR_SEMAINE } from '@/lib/limites';
@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'generate-week', limit: 20, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
-    const body = await request.json();
-    const semaine_debut = body.semaine_debut || getMonday();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Requête invalide' }, { status: 400 });
+    const semaine_debut = semaineOuLundi(body.semaine_debut);
     // Intention d'optimisation du clic (« budget », « temps », « gaspillage ») :
     // validée côté serveur — toute valeur inconnue retombe sur « équilibré »
     // plutôt que de rejeter la requête (le défaut est toujours sûr).

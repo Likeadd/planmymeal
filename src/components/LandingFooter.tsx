@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { anneeParis } from '@/lib/dates';
 import { BrandMark } from '@/components/BrandMark';
-import { CATEGORIES_SEO } from '@/lib/categories-seo';
 
 const FOOTER_LINKS = [
   ['FAQ', '/faq'],
@@ -93,20 +92,6 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
           </ul>
         </div>
       </div>
-
-      {/* Idées de recettes : pages catégories (SEO + navigation des visiteurs) */}
-      <nav aria-label="Idées de recettes" className="border-t border-gray-200 py-5 px-4">
-        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-gray-600">
-          {CATEGORIES_SEO.map(cat => (
-            <li key={cat.slug}>
-              <Link href={`/recettes/categorie/${cat.slug}`} className="hover:text-brand-600 transition-colors">
-                {cat.court}
-              </Link>
-            </li>
-          ))}
-          <li><Link href="/recettes" className="hover:text-brand-600 transition-colors">Toutes les recettes</Link></li>
-        </ul>
-      </nav>
 
       <div className="border-t border-gray-200 py-6 flex flex-col items-center gap-3">
         <BrandMark href="/" height={26} />

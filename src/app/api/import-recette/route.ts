@@ -273,6 +273,9 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profil } = await admin.from('profiles').select('plan').eq('id', user.id).maybeSingle();
     if (profil?.plan !== 'pro' && profil?.plan !== 'famille') {
+      // Anti-course : un seul import gratuit à la fois par utilisateur (le quota est lu avant l'écriture).
+      const rafale = await enforceUserRateLimit(request, user.id, { name: 'import-recette-gratuit', limit: 1, windowMs: 20_000 });
+      if (rafale) return rafale;
       const depuis = new Date(Date.now() - 30 * 86_400_000).toISOString();
       const { count } = await admin.from('meals')
         .select('id', { count: 'exact', head: true })

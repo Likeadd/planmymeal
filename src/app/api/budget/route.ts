@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { snapshotBudget, calculerDepenseSemaine } from '@/lib/rotation-engine';
 import { calculerEconomieReference } from '@/lib/budget';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     if (userLimited) return userLimited;
 
     const admin = getSupabaseAdmin();
-    const semaine_debut = request.nextUrl.searchParams.get('semaine_debut') || getMonday();
+    const semaine_debut = semaineOuLundi(request.nextUrl.searchParams.get('semaine_debut'));
 
     // Profil (budget défini ? base de dépense déclarée ?)
     const { data: profile } = await admin
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest) {
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'budget', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({} as Record<string, unknown>));
     const admin = getSupabaseAdmin();
 
     // ── Mise à jour du budget hebdomadaire ──
@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest) {
       if (updateError) throw new Error(updateError.message);
 
       // Rafraîchir le snapshot de la semaine courante avec le nouveau budget
-      const semaine_debut = body.semaine_debut || getMonday();
+      const semaine_debut = semaineOuLundi(body.semaine_debut);
       const { data: plan } = await admin.from('weekly_plans')
         .select('id').eq('user_id', user.id).eq('semaine_debut', semaine_debut).maybeSingle();
       if (plan) await snapshotBudget(user.id, semaine_debut, plan.id, admin);
@@ -136,7 +136,7 @@ export async function PUT(request: NextRequest) {
       if (upsertError) throw new Error(upsertError.message);
 
       // Le changement de prix affecte la dépense de la semaine → snapshot
-      const semaine_debut = body.semaine_debut || getMonday();
+      const semaine_debut = semaineOuLundi(body.semaine_debut);
       const { data: plan } = await admin.from('weekly_plans')
         .select('id').eq('user_id', user.id).eq('semaine_debut', semaine_debut).maybeSingle();
       if (plan) await snapshotBudget(user.id, semaine_debut, plan.id, admin);
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
       if (depenseReelle !== null && (!Number.isFinite(depenseReelle) || depenseReelle < 0 || depenseReelle > 10000)) {
         return NextResponse.json({ error: 'Dépense réelle invalide (0 – 10000 €)' }, { status: 400 });
       }
-      const semaine = body.semaine_debut || getMonday();
+      const semaine = semaineOuLundi(body.semaine_debut);
 
       const { data: snap } = await admin.from('weekly_budget_snapshots')
         .select('id').eq('user_id', user.id).eq('semaine_debut', semaine).maybeSingle();

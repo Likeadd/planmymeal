@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { timingSafeEqual } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from '@/../supabase/database.types';
@@ -63,4 +64,11 @@ export async function getAuthUserAndClient(
   const { data: { user }, error } = await supabase.auth.getUser();
   if (user && !user.email_confirmed_at) return { user: null, error: 'Email non confirmé', supabase };
   return { user: user ?? null, error: error?.message ?? null, supabase };
+}
+
+/** Vérifie `Authorization: Bearer <secret>` en temps constant (routes cron). */
+export function bearerValide(auth: string | null, secret: string): boolean {
+  const a = Buffer.from(auth ?? '');
+  const b = Buffer.from(`Bearer ${secret}`);
+  return a.length === b.length && timingSafeEqual(a, b);
 }

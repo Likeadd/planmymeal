@@ -3,7 +3,7 @@
 // ============================================================================
 // ChiffresCles — preuve par les faits, sous le hero de la landing.
 // Les chiffres sont LUS dans le catalogue public (pas de valeurs inventées) :
-// recettes publiques, cuisines distinctes, ingrédients chiffrés. Arrondis
+// recettes publiques et cuisines distinctes. Arrondis
 // vers le bas (« 2 500+ ») pour rester vrais même si le catalogue bouge.
 // Aucun avis client affiché tant qu'il n'y a pas de vrais témoignages.
 // ============================================================================
@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import { CountUp } from '@/components/CountUp';
 
-interface Chiffres { recettes: number; cuisines: number; ingredients: number }
+interface Chiffres { recettes: number; cuisines: number }
 
 const arrondi = (n: number, pas: number) => Math.max(pas, Math.floor(n / pas) * pas);
 
@@ -23,16 +23,14 @@ export function ChiffresCles() {
     let alive = true;
     const supabase = createBrowserClient();
     (async () => {
-      const [rec, ing, cui] = await Promise.all([
+      const [rec, cui] = await Promise.all([
         supabase.from('meals').select('id', { count: 'exact', head: true }).eq('is_public', true),
-        supabase.from('ingredients').select('id', { count: 'exact', head: true }),
         supabase.from('meals').select('cuisine').eq('is_public', true).not('cuisine', 'is', null).limit(5000),
       ]);
-      if (!alive || rec.count == null || ing.count == null) return;
+      if (!alive || rec.count == null) return;
       setChiffres({
         recettes: rec.count,
         cuisines: new Set((cui.data ?? []).map(r => r.cuisine)).size,
-        ingredients: ing.count,
       });
     })().catch(() => { /* bandeau masqué si la base ne répond pas */ });
     return () => { alive = false; };
@@ -43,8 +41,8 @@ export function ChiffresCles() {
   const items = [
     { valeur: arrondi(chiffres.recettes, 100), suffixe: '+', label: 'recettes au catalogue' },
     { valeur: chiffres.cuisines, suffixe: '', label: 'cuisines du monde' },
-    { valeur: arrondi(chiffres.ingredients, 50), suffixe: '+', label: 'ingrédients chiffrés au prix réel' },
-    { valeur: 0, suffixe: ' €', label: 'pour commencer, sans carte' },
+    { valeur: 7, suffixe: '', label: 'critères arbitrés chaque semaine' },
+    { valeur: 1, suffixe: ' clic', label: 'pour vos menus et vos courses' },
   ];
 
   return (

@@ -21,6 +21,7 @@
 // Paramètres : ?dry_run=1 (aucune écriture) · ?limit=50 · ?cursor=<user_id>
 // ============================================================================
 
+import { bearerValide } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { orchestrerAutoPlanGlissant, type AutoPlanDb } from '@/lib/auto-planner';
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
     if (secret) {
       const auth = request.headers.get('authorization');
-      if (auth !== `Bearer ${secret}`) {
+      if (!bearerValide(auth, secret)) {
         logRequestSecurityEvent(request, 'cron_secret', { reason: 'secret invalide' });
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
       }

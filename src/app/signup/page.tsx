@@ -8,6 +8,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
+import { ApercuPlanning } from '@/components/ApercuPlanning';
 import { toast } from 'sonner';
 import { LoadingButton } from '@/components/LoadingButton';
 
@@ -171,6 +172,9 @@ export default function SignupPage() {
                   </li>
                 ))}
               </ul>
+
+              {/* Ce qui attend l'utilisateur juste après l'inscription (écrans larges) */}
+              <ApercuPlanning className="hidden lg:block mt-10 ml-8 max-w-md" />
             </div>
 
             {/* Carte formulaire */}

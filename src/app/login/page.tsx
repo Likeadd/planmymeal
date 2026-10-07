@@ -106,23 +106,17 @@ function LoginForm() {
       return;
     }
 
-    // Cookies posés par l'API → le client navigateur relit la session (lecture
-    // locale, sans réseau). L'onboarding vient de la réponse : plus de requête
-    // profil avant la redirection. false EXPLICITE → onboarding ; null/true
-    // → /aujourdhui (le proxy renvoie vers /onboarding si vraiment incomplet).
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      const cible = (json as { onboardingComplete?: boolean | null }).onboardingComplete === false
-        ? '/onboarding' : '/aujourdhui';
-      toast.success('Connexion réussie ! 👋');
-      // replace : le retour arrière ne ramène pas sur le formulaire de login.
-      router.replace(cible);
-      // On garde le bouton en état « chargement » pendant la navigation :
-      // pas de flash du formulaire entre le clic et la page suivante.
-      return;
-    }
-
-    setLoading(false);
+    // Cookies posés par l'API. Navigation COMPLÈTE (pas router.replace) : le
+    // client Supabase et l'AuthProvider, initialisés sans session sur cette
+    // page, repartent des nouveaux cookies. Avant, un getSession() encore vide
+    // laissait l'utilisateur bloqué sur le formulaire sans message.
+    // false EXPLICITE → onboarding ; sinon /aujourdhui (le proxy corrige).
+    const cible = (json as { onboardingComplete?: boolean | null }).onboardingComplete === false
+      ? '/onboarding' : '/aujourdhui';
+    toast.success('Connexion réussie ! 👋');
+    // replace : le retour arrière ne ramène pas sur le formulaire de login.
+    // Le bouton reste en « chargement » pendant la navigation.
+    window.location.replace(cible);
   };
 
   return (

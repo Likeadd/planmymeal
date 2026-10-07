@@ -18,8 +18,7 @@ const lienNav = lienNavSouligne;
 // l'autre côté du logo (équilibre visuel de la navbar 1fr / auto / 1fr).
 const NAV_LINKS = [
   ['Fonctionnalités', '/#fonctionnalites'],
-  ['Collection', '/#collection'],
-  ['Rituels', '/#rituels'],
+  ['Recettes', '/recettes'],
 ];
 
 const NAV_LINKS_DROITE = [
@@ -108,7 +107,7 @@ export default function LandingHeader() {
                 </Link>
                 <Link href="/signup"
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-500 text-white text-[11px] font-semibold tracking-[0.14em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
-                  Essayer
+                  Optimiser ma semaine
                 </Link>
               </>
             )}
@@ -119,7 +118,7 @@ export default function LandingHeader() {
             {!isLoggedIn && (
               <Link href="/signup"
                 className="inline-flex items-center px-3.5 py-2 bg-brand-500 text-white text-[10px] font-semibold tracking-[0.12em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
-                Essayer
+                Optimiser
               </Link>
             )}
           </div>
@@ -164,7 +163,7 @@ export default function LandingHeader() {
                   </Link>
                   <Link href="/signup" onClick={() => setMobileMenuOpen(false)}
                     className="block text-center text-sm font-semibold text-white bg-brand-500 py-2.5 rounded-full">
-                    Essayer gratuitement
+                    Optimiser ma semaine
                   </Link>
                 </>
               )}

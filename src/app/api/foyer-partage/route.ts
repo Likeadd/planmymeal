@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       supabase.rpc('household_list_members'),
     ]);
     if (hError || !household) throw new UserError('Foyer introuvable');
-    if (mError) throw new UserError(mError.message);
+    if (mError) throw new Error(mError.message);
 
     const moi = (membres ?? []).find(m => m.user_id === user.id);
     const estProprietaire = moi?.role === 'owner';
@@ -103,6 +103,11 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+/** Message SQL conservé seulement pour les `raise exception` métier (P0001) ; le reste reste interne. */
+function erreurRpc(e: { message: string; code?: string }): Error {
+  return e.code === 'P0001' ? new UserError(e.message) : new Error(e.message);
+}
+
 type Action =
   | { action: 'inviter'; jours?: number }
   | { action: 'annuler_invitation'; invitation_id: number }
@@ -134,7 +139,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Durée invalide (1 à 30 jours)' }, { status: 400 });
         }
         const { data: code, error } = await supabase.rpc('household_invite', { p_days: jours });
-        if (error) throw new UserError(error.message);
+        if (error) throw erreurRpc(error);
         const { data: inv } = await supabase
           .from('household_invitations').select('id, code, expires_at').eq('code', code!).maybeSingle();
         return NextResponse.json({ success: true, invitation: inv ?? { code, expires_at: null } });
@@ -146,7 +151,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invitation invalide' }, { status: 400 });
         }
         const { error } = await supabase.rpc('household_annuler_invitation', { p_invitation_id: id });
-        if (error) throw new UserError(error.message);
+        if (error) throw erreurRpc(error);
         return NextResponse.json({ success: true });
       }
 
@@ -154,13 +159,13 @@ export async function POST(request: NextRequest) {
         const code = typeof body.code === 'string' ? body.code.trim() : '';
         if (!code) return NextResponse.json({ error: 'Code manquant' }, { status: 400 });
         const { data: householdId, error } = await supabase.rpc('household_join', { p_code: code });
-        if (error) throw new UserError(error.message);
+        if (error) throw erreurRpc(error);
         return NextResponse.json({ success: true, household_id: householdId });
       }
 
       case 'quitter': {
         const { error } = await supabase.rpc('household_leave');
-        if (error) throw new UserError(error.message);
+        if (error) throw erreurRpc(error);
         return NextResponse.json({ success: true });
       }
 
@@ -168,7 +173,7 @@ export async function POST(request: NextRequest) {
         const memberId = typeof body.user_id === 'string' ? body.user_id : '';
         if (!memberId) return NextResponse.json({ error: 'Membre manquant' }, { status: 400 });
         const { error } = await supabase.rpc('household_remove_member', { p_member_user_id: memberId });
-        if (error) throw new UserError(error.message);
+        if (error) throw erreurRpc(error);
         return NextResponse.json({ success: true });
       }
 

@@ -133,6 +133,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Aucune modification fournie' }, { status: 400 });
     }
 
+    if (payload.id != null && !Number.isInteger(payload.id)) {
+      return NextResponse.json({ error: 'Identifiant de membre invalide' }, { status: 400 });
+    }
     const nom = String(payload.nom ?? '').trim();
     if (nom.length < 1 || nom.length > 40) {
       return NextResponse.json({ error: 'Le prénom du membre est requis (1 à 40 caractères)' }, { status: 400 });
@@ -154,11 +157,11 @@ export async function PUT(request: NextRequest) {
 
     // Les aliments : relation connue + identifiant entier (les ids inconnus sont
     // ignorés côté SQL plutôt que de faire échouer tout l'enregistrement).
-    const aliments = (payload.aliments ?? [])
+    const aliments = (payload.aliments ?? []).slice(0, 500)
       .filter(a => Number.isInteger(a.ingredient_id) && estRelationIngredient(a.relation))
       .map(a => ({ ingredient_id: a.ingredient_id, relation: a.relation as RelationIngredient }));
 
-    const recettes = (payload.recettes ?? [])
+    const recettes = (payload.recettes ?? []).slice(0, 500)
       .filter(r => Number.isInteger(r.meal_id))
       .map(r => ({
         meal_id: r.meal_id,
@@ -178,6 +181,12 @@ export async function PUT(request: NextRequest) {
       p_preferences: recettes,
     });
     if (rpcError) throw new Error(rpcError.message);
+
+    // Anti-course : deux créations simultanées passent toutes deux le contrôle ci-dessus.
+    if (payload.id == null && (await compterMembres(user.id)) > NB_MEMBRES_MAX) {
+      await admin.from('family_members').delete().eq('id', membreId as number).eq('user_id', user.id);
+      return NextResponse.json({ error: `Un foyer se limite à ${NB_MEMBRES_MAX} membres` }, { status: 400 });
+    }
 
     // ── Cohérence du foyer : au moins « les membres + moi » ──
     // On ne baisse JAMAIS nb_personnes automatiquement (l'utilisateur peut

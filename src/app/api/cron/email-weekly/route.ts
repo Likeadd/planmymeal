@@ -8,6 +8,7 @@
 // (Dry run sans envoi : /api/cron/email-weekly?dry_run=1)
 // ============================================================================
 
+import { bearerValide } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { envoyerDigestsHebdomadaires } from '@/lib/email-service';
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
     if (secret) {
       const auth = request.headers.get('authorization');
-      if (auth !== `Bearer ${secret}`) {
+      if (!bearerValide(auth, secret)) {
         logRequestSecurityEvent(request, 'cron_secret', { reason: 'secret invalide' });
         return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
       }

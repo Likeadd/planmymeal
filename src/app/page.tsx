@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, BadgeEuro, Brain, Check, ChefHat, Loader2, Minus,
-  Package, Plus, Refrigerator, ShoppingCart, Sparkles, Users, UtensilsCrossed,
+  Plus, Refrigerator, ShoppingCart, Sparkles, Users, UtensilsCrossed,
   CalendarDays,
 } from 'lucide-react';
 import LandingHeader from '@/components/LandingHeader';
@@ -16,6 +16,8 @@ import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
 import { Reveal } from '@/components/Reveal';
 import { ChiffresCles } from '@/components/ChiffresCles';
+import { ApercuPlanning } from '@/components/ApercuPlanning';
+import { FAQ_CATEGORIES } from '@/app/faq/faq-data';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { STRIPE_PLANS } from '@/lib/stripe';
@@ -48,13 +50,13 @@ export default function LandingPage() {
       <LandingHeader />
       <main>
         <Hero />
-        <IconsBanner />
         <ChiffresCles />
         <Features />
         <Collection />
         <NouveautesMonde />
         <Promo />
         <Pricing />
+        <SectionFinale />
       </main>
       <LandingFooter />
     </div>
@@ -71,25 +73,25 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-2">
         {/* Côté gauche : texte */}
-        <div className="flex items-center px-4 sm:px-12 py-16 lg:py-24">
+        <div className="flex items-center px-4 sm:px-12 pt-10 pb-12 sm:py-16 lg:py-24">
           {/* Au-dessus de la ligne de flottaison : animation CSS (joue sans
               JavaScript ni IntersectionObserver). Avec Reveal, le titre H1 était
               servi en opacity:0 et restait invisible tant que le JS n'avait pas
               tourné (aperçus de partage, robots, JS lent). */}
           <div className="max-w-xl animate-hero-in">
-            <h1 className="font-display text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
+            <h1 className="font-display text-[2.35rem] min-[400px]:text-5xl sm:text-6xl font-bold text-gray-900 leading-[1.06]">
               Mangez mieux.
               <br />
-              <Underlined color="#7C5FBF">Planifiez moins.</Underlined>
+              <span className="whitespace-nowrap"><Underlined color="#7C5FBF">Planifiez moins.</Underlined></span>
             </h1>
 
-            <p className="mt-6 text-gray-600 text-lg leading-relaxed">
+            <p className="mt-5 sm:mt-6 text-gray-600 text-base sm:text-lg leading-relaxed">
               Chaque semaine, le moteur arbitre votre budget, vos goûts, votre
               temps et votre frigo pour composer des menus sur mesure — et la
               liste de courses arrive toute prête.
             </p>
 
-            <div className="mt-9">
+            <div className="mt-7 sm:mt-9">
               <Link href={isLoggedIn ? '/dashboard' : '/signup'}
                 className="group inline-flex items-center gap-2.5 px-8 py-4 bg-brand-500 text-white font-semibold text-sm tracking-[0.12em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
                 {isLoggedIn ? 'Voir ma semaine' : 'Optimiser ma semaine'}
@@ -101,7 +103,10 @@ function Hero() {
                 produit. La preuve sociale (« Déjà X foyers accompagnés »)
                 prendra cette place le jour où le chiffre est réel — jamais
                 inventé. */}
-            <ul className="mt-6 space-y-2 text-sm text-gray-700">
+            <p className="mt-3 text-xs text-gray-500">
+              Inscription gratuite · sans carte bancaire
+            </p>
+            <ul className="mt-5 space-y-2 text-sm text-gray-700">
               {['Menu personnalisé', 'Liste de courses automatique', 'Adapté à votre budget'].map(item => (
                 <li key={item} className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-brand-500 shrink-0" />
@@ -109,9 +114,6 @@ function Hero() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-gray-500">
-              Inscription gratuite · sans carte bancaire
-            </p>
           </div>
         </div>
 
@@ -126,90 +128,14 @@ function Hero() {
             <path d="M110 0 H0 C25 100 75 160 40 240 C5 320 85 380 55 460 C25 540 85 600 50 680 C25 740 70 780 110 800 Z" fill="currentColor" />
           </svg>
 
-          <div className="relative flex items-center justify-center py-16 lg:py-24 pl-10 sm:pl-16 pr-6 sm:pr-12">
-            {/* Pile de menus : deux cartes en arrière-plan */}
-            <Reveal className="relative" delay={0.15} y={16}>
-              <div className="absolute inset-0 translate-x-3 translate-y-4 -rotate-3 bg-white/85 rounded-4xl shadow-lg" aria-hidden />
-              <div className="absolute inset-0 translate-x-1.5 translate-y-2 rotate-1 bg-white/60 rounded-4xl shadow-sm" aria-hidden />
-              <HeroMealCard />
+          <div className="relative flex items-center justify-center py-10 sm:py-14 lg:py-20 pl-12 sm:pl-20 lg:pl-24 pr-4 sm:pr-10">
+            {/* Aperçu de l'écran « Ma semaine » du dashboard */}
+            <Reveal className="w-full max-w-[540px]" delay={0.15} y={16}>
+              <ApercuPlanning />
             </Reveal>
           </div>
         </div>
       </div>
-    </section>
-  );
-}
-
-function HeroMealCard() {
-  const meals = [
-    { e: '🍗', t: 'Poulet rôti, légumes de saison', meta: '45 min · 620 kcal' },
-    { e: '🎃', t: 'Velouté de potimarron', meta: '25 min · 310 kcal' },
-    { e: '🥗', t: 'Salade de lentilles, feta', meta: '15 min · 420 kcal' },
-  ];
-
-  return (
-    <div className="w-[min(320px,calc(100vw-5rem))] sm:w-[380px] bg-white rounded-4xl shadow-2xl shadow-brand-900/20 p-6 rotate-2">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-[11px] tracking-[0.22em] uppercase text-brand-600 font-semibold">Mardi · Déjeuner</div>
-          <div className="font-display text-xl font-bold text-gray-900 mt-0.5">Menu du jour</div>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-accent-500 flex items-center justify-center text-white">
-          <Sparkles className="w-4 h-4" />
-        </div>
-      </div>
-
-      <div className="space-y-2.5">
-        {meals.map(m => (
-          <div key={m.t} className="flex items-center gap-3 bg-gray-50 rounded-xl p-2.5">
-            <span className="w-9 h-9 rounded-full bg-white shadow-xs flex items-center justify-center text-lg shrink-0">{m.e}</span>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-gray-900 leading-snug">{m.t}</div>
-              <div className="text-[11px] text-gray-500">{m.meta}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-500">Liste de courses prête</span>
-        <span className="text-[11px] font-semibold tracking-wide bg-brand-100 text-brand-700 px-2.5 py-1 rounded-full">
-          Optimisé pour vous
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Bandeau icônes (lavande) ───────────────────────────────────────────────
-
-// Barre des 4 fonctionnalités : les BÉNÉFICES (ce que ça change pour vous),
-// pas les mécanismes. « Génération IA » est devenu un feature banal — on vend
-// le résultat : une semaine optimisée sur les 7 dimensions que le moteur
-// arbitre réellement (le détail est énuméré dans la section Fonctionnalités).
-const ICONS = [
-  { icon: <Brain className="w-6 h-6" />, label: 'Mémoire du foyer' },
-  { icon: <ShoppingCart className="w-6 h-6" />, label: 'Courses optimisées' },
-  { icon: <Package className="w-6 h-6" />, label: 'Anti-gaspillage' },
-  { icon: <Sparkles className="w-6 h-6" />, label: 'Semaine optimisée à 7 critères' },
-];
-
-function IconsBanner() {
-  return (
-    <section className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-accent-200 border-y border-accent-200">
-      {ICONS.map((item, i) => (
-        <Reveal key={item.label} delay={i * 0.08} y={16}
-          className="group bg-accent-100 py-8 px-4 flex flex-col items-center gap-3 text-center">
-          <div className="w-14 h-14 rounded-full border border-brand-500/40 flex items-center justify-center text-brand-600 bg-gray-50 group-hover:bg-white group-hover:scale-105 transition-all">
-            {item.icon}
-          </div>
-          <span className="text-[11px] font-semibold tracking-[0.2em] uppercase text-gray-800">
-            {item.label}
-          </span>
-          {/* Trait éditorial : accent → brand au survol */}
-          <span className="h-0.5 w-4 rounded-full bg-accent-300 group-hover:bg-brand-500 group-hover:w-8 transition-all" aria-hidden />
-        </Reveal>
-      ))}
     </section>
   );
 }
@@ -264,7 +190,7 @@ function Features() {
         <Reveal className="text-center max-w-2xl mx-auto">
           <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
             Tout pour bien manger,{' '}
-            <Underlined color="#7C5FBF">au même endroit.</Underlined>
+            <span className="whitespace-nowrap"><Underlined color="#7C5FBF">au même endroit.</Underlined></span>
           </h2>
           <p className="mt-6 text-gray-600 text-lg leading-relaxed">
             Sept critères pris en compte à chaque optimisation :
@@ -440,14 +366,14 @@ const TESTIMONIAL = {
 const PROMO_STATS = [
   { value: '21 jours', label: 'de rotation' },
   { value: '14 repas', label: 'planifiés' },
-  { value: '1 clic', label: 'pour optimiser' },
+  { value: '0 €', label: 'pour commencer' },
 ];
 
 function Promo() {
   // Un témoignage ne s'affiche que si la citation ET l'auteur sont renseignés
   const hasTestimonial = Boolean(TESTIMONIAL.quote.trim() && TESTIMONIAL.author.trim());
   return (
-    <section id="rituels" className="bg-gray-50 pb-20 sm:pb-28">
+    <section id="rituels" className="bg-gray-50 pb-14 sm:pb-16">
       <Reveal className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-3 overflow-hidden rounded-3xl shadow-xs">
         {/* Bloc terracotta */}
         <div className="relative bg-brand-600 p-10 sm:p-12">
@@ -701,7 +627,7 @@ function Pricing() {
   };
 
   return (
-    <section id="tarifs" className="py-20 sm:py-28 bg-gray-50 border-t border-gray-200">
+    <section id="tarifs" className="pt-14 sm:pt-20 pb-20 sm:pb-24 bg-gray-50 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto">
           <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
@@ -782,4 +708,51 @@ function Pricing() {
   );
 }
 
+// ─── Section finale : mini-FAQ + dernier appel à l'action ───────────────────
+// Questions reprises de la FAQ (une seule source de vérité : faq-data.ts).
 
+const QUESTIONS_FINALES = ['Comment ça marche ?', 'Est-ce vraiment gratuit ?', 'Les recettes sont-elles adaptées à mon régime ?', 'Puis-je annuler à tout moment ?'];
+const MINI_FAQ = FAQ_CATEGORIES.flatMap(c => c.items).filter(i => QUESTIONS_FINALES.includes(i.q));
+
+function SectionFinale() {
+  const { user, loading } = useAuth();
+  const isLoggedIn = !loading && !!user;
+  return (
+    <section aria-labelledby="finale-titre" className="bg-white border-t border-gray-200 py-16 sm:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+        <Reveal>
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">Vos questions</h2>
+          <div className="mt-6 divide-y divide-gray-200 border-y border-gray-200">
+            {MINI_FAQ.map(item => (
+              <details key={item.q} className="group py-4">
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none min-h-[44px] font-semibold text-gray-900">
+                  {item.q}
+                  <Plus className="w-4 h-4 text-brand-500 shrink-0 transition-transform group-open:rotate-45" aria-hidden />
+                </summary>
+                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{item.a}</p>
+              </details>
+            ))}
+          </div>
+          <Link href="/faq" className="mt-5 inline-flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-brand-600 hover:text-brand-700">
+            Toutes les questions <ArrowRight className="w-4 h-4" aria-hidden />
+          </Link>
+        </Reveal>
+
+        <Reveal delay={0.1} className="rounded-3xl bg-brand-600 text-white p-8 sm:p-12 text-center lg:sticky lg:top-24">
+          <h2 id="finale-titre" className="font-display text-3xl sm:text-4xl font-bold leading-tight">
+            Votre semaine de menus, prête en un clic.
+          </h2>
+          <p className="mt-4 text-white/85 leading-relaxed">
+            Répondez à quelques questions : vos menus et votre liste de courses sont composés aussitôt.
+          </p>
+          <Link href={isLoggedIn ? '/dashboard' : '/signup'}
+            className="group mt-8 inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-white text-brand-700 font-semibold text-sm tracking-[0.12em] uppercase rounded-full hover:bg-gray-50 transition-colors">
+            {isLoggedIn ? 'Voir ma semaine' : 'Optimiser ma semaine'}
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden />
+          </Link>
+          <p className="mt-4 text-xs text-white/75">Inscription gratuite · sans carte bancaire</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}

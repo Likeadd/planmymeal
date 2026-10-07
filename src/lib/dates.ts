@@ -127,3 +127,12 @@ export function formatWeekRange(lundiIso: string): string {
     ? `${start.getDate()} – ${fmt(end)}`
     : `${fmt(start)} – ${fmt(end)}`;
 }
+
+/** Entrée client `semaine_debut` : date ISO valide telle quelle, sinon lundi courant. */
+export function semaineOuLundi(v: unknown): string {
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const d = new Date(`${v}T12:00:00Z`);
+    if (!Number.isNaN(d.getTime()) && d.toISOString().startsWith(v)) return v;
+  }
+  return getMondayParis();
+}

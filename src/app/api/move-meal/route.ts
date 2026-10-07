@@ -18,7 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { getMonday } from '@/lib/dates';
+import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/rotation-engine';
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
-    const semaine_debut: string = body.semaine_debut || getMonday();
+    const semaine_debut: string = semaineOuLundi(body.semaine_debut);
 
     // Le plan de la semaine doit exister — résolu depuis la SESSION
     const { data: plan } = await admin.from('weekly_plans')

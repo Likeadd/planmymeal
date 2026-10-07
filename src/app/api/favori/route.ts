@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'favori', limit: 60, windowMs: 60_000 });
     if (userLimited) return userLimited;
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({} as Record<string, unknown>));
     const mealId = Number(body.meal_id);
     const avis = body.avis === 'liked' || body.avis === 'disliked' ? body.avis : null;
     if (!Number.isInteger(mealId) || mealId <= 0) return NextResponse.json({ error: 'meal_id invalide' }, { status: 400 });

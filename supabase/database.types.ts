@@ -629,6 +629,7 @@ export type Database = {
           batch_cooking: boolean
           batch_cooking_jour: number
           budget_hebdo: number | null
+          budget_strict: boolean
           calories_par_jour: number | null
           sexe: string | null
           age: number | null
@@ -671,6 +672,7 @@ export type Database = {
           batch_cooking?: boolean
           batch_cooking_jour?: number
           budget_hebdo?: number | null
+          budget_strict?: boolean
           calories_par_jour?: number | null
           sexe?: string | null
           age?: number | null
@@ -711,6 +713,7 @@ export type Database = {
           batch_cooking?: boolean
           batch_cooking_jour?: number
           budget_hebdo?: number | null
+          budget_strict?: boolean
           calories_par_jour?: number | null
           sexe?: string | null
           age?: number | null

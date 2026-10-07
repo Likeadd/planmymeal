@@ -21,6 +21,8 @@ interface BudgetData {
   budget: number | null;
   nb_personnes: number;
   prix_max_portion: number | null;
+  /** true = la semaine ne dépasse pas le budget ; false = autour du budget */
+  budget_strict: boolean;
   depense: number;
   economie: number;
   /** Base de dépense DÉCLARÉE par l'utilisateur (null = non saisie → widget masqué) */
@@ -122,6 +124,23 @@ export default function BudgetPage() {
   useEffect(() => {
     void (async () => { await load(); })();
   }, [load]);
+
+  const saveMode = async (strict: boolean) => {
+    if (!data || data.budget_strict === strict) return;
+    setData({ ...data, budget_strict: strict });
+    try {
+      const res = await fetch('/api/budget', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ budget_strict: strict }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Erreur');
+      toast.success(strict ? 'Budget strict : vos semaines resteront sous le budget' : 'Budget souple : vos semaines resteront autour du budget');
+    } catch (e) {
+      setData(d => (d ? { ...d, budget_strict: !strict } : d));
+      toast.error(errorMessage(e, 'Erreur lors de la sauvegarde'));
+    }
+  };
 
   const saveBudget = async (value: number | null) => {
     setSavingBudget(true);
@@ -326,6 +345,23 @@ export default function BudgetPage() {
                   ? `Soit environ ${formatPrix(budget / (data?.nb_personnes || 2))} par personne`
                   : 'Aucun budget défini — cliquez pour le fixer'}
               </p>
+              {budget != null && (
+                <div className="mt-4">
+                  <div role="radiogroup" aria-label="Respect du budget" className="inline-flex rounded-full bg-gray-100 p-1 text-sm">
+                    {([[true, 'Strict'], [false, 'Souple']] as const).map(([val, label]) => (
+                      <button key={label} type="button" role="radio" aria-checked={(data?.budget_strict ?? true) === val} onClick={() => saveMode(val)}
+                        className={`px-4 py-1.5 rounded-full font-semibold transition-colors ${(data?.budget_strict ?? true) === val ? 'bg-white text-brand-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500 max-w-xs">
+                    {(data?.budget_strict ?? true)
+                      ? 'Chaque optimisation compose une semaine qui ne dépasse pas ce budget.'
+                      : 'Chaque optimisation vise ce budget, avec une marge d’environ 10 %, pour garder plus de variété.'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Dépense + économie */}

@@ -21,7 +21,6 @@ import { Check, Loader2, Pencil, PiggyBank, Timer, Wallet, X, Recycle } from 'lu
 import { toast } from 'sonner';
 import { formatPrix } from '@/lib/budget';
 import { errorMessage, formatMinutes } from '@/lib/utils';
-import { getMonday } from '@/lib/dates';
 import { useAuth } from '@/components/AuthProvider';
 import { cn } from '@/lib/utils';
 import type { DayPlan } from '@/types';
@@ -35,7 +34,7 @@ interface BudgetRecap {
   economie_reference: { economie: number; pourcentage: number; depassement: boolean; depenseReference: number } | null;
 }
 
-export function SummaryBar({ days }: { days: DayPlan[] }) {
+export function SummaryBar({ days, semaineDebut }: { days: DayPlan[]; semaineDebut: string }) {
   const { profile, refreshProfile } = useAuth();
   const [recap, setRecap] = useState<BudgetRecap | null>(null);
   // Saisie inline du budget depuis la cellule « Coût estimé » (aucun budget
@@ -43,18 +42,21 @@ export function SummaryBar({ days }: { days: DayPlan[] }) {
   const [editionBudget, setEditionBudget] = useState(false);
   const [budgetSaisie, setBudgetSaisie] = useState('');
   const [enregistreBudget, setEnregistreBudget] = useState(false);
-  // Budget/économies : toujours la semaine COURANTE (comparaison cumulée),
-  // calculée dans le fuseau de l'app (identique serveur / navigateur).
-  const semaineCourante = getMonday();
+  // Budget/économies : la semaine AFFICHÉE, rechargés à chaque changement du
+  // planning (optimisation, remplacement d'un repas) — `signature` change dès
+  // qu'un repas change. Avant : lu une seule fois pour la semaine courante,
+  // les montants restaient périmés après « Optimiser ma semaine ».
+  const semaineCourante = semaineDebut;
+  const signature = days.map(d => [d.dejeuner?.id, d.diner?.id, d.dessert?.id, d.dessertMidi?.id, d.restesDe].join('.')).join('|');
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/budget?semaine_debut=${semaineCourante}`)
+    fetch(`/api/budget?semaine_debut=${semaineCourante}`, { cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
       .then(d => { if (!cancelled && d) setRecap(d); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [semaineCourante]);
+  }, [semaineCourante, signature]);
 
   // Économie « vérité » : vs base déclarée si saisie, sinon vs budget hebdo.
   const economie = recap?.economie_reference?.economie

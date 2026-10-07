@@ -30,8 +30,9 @@ const MESSAGES = [
   { seuil: 100, texte: 'Votre planning est prêt !' },
 ];
 
-export function ChargementPlanning({ etape }: { etape: EtapeChargement }) {
-  const [progression, setProgression] = useState(2);
+export function ChargementPlanning({ etape, optimisation = false }: { etape: EtapeChargement; /** Optimisation d'une semaine existante (dashboard) plutôt que première semaine */ optimisation?: boolean }) {
+  // Optimisation : le profil est déjà enregistré, la barre démarre à l'étape suivante
+  const [progression, setProgression] = useState(optimisation ? CIBLES.profil : 2);
 
   useEffect(() => {
     const cible = CIBLES[etape];
@@ -57,9 +58,9 @@ export function ChargementPlanning({ etape }: { etape: EtapeChargement }) {
           {termine ? <Check className="w-8 h-8 text-sauge-700" /> : <span className="animate-pulse">🍽️</span>}
         </div>
         <h1 id="chargement-titre" className="mt-6 font-display text-2xl sm:text-3xl font-bold text-gray-900 leading-snug">
-          {termine ? 'Votre planning sur mesure est prêt' : 'Nous créons votre planning sur mesure'}
+          {termine ? (optimisation ? 'Votre semaine est optimisée' : 'Votre planning sur mesure est prêt') : (optimisation ? 'Nous optimisons votre semaine' : 'Nous créons votre planning sur mesure')}
         </h1>
-        <p className="mt-2 text-sm text-gray-600">{termine ? 'Redirection vers votre semaine…' : 'Quelques secondes, le moteur compose votre première semaine.'}</p>
+        <p className="mt-2 text-sm text-gray-600">{termine ? (optimisation ? 'Affichage de vos menus…' : 'Redirection vers votre semaine…') : (optimisation ? 'Quelques secondes, le moteur recompose vos menus et votre liste de courses.' : 'Quelques secondes, le moteur compose votre première semaine.')}</p>
 
         <div className="mt-8">
           <div className="h-3 rounded-full bg-gray-200 overflow-hidden" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Création du planning">
@@ -73,4 +74,25 @@ export function ChargementPlanning({ etape }: { etape: EtapeChargement }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Écran de chargement du bouton « Optimiser ma semaine » (dashboard) : visible
+ * pendant la génération, passe à 100 % puis disparaît quand le planning est prêt.
+ */
+export function ChargementOptimisation({ actif }: { actif: boolean }) {
+  const [precedent, setPrecedent] = useState(actif);
+  const [phase, setPhase] = useState<'off' | 'semaine' | 'fin'>(actif ? 'semaine' : 'off');
+  // Ajustement d'état pendant le rendu (pas d'effet) : actif → barre ; fin d'activité → 100 % puis masqué
+  if (actif !== precedent) {
+    setPrecedent(actif);
+    setPhase(actif ? 'semaine' : phase === 'semaine' ? 'fin' : 'off');
+  }
+  useEffect(() => {
+    if (phase !== 'fin') return;
+    const t = window.setTimeout(() => setPhase('off'), 800);
+    return () => window.clearTimeout(t);
+  }, [phase]);
+  if (phase === 'off') return null;
+  return <ChargementPlanning etape={phase} optimisation />;
 }

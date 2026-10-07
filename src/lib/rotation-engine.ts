@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/../supabase/database.types';
 import type { RecetteMoteur, Profile, DayPlan, RepasSlot } from '@/types';
 import { EQUIPEMENTS, type MealPreference, type Regime } from '@/types';
-import { facteurBudget, prixParPortion, prixMoyenPortions } from '@/lib/budget';
+import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses } from '@/lib/budget';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/courses-budget';
 import {
   isDessert, pickPourSlot, optimiserRecoupement, eligiblePourSlot, SCORE_MIN_PLAT,
@@ -444,38 +444,60 @@ export async function generateWeeklyPlan(
   const budgetHebdo = (profileRow as { budget_hebdo?: number | null } | null)?.budget_hebdo ?? null;
   if (budgetHebdo && budgetHebdo > 0) {
     const nbPersonnes = (profileRow as { nb_personnes?: number | null } | null)?.nb_personnes || 2;
-    days = respecterBudget(days, plats, budgetHebdo, nbPersonnes, slots);
+    // Mode du budget (profil) : strict par défaut ; false = « souple », autour du budget
+    const strict = (profileRow as { budget_strict?: boolean | null } | null)?.budget_strict !== false;
+    days = respecterBudget(days, plats, budgetHebdo, nbPersonnes, slots, strict);
   }
 
   return { days, fallbackUtilise, cuisinesDiversifiees };
 }
 
-/**
- * Marge sous le budget : la liste de courses arrondit chaque ingrédient au
- * conditionnement supérieur (0,1 kg, pièce entière), elle coûte donc un peu
- * plus que la somme des prix par portion.
- */
-const MARGE_BUDGET = 0.9;
+/** Strict : sous le budget (marge 2 % : la liste exclut le frigo mais arrondit). Souple : « autour » du budget (+10 % max). */
+const CIBLE_STRICT = 0.98;
+const CIBLE_SOUPLE = 1.1;
 
-/** Coût estimé de la semaine, calculé comme la liste de courses (restes : dîner cuit ×2, déjeuner gratuit). */
+/**
+ * Coût estimé de la semaine, calculé comme la vraie liste de courses : les
+ * quantités de tous les repas sont additionnées par ingrédient (restes : dîner
+ * cuit ×2, déjeuner gratuit) puis arrondies au conditionnement d'achat. Une
+ * somme des prix par portion sous-estimait fortement ce coût (arrondi à la
+ * pièce / au 0,1 kg de chaque ingrédient) : budget de 50 € dépassé du double.
+ * Le stock du frigo n'est pas déduit → estimation prudente.
+ */
 export function coutSemaine(days: DayPlan[], nbPersonnes: number): number {
-  const prix = (m: unknown) => (m ? prixParPortion(m as RecetteMoteur) ?? 0 : 0) * nbPersonnes;
-  let total = 0;
+  const cumul = new Map<number, { q: number; unite: string; ing: { id: number; nom: string; prix_unitaire: number | null; unite_prix: string | null } & { rayon?: string } }>();
+  const ajouter = (m: unknown, mult: number) => {
+    const meal = m as RecetteMoteur | null;
+    if (!meal) return;
+    const ratio = (nbPersonnes / (meal.portions_par_defaut || 2)) * mult;
+    for (const iq of (meal as unknown as { ingredients?: { quantite: number; unite: string; est_optionnel: boolean; ingredient: { id: number; nom: string; prix_unitaire: number | null; unite_prix: string | null; rayon?: string } }[] }).ingredients ?? []) {
+      if (iq.est_optionnel) continue;
+      const cur = cumul.get(iq.ingredient.id);
+      if (cur) cur.q += iq.quantite * ratio;
+      else cumul.set(iq.ingredient.id, { q: iq.quantite * ratio, unite: iq.unite, ing: iq.ingredient });
+    }
+  };
   days.forEach((d, i) => {
-    if (!d.restesDe) total += prix(d.dejeuner);
-    total += prix(d.diner) * (days[i + 1]?.restesDe && days[i + 1].restesDe === d.diner?.id ? 2 : 1);
-    total += prix(d.dessert) + prix(d.dessertMidi);
+    if (!d.restesDe) ajouter(d.dejeuner, 1);
+    ajouter(d.diner, days[i + 1]?.restesDe && days[i + 1].restesDe === d.diner?.id ? 2 : 1);
+    ajouter(d.dessert, 1);
+    ajouter(d.dessertMidi, 1);
   });
-  return Math.round(total * 100) / 100;
+  const sections = chiffrerListeCourses([...cumul.entries()].map(([id, c]) => ({
+    ingredient_id: id, quantite_totale: Math.round(c.q * 10) / 10, unite: c.unite, rayon: c.ing.rayon ?? 'epicerie_salee', checked: false, ingredient: c.ing,
+  })));
+  return Math.round(sections.reduce((t, sec) => t + sec.total, 0) * 100) / 100;
 }
 
 /**
- * Ramène la semaine sous le budget : remplace le plat le plus coûteux par le
- * mieux noté des plats nettement moins chers (mêmes contraintes de créneau,
- * jamais un plat déjà dans la semaine), toutes ses occurrences à la fois
- * (batch cooking et restes restent cohérents). Si aucun plat ne peut plus
- * baisser, les desserts les plus chers sont retirés. Budget irréalisable avec
- * le catalogue → semaine la moins chère possible. Exporté pour les tests.
+ * Ramène la semaine vers le budget (contrainte, pas simple préférence).
+ * À chaque tour : parmi les plats les plus chers, on cherche le remplacement
+ * (mêmes contraintes de créneau, jamais un plat déjà servi, toutes les
+ * occurrences d'un plat à la fois pour garder batch et restes cohérents) qui
+ * ramène le coût de la liste de courses sous la cible en gardant le meilleur
+ * score — sinon le moins cher. Plus aucun plat à changer → desserts retirés,
+ * du plus cher au moins cher. Budget irréalisable avec le catalogue
+ * compatible → semaine la moins chère possible. Exporté pour les tests.
  */
 export function respecterBudget(
   days: DayPlan[],
@@ -483,14 +505,24 @@ export function respecterBudget(
   budgetHebdo: number,
   nbPersonnes: number,
   slots: (jourIndex: number, repasType: RepasSlot) => SlotContexte,
+  strict = true,
 ): DayPlan[] {
-  const cible = budgetHebdo * MARGE_BUDGET;
+  const cible = budgetHebdo * (strict ? CIBLE_STRICT : CIBLE_SOUPLE);
   const pp = (m: unknown) => prixParPortion(m as RecetteMoteur) ?? 0;
+  const cout = (d: DayPlan[]) => coutSemaine(d, nbPersonnes);
   const figes = new Set<number>();
   let semaine = days.map(d => ({ ...d }));
+  let courant = cout(semaine);
 
-  for (let iter = 0; iter < 40 && coutSemaine(semaine, nbPersonnes) > cible; iter++) {
-    // Plats principaux, regroupés par recette (coût cumulé de leurs occurrences)
+  const remplacer = (d: DayPlan[], idCher: number, creneaux: { jour: number; type: 'dejeuner' | 'diner' }[], c: Candidate): DayPlan[] =>
+    d.map((j, i) => {
+      const n = { ...j };
+      for (const cr of creneaux) if (cr.jour === i) n[cr.type] = c.meal as unknown as DayPlan['dejeuner'];
+      if (n.restesDe === idCher) n.restesDe = c.meal.id;
+      return n;
+    });
+
+  for (let iter = 0; iter < 60 && courant > cible; iter++) {
     const groupes = new Map<number, { cout: number; creneaux: { jour: number; type: 'dejeuner' | 'diner' }[] }>();
     semaine.forEach((d, i) => {
       for (const type of ['dejeuner', 'diner'] as const) {
@@ -502,23 +534,33 @@ export function respecterBudget(
         groupes.set(m.id, g);
       }
     });
-    const [idCher, groupe] = [...groupes.entries()].sort((a, b) => b[1].cout - a[1].cout)[0] ?? [];
+    const chers = [...groupes.entries()].sort((a, b) => b[1].cout - a[1].cout).slice(0, 4);
 
-    if (idCher != null && groupe) {
-      const actuel = pp(semaine[groupe.creneaux[0].jour][groupe.creneaux[0].type]);
+    if (chers.length > 0) {
       const utilises = new Set(semaine.flatMap(d => [d.dejeuner?.id, d.diner?.id]).filter((id): id is number => id != null));
-      const remplacant = plats
-        .filter(c => !utilises.has(c.meal.id))
-        .filter(c => { const p = prixParPortion(c.meal); return p != null && p > 0 && p <= actuel * 0.8; })
-        .filter(c => groupe.creneaux.every(cr => eligiblePourSlot(c, slots(semaine[cr.jour].jourIndex, cr.type))))
-        .sort((a, b) => b.score - a.score)[0];
-      if (!remplacant) { figes.add(idCher); continue; }
-      semaine = semaine.map((d, i) => {
-        const n = { ...d };
-        for (const cr of groupe.creneaux) if (cr.jour === i) n[cr.type] = remplacant.meal as unknown as DayPlan['dejeuner'];
-        if (n.restesDe === idCher) n.restesDe = remplacant.meal.id;
-        return n;
-      });
+      let meilleur: { id: number; semaine: DayPlan[]; cout: number; score: number } | null = null;
+      for (const [idCher, groupe] of chers) {
+        const actuel = pp(semaine[groupe.creneaux[0].jour][groupe.creneaux[0].type]);
+        const candidats = plats
+          .filter(c => !utilises.has(c.meal.id))
+          .filter(c => { const p = prixParPortion(c.meal); return p != null && p > 0 && p < actuel; })
+          .filter(c => groupe.creneaux.every(cr => eligiblePourSlot(c, slots(semaine[cr.jour].jourIndex, cr.type))))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 40);
+        for (const c of candidats) {
+          const essai = remplacer(semaine, idCher, groupe.creneaux, c);
+          const coutEssai = cout(essai);
+          if (coutEssai >= courant - 0.01) continue;
+          // Sous la cible : le mieux noté gagne ; sinon : le moins cher
+          const meilleurSousCible = meilleur != null && meilleur.cout <= cible;
+          const ok = coutEssai <= cible
+            ? (!meilleurSousCible || c.score > meilleur!.score)
+            : (!meilleurSousCible && (meilleur == null || coutEssai < meilleur.cout));
+          if (ok) meilleur = { id: idCher, semaine: essai, cout: coutEssai, score: c.score };
+        }
+      }
+      if (meilleur) { semaine = meilleur.semaine; courant = meilleur.cout; continue; }
+      chers.forEach(([id]) => figes.add(id));
       continue;
     }
 
@@ -530,6 +572,7 @@ export function respecterBudget(
     if (!pire) break;
     const { i: jourPire, cle: clePire } = pire;
     semaine = semaine.map((d, i) => i === jourPire ? { ...d, [clePire]: null } : d);
+    courant = cout(semaine);
   }
   return semaine;
 }

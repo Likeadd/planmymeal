@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
     const { data: profile } = await admin
       .from('profiles').select('budget_hebdo, nb_personnes, prix_max_portion, depense_reference_hebdo, depense_reference_saisie_le').eq('id', user.id).single();
 
+    // Mode du budget : requête à part (colonne ajoutée par la migration 00036 ; strict par défaut)
+    const { data: modeRow } = await admin.from('profiles').select('budget_strict').eq('id', user.id).single();
+
     // Plan de la semaine + snapshot existant
     const { data: plan } = await admin.from('weekly_plans')
       .select('id').eq('user_id', user.id).eq('semaine_debut', semaine_debut).maybeSingle();
@@ -49,6 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       budget: profile?.budget_hebdo ?? null,
+      budget_strict: modeRow?.budget_strict !== false,
       nb_personnes: profile?.nb_personnes ?? 2,
       prix_max_portion: profile?.prix_max_portion ?? null,
       depense,
@@ -104,6 +108,15 @@ export async function PUT(request: NextRequest) {
       if (plan) await snapshotBudget(user.id, semaine_debut, plan.id, admin);
 
       return NextResponse.json({ success: true, budget_hebdo: budget });
+    }
+
+    // ── Mode du budget : strict / souple ──
+    if (body.budget_strict !== undefined) {
+      if (typeof body.budget_strict !== 'boolean') return NextResponse.json({ error: 'Mode invalide' }, { status: 400 });
+      const { error: updateError } = await admin.from('profiles')
+        .update({ budget_strict: body.budget_strict }).eq('id', user.id);
+      if (updateError) return NextResponse.json({ error: 'Mode du budget indisponible pour le moment' }, { status: 503 });
+      return NextResponse.json({ success: true, budget_strict: body.budget_strict });
     }
 
     // ── Prix max par portion (Pro) : cap strict sur la sélection ──

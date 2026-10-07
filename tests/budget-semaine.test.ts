@@ -36,6 +36,22 @@ describe('respecterBudget', () => {
     expect(coutSemaine(res, 2)).toBe(140); // aucun plat moins cher compatible : semaine inchangée
   });
 
+  it('le coût suit la liste de courses : un ingrédient partagé est additionné puis arrondi', () => {
+    const commun = { quantite: 300, unite: 'g', est_optionnel: false, ingredient: { id: 999, nom: 'x', prix_unitaire: 10, unite_prix: 'kg', poids_unites: null } };
+    const m = () => ({ ...recette(1), ingredients: [commun] } as unknown as RecetteMoteur);
+    const days = semaine(m).slice(0, 1); // 2 repas × 300 g × (2 pers / 2 portions) = 0,6 kg → 6 €
+    expect(coutSemaine(days, 2)).toBe(6);
+  });
+
+  it('souple : autour du budget, strict : sous le budget', () => {
+    const pool = () => Array.from({ length: 40 }, (_, i) => cand(recette(2 + i * 0.4), 40 - i));
+    const strict = respecterBudget(semaine(() => recette(10)), pool(), 80, 2, slot(), true);
+    const souple = respecterBudget(semaine(() => recette(10)), pool(), 80, 2, slot(), false);
+    expect(coutSemaine(strict, 2)).toBeLessThanOrEqual(80);
+    expect(coutSemaine(souple, 2)).toBeLessThanOrEqual(88);
+    expect(coutSemaine(souple, 2)).toBeGreaterThanOrEqual(coutSemaine(strict, 2)); // souple garde les plats mieux notés
+  });
+
   it('laisse intacte une semaine déjà sous le budget', () => {
     const days = semaine(() => recette(2));
     expect(respecterBudget(days, [], 50, 2, slot())).toEqual(days);

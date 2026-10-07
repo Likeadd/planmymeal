@@ -32,6 +32,7 @@ import { LoadingButton } from '@/components/LoadingButton';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { SummaryBar } from '@/components/dashboard/SummaryBar';
 import { PromesseOptimisation, OptimiserBar } from '@/components/dashboard/OptimiserBar';
+import { ChargementOptimisation } from '@/components/ChargementPlanning';
 import type { IntentionOptimisation } from '@/lib/rotation-engine';
 import { Underlined } from '@/components/WavyUnderline';
 
@@ -308,6 +309,7 @@ function DashboardInner() {
       regenerating={regenerating}
       onRegenerate={regenererAvecRecap}
     >
+      <ChargementOptimisation actif={regenerating} />
 
       {error && (
         <div className="container-app py-6">
@@ -377,7 +379,7 @@ function DashboardInner() {
           </div>
 
           {/* ── Barre de résumé fine : Économies · Budget · Temps · Anti-gaspi ── */}
-          <div data-tour="resume"><SummaryBar days={days} /></div>
+          <div data-tour="resume"><SummaryBar days={days} semaineDebut={semaineDebut} /></div>
           {/* L'action CENTRALE (audit UX) : le libellé et la promesse disent ce
               que le moteur fait — arbitrer budget, goûts, temps, stock, restes,
               nutrition et gaspillage — au lieu d'un simple « régénérer ».

@@ -35,12 +35,15 @@ export function DashboardShell({
   onRegenerate,
   regenerating,
   showRegenerate,
+  libelleRegenerate,
 }: {
   children: React.ReactNode;
-  /** CTA « Optimiser ma semaine » de la topbar (semaine en cours uniquement), avec l'intention choisie au clic */
+  /** CTA « Optimiser ma semaine » de la topbar (semaine affichée), avec l'intention choisie au clic */
   onRegenerate?: (intention?: import('@/lib/rotation-engine').IntentionOptimisation) => void;
   regenerating?: boolean;
   showRegenerate?: boolean;
+  /** Libellé du CTA (« Optimiser cette semaine » hors semaine en cours) */
+  libelleRegenerate?: string;
 }) {
   // Visiteur NON connecté (pages publiques : catalogue, fiches recettes) :
   // en-tête et pied de page du site, pas la navigation de l'application —
@@ -60,7 +63,7 @@ export function DashboardShell({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Desktop : topbar ─────────────────────────────────────────── */}
-      <Topbar onRegenerate={onRegenerate} regenerating={regenerating} showRegenerate={showRegenerate} />
+      <Topbar onRegenerate={onRegenerate} regenerating={regenerating} showRegenerate={showRegenerate} libelle={libelleRegenerate} />
       {/* ── Mobile : topbar compacte (lg:hidden) ── */}
       <MobileTopbar />
 
@@ -90,10 +93,11 @@ const NAV_ITEMS = [
 
 type NavItem = (typeof NAV_ITEMS)[number];
 
-function Topbar({ onRegenerate, regenerating, showRegenerate }: {
+function Topbar({ onRegenerate, regenerating, showRegenerate, libelle }: {
   onRegenerate?: (intention?: import('@/lib/rotation-engine').IntentionOptimisation) => void;
   regenerating?: boolean;
   showRegenerate?: boolean;
+  libelle?: string;
 }) {
   return (
     <header className="hidden lg:block sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200">
@@ -116,7 +120,7 @@ function Topbar({ onRegenerate, regenerating, showRegenerate }: {
           <PlanChip />
           <UserMenu />
           {showRegenerate && (
-            <OptimiserButton onOptimiser={intention => onRegenerate?.(intention)} loading={!!regenerating} />
+            <OptimiserButton onOptimiser={intention => onRegenerate?.(intention)} loading={!!regenerating} libelle={libelle} />
           )}
         </div>
       </div>

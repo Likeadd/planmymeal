@@ -1,0 +1,43 @@
+import { describe, it, expect } from 'vitest';
+import { coutSemaine, respecterBudget, type Candidate } from '@/lib/rotation-engine';
+import type { DayPlan, RecetteMoteur } from '@/types';
+
+// Recette chiffrée : 1 kg d'un ingrédient au prix donné, 2 portions → prix/portion = prixKg / 2
+let id = 0;
+const recette = (prixKg: number, temps = 20): RecetteMoteur => ({
+  id: ++id, titre: `R${id}`, type_repas: 'plat', temps_preparation: temps, temps_cuisson: 0,
+  portions_par_defaut: 2,
+  ingredients: [{ quantite: 1000, unite: 'g', est_optionnel: false,
+    ingredient: { id: id, nom: 'x', prix_unitaire: prixKg, unite_prix: 'kg', poids_unites: null } }],
+} as unknown as RecetteMoteur);
+
+const cand = (meal: RecetteMoteur, score = 1): Candidate => ({ meal, score } as unknown as Candidate);
+const slot = (tempsMax: number | null = null) => () => ({ jourIndex: 0, repasType: 'diner' as const, tempsMax, contexte: 'normal', nouveaute: 50 } as never);
+
+const semaine = (m: () => RecetteMoteur): DayPlan[] =>
+  Array.from({ length: 7 }, (_, i) => ({ jour: `J${i}`, jourIndex: i, dejeuner: m(), diner: m(), dessert: null, dessertMidi: null } as unknown as DayPlan));
+
+describe('respecterBudget', () => {
+  it('ramène une semaine chère sous le budget', () => {
+    const days = semaine(() => recette(10)); // 5 €/portion × 2 pers × 14 = 140 €
+    const pool = Array.from({ length: 20 }, () => cand(recette(2))); // 1 €/portion
+    expect(coutSemaine(days, 2)).toBe(140);
+    const res = respecterBudget(days, pool, 50, 2, slot());
+    expect(coutSemaine(res, 2)).toBeLessThanOrEqual(50);
+    // Jamais deux fois le même plat
+    const ids = res.flatMap(d => [d.dejeuner!.id, d.diner!.id]);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('respecte le temps max du créneau', () => {
+    const days = semaine(() => recette(10));
+    const pool = Array.from({ length: 20 }, () => cand(recette(2, 90)));
+    const res = respecterBudget(days, pool, 50, 2, slot(30));
+    expect(coutSemaine(res, 2)).toBe(140); // aucun plat moins cher compatible : semaine inchangée
+  });
+
+  it('laisse intacte une semaine déjà sous le budget', () => {
+    const days = semaine(() => recette(2));
+    expect(respecterBudget(days, [], 50, 2, slot())).toEqual(days);
+  });
+});

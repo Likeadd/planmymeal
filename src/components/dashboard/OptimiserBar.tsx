@@ -34,10 +34,11 @@ const INTENTIONS: { value: IntentionOptimisation | 'equilibre'; label: string; s
 ];
 
 export function OptimiserBar({
-  onOptimiser, loading,
+  onOptimiser, loading, libelle = 'Optimiser ma semaine',
 }: {
   onOptimiser: (intention?: IntentionOptimisation) => void | Promise<void>;
   loading: boolean;
+  libelle?: string;
 }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const payant = estPayant(useAuth().profile?.plan);
@@ -84,7 +85,7 @@ export function OptimiserBar({
             {loading
               ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" aria-hidden />
               : <Sparkles className="w-4 h-4" aria-hidden />}
-            Optimiser ma semaine
+            {libelle}
           </button>
           <button onClick={() => setMenuOuvert(v => !v)} disabled={loading}
             aria-label="Choisir le type d'optimisation" aria-expanded={menuOuvert}
@@ -102,10 +103,11 @@ export function OptimiserBar({
  * Clic principal = équilibré ; caret = menu (même choix que la fiche mobile).
  */
 export function OptimiserButton({
-  onOptimiser, loading,
+  onOptimiser, loading, libelle = 'Optimiser ma semaine',
 }: {
   onOptimiser: (intention?: IntentionOptimisation) => void | Promise<void>;
   loading: boolean;
+  libelle?: string;
 }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const payant = estPayant(useAuth().profile?.plan);
@@ -123,7 +125,7 @@ export function OptimiserButton({
           {loading
             ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" aria-hidden />
             : <Sparkles className="w-4 h-4" aria-hidden />}
-          Optimiser ma semaine
+          {libelle}
         </button>
         <button onClick={() => setMenuOuvert(v => !v)} disabled={loading}
           aria-label="Choisir le type d'optimisation" aria-expanded={menuOuvert}

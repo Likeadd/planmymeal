@@ -9,7 +9,7 @@ import { EQUIPEMENTS, type MealPreference, type Regime } from '@/types';
 import { facteurBudget, prixParPortion, prixMoyenPortions } from '@/lib/budget';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/courses-budget';
 import {
-  isDessert, pickPourSlot, optimiserRecoupement, SCORE_MIN_PLAT,
+  isDessert, pickPourSlot, optimiserRecoupement, eligiblePourSlot, SCORE_MIN_PLAT,
   type Rng, type SlotContexte,
 } from '@/lib/moteur-creneaux';
 
@@ -438,7 +438,100 @@ export async function generateWeeklyPlan(
     }
   }
 
+  // ⭐ Budget hebdo = contrainte DURE : le facteur de score ci-dessus ne fait
+  // que pencher vers les recettes économiques, il ne garantit rien. Le tirage
+  // pondéré pouvait donc composer une semaine à 111 € pour un budget de 50 €.
+  const budgetHebdo = (profileRow as { budget_hebdo?: number | null } | null)?.budget_hebdo ?? null;
+  if (budgetHebdo && budgetHebdo > 0) {
+    const nbPersonnes = (profileRow as { nb_personnes?: number | null } | null)?.nb_personnes || 2;
+    days = respecterBudget(days, plats, budgetHebdo, nbPersonnes, slots);
+  }
+
   return { days, fallbackUtilise, cuisinesDiversifiees };
+}
+
+/**
+ * Marge sous le budget : la liste de courses arrondit chaque ingrédient au
+ * conditionnement supérieur (0,1 kg, pièce entière), elle coûte donc un peu
+ * plus que la somme des prix par portion.
+ */
+const MARGE_BUDGET = 0.9;
+
+/** Coût estimé de la semaine, calculé comme la liste de courses (restes : dîner cuit ×2, déjeuner gratuit). */
+export function coutSemaine(days: DayPlan[], nbPersonnes: number): number {
+  const prix = (m: unknown) => (m ? prixParPortion(m as RecetteMoteur) ?? 0 : 0) * nbPersonnes;
+  let total = 0;
+  days.forEach((d, i) => {
+    if (!d.restesDe) total += prix(d.dejeuner);
+    total += prix(d.diner) * (days[i + 1]?.restesDe && days[i + 1].restesDe === d.diner?.id ? 2 : 1);
+    total += prix(d.dessert) + prix(d.dessertMidi);
+  });
+  return Math.round(total * 100) / 100;
+}
+
+/**
+ * Ramène la semaine sous le budget : remplace le plat le plus coûteux par le
+ * mieux noté des plats nettement moins chers (mêmes contraintes de créneau,
+ * jamais un plat déjà dans la semaine), toutes ses occurrences à la fois
+ * (batch cooking et restes restent cohérents). Si aucun plat ne peut plus
+ * baisser, les desserts les plus chers sont retirés. Budget irréalisable avec
+ * le catalogue → semaine la moins chère possible. Exporté pour les tests.
+ */
+export function respecterBudget(
+  days: DayPlan[],
+  plats: Candidate[],
+  budgetHebdo: number,
+  nbPersonnes: number,
+  slots: (jourIndex: number, repasType: RepasSlot) => SlotContexte,
+): DayPlan[] {
+  const cible = budgetHebdo * MARGE_BUDGET;
+  const pp = (m: unknown) => prixParPortion(m as RecetteMoteur) ?? 0;
+  const figes = new Set<number>();
+  let semaine = days.map(d => ({ ...d }));
+
+  for (let iter = 0; iter < 40 && coutSemaine(semaine, nbPersonnes) > cible; iter++) {
+    // Plats principaux, regroupés par recette (coût cumulé de leurs occurrences)
+    const groupes = new Map<number, { cout: number; creneaux: { jour: number; type: 'dejeuner' | 'diner' }[] }>();
+    semaine.forEach((d, i) => {
+      for (const type of ['dejeuner', 'diner'] as const) {
+        const m = d[type];
+        if (!m || (type === 'dejeuner' && d.restesDe) || figes.has(m.id)) continue;
+        const g = groupes.get(m.id) ?? { cout: 0, creneaux: [] };
+        g.cout += pp(m);
+        g.creneaux.push({ jour: i, type });
+        groupes.set(m.id, g);
+      }
+    });
+    const [idCher, groupe] = [...groupes.entries()].sort((a, b) => b[1].cout - a[1].cout)[0] ?? [];
+
+    if (idCher != null && groupe) {
+      const actuel = pp(semaine[groupe.creneaux[0].jour][groupe.creneaux[0].type]);
+      const utilises = new Set(semaine.flatMap(d => [d.dejeuner?.id, d.diner?.id]).filter((id): id is number => id != null));
+      const remplacant = plats
+        .filter(c => !utilises.has(c.meal.id))
+        .filter(c => { const p = prixParPortion(c.meal); return p != null && p > 0 && p <= actuel * 0.8; })
+        .filter(c => groupe.creneaux.every(cr => eligiblePourSlot(c, slots(semaine[cr.jour].jourIndex, cr.type))))
+        .sort((a, b) => b.score - a.score)[0];
+      if (!remplacant) { figes.add(idCher); continue; }
+      semaine = semaine.map((d, i) => {
+        const n = { ...d };
+        for (const cr of groupe.creneaux) if (cr.jour === i) n[cr.type] = remplacant.meal as unknown as DayPlan['dejeuner'];
+        if (n.restesDe === idCher) n.restesDe = remplacant.meal.id;
+        return n;
+      });
+      continue;
+    }
+
+    // Plus aucun plat ne peut baisser : on retire le dessert le plus cher
+    let pire: { i: number; cle: 'dessert' | 'dessertMidi'; p: number } | null = null;
+    semaine.forEach((d, i) => (['dessert', 'dessertMidi'] as const).forEach(cle => {
+      if (d[cle] && (!pire || pp(d[cle]) > pire.p)) pire = { i, cle, p: pp(d[cle]) };
+    }));
+    if (!pire) break;
+    const { i: jourPire, cle: clePire } = pire;
+    semaine = semaine.map((d, i) => i === jourPire ? { ...d, [clePire]: null } : d);
+  }
+  return semaine;
 }
 
 /**

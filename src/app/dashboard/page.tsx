@@ -303,7 +303,8 @@ function DashboardInner() {
 
   return (
     <DashboardShell
-      showRegenerate={!empty && estSemaineCourante}
+      showRegenerate={!empty}
+      libelleRegenerate={estSemaineCourante ? 'Optimiser ma semaine' : 'Optimiser cette semaine'}
       regenerating={regenerating}
       onRegenerate={regenererAvecRecap}
     >
@@ -457,7 +458,8 @@ function DashboardInner() {
           sinon plus aucun moyen de relancer l'optimisation après avoir généré
           une semaine future en mobile). Le vide a son propre CTA, pas de doublon. */}
       {!empty && (
-        <OptimiserBar onOptimiser={intention => regenererAvecRecap(intention)} loading={regenerating} />
+        <OptimiserBar onOptimiser={intention => regenererAvecRecap(intention)} loading={regenerating}
+          libelle={estSemaineCourante ? 'Optimiser ma semaine' : 'Optimiser cette semaine'} />
       )}
 
       {/* Modal swap */}

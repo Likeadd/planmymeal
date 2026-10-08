@@ -6,6 +6,8 @@
 //   … --classiques : plats classiques 100 % produits bruts (classiques-bruts.ts)
 //   … --francaises : recettes françaises rédigées à la main (recettes-francaises.ts)
 //   … --rapides : recettes simples et rapides, 25 min max (recettes-rapides.ts)
+//   … --sportives : liste de classiques français + 500 repas sportifs à la française
+//   … --equilibrees : petits-déjeuners, collations sportives et plats courants absents
 //
 // 1. Macros CALCULÉES depuis la composition (lib/macros).
 // 2. Filtres : plat ≥ 20 g de protéines (≥ 16 g végétarien), 300–850 kcal ;
@@ -25,13 +27,22 @@ import { genererRecettes, estVege } from './data/generateur-recettes';
 import { genererClassiques, estVegeClassique } from './data/classiques-bruts';
 import { RECETTES_FRANCAISES } from './data/recettes-francaises';
 import { RECETTES_RAPIDES } from './data/recettes-rapides';
+import { enrichirEtapes } from './data/detail-etapes';
+import { RECETTES_FRANCAISES_LISTE } from './data/recettes-francaises-liste';
+import { genererSportives } from './data/recettes-sportives';
+import { RECETTES_EQUILIBREES } from './data/recettes-equilibrees';
+import { genererEquilibrees } from './data/recettes-equilibrees-familles';
 import { RECETTES_CLASSIQUES_ACCESSIBLES } from './data/recettes-classiques-accessibles';
 import { FAMILLES_FRANCAISES, FAMILLES_FRANCAISES_2 } from './data/recettes-francaises-familles';
 
 const APPLIQUER = process.argv.includes('--appliquer');
 const FRANCAISES = process.argv.includes('--francaises');
 const RAPIDES = process.argv.includes('--rapides');
-const CLASSIQUES = FRANCAISES || RAPIDES || process.argv.includes('--classiques');
+const SPORTIVES = process.argv.includes('--sportives');
+const EQUILIBREES = process.argv.includes('--equilibrees');
+/** Remplace les étapes des recettes DÉJÀ insérées (même titre) par les étapes actuelles du lot, détaillées */
+const MAJ_ETAPES = process.argv.includes('--maj-etapes');
+const CLASSIQUES = FRANCAISES || RAPIDES || SPORTIVES || EQUILIBREES || process.argv.includes('--classiques');
 /** Classiques : une protéine différente suffit à distinguer deux plats. */
 const SEUIL_JACCARD = CLASSIQUES ? 0.85 : 0.8;
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -66,7 +77,26 @@ const jaccard = (a: Set<number>, b: Set<number>) => {
   }
   const titres = new Set(existants.map(e => e.titre));
 
-  const recettes = RAPIDES ? [...RECETTES_RAPIDES, ...RECETTES_CLASSIQUES_ACCESSIBLES] : FRANCAISES ? [...RECETTES_FRANCAISES, ...FAMILLES_FRANCAISES, ...FAMILLES_FRANCAISES_2] : CLASSIQUES ? genererClassiques() : genererRecettes();
+  const recettes = EQUILIBREES ? [...RECETTES_EQUILIBREES, ...genererEquilibrees()] : SPORTIVES ? [...RECETTES_FRANCAISES_LISTE, ...genererSportives(Number(process.env.NB_SPORTIVES ?? 760))] : RAPIDES ? [...RECETTES_RAPIDES, ...RECETTES_CLASSIQUES_ACCESSIBLES] : FRANCAISES ? [...RECETTES_FRANCAISES, ...FAMILLES_FRANCAISES, ...FAMILLES_FRANCAISES_2] : CLASSIQUES ? genererClassiques() : genererRecettes();
+  if (MAJ_ETAPES) {
+    // Même fusion des ingrédients répétés que pour l'insertion : la mise en place doit refléter la base
+    const fusionner = (r: (typeof recettes)[number]) => {
+      const f = new Map<string, (typeof r.ingredients)[number]>();
+      for (const l of r.ingredients) {
+        const k = l[0].toLowerCase(), deja = f.get(k);
+        if (deja && deja[2] === l[2]) deja[1] += l[1]; else if (!deja) f.set(k, [...l] as typeof l);
+      }
+      return { ...r, ingredients: [...f.values()] };
+    };
+    const cibles = recettes.filter(r => titres.has(r.titre.toLowerCase()));
+    let ok = 0, ko = 0;
+    for (let i = 0; i < cibles.length; i += 10) {
+      const res = await Promise.all(cibles.slice(i, i + 10).map(r => s.from('meals').update({ instructions: enrichirEtapes(fusionner(r)) }).eq('titre', r.titre).eq('is_public', true)));
+      for (const x of res) x.error ? ko++ : ok++;
+    }
+    console.log(`${ok} recettes mises à jour (${ko} en erreur) sur ${recettes.length} du lot.`);
+    return;
+  }
   const retenues: { r: (typeof recettes)[number]; m: { cal: number; p: number; g: number; l: number }; sig: Set<number> }[] = [];
   const rejets: Record<string, number> = {};
   const rejet = (k: string) => { rejets[k] = (rejets[k] ?? 0) + 1; };
@@ -89,7 +119,7 @@ const jaccard = (a: Set<number>, b: Set<number>) => {
       return { quantite, unite, poidsUnites: i.poids_unites, coefficients: i.calories_pour_100g == null ? null : {
         cal: i.calories_pour_100g, proteines: i.proteines_pour_100g ?? 0, glucides: i.glucides_pour_100g ?? 0, lipides: i.lipides_pour_100g ?? 0 } };
     }), r.portions);
-    if (!res.ok) { rejet(`macros : ${res.raison} (${res.detail})`); if (FRANCAISES || RAPIDES) console.log(`  ✗ ${r.titre} — ${res.detail}`); continue; }
+    if (!res.ok) { rejet(`macros : ${res.raison} (${res.detail})`); if (FRANCAISES || RAPIDES || SPORTIVES || EQUILIBREES) console.log(`  ✗ ${r.titre} — ${res.detail}`); continue; }
     const m = res.macros;
     if (CLASSIQUES) {
       // Classiques : plats rassasiants (≥ 15 g de protéines, 10 g sans viande
@@ -137,7 +167,7 @@ const jaccard = (a: Set<number>, b: Set<number>) => {
       return {
         titre: r.titre, type_repas: r.type, cuisine: r.cuisine, difficulte: r.difficulte,
         temps_preparation: r.prep, temps_cuisson: r.cuisson || null, portions_par_defaut: r.portions,
-        conservation_jours: r.conservation, ustensiles: r.ustensiles, instructions: r.etapes,
+        conservation_jours: r.conservation, ustensiles: r.ustensiles, instructions: enrichirEtapes(r),
         saison: deduireSaison(r.titre, noms),
         calories_par_portion: Math.round(m.cal), proteines: Math.round(m.p * 10) / 10,
         glucides: Math.round(m.g * 10) / 10, lipides: Math.round(m.l * 10) / 10, macros_verifiables: true,

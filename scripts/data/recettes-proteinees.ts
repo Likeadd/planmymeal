@@ -5,7 +5,7 @@
 
 export interface RecetteSaisie {
   titre: string;
-  type: 'entree' | 'plat' | 'dessert';
+  type: 'entree' | 'plat' | 'dessert' | 'petit_dejeuner' | 'snack';
   cuisine: string;
   prep: number;
   cuisson: number;

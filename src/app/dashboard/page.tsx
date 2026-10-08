@@ -67,7 +67,7 @@ function DashboardInner() {
   const {
     days, shoppingSections, loading, regenerating, error, empty,
     semaineDebut, fallbackUtilise, cuisinesDiversifiees, recup, regenerate, regenerateMeal, regeneratingSlots, toggleShoppingItem, uncheckAllShoppingItems,
-    swapMeal, setRepasLibre, viderCreneau, moveMeal, markMealStatus, fetchSwapSuggestions, toggleRestes, restesToggling,
+    swapMeal, setRepasLibre, viderCreneau, moveMeal, markMealStatus, toggleRestes, restesToggling,
     weekOffset, estSemaineCourante, goToWeek, goToCurrentWeek,
     fromCache, estEnLigne,
   } = useWeeklyPlan(initialOffset);
@@ -469,7 +469,7 @@ function DashboardInner() {
         <SwapModal
           dayIndex={swapModal.dayIndex}
           repas={swapModal.repas}
-          fetchSuggestions={fetchSwapSuggestions}
+          dejaDansLaSemaine={new Set(days.flatMap(d => [d.dejeuner?.id, d.diner?.id, d.dessert?.id, d.dessertMidi?.id]).filter((id): id is number => id != null))}
           swapping={swapping}
           onSelect={handleConfirmSwap}
           onCustom={handleCustomMeal}

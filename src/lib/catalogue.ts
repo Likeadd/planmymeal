@@ -36,6 +36,20 @@ export const SELECT_CATALOGUE = `
   meal_ingredients(quantite, unite, est_optionnel, ingredients(id, nom, rayon, prix_unitaire, unite_prix, poids_unites))
 `;
 
+/**
+ * Version LÉGÈRE pour le chargement complet du catalogue : les lignes de recette
+ * ne portent que l'identifiant de l'ingrédient ; les détails (nom, rayon, prix,
+ * poids) sont chargés UNE fois (≈ 400 lignes) puis rattachés en mémoire. Le
+ * SELECT complet répétait l'objet ingrédient sur chaque ligne (≈ 60 000 lignes
+ * pour 7 500 recettes) : 13 Mo de JSON, ≈ 3 Mo ainsi. Le résultat est identique.
+ */
+const SELECT_CATALOGUE_LEGER = `
+  id, titre, type_repas, cuisine, saison, ustensiles, difficulte,
+  temps_preparation, temps_cuisson, calories_par_portion, proteines,
+  conservation_jours, portions_par_defaut,
+  meal_ingredients(ingredient_id, quantite, unite, est_optionnel)
+`;
+
 /** Plafond d'une réponse PostgREST — au-delà, il faut paginer explicitement. */
 export const PAGE = 1000;
 
@@ -48,6 +62,16 @@ export const PAGE = 1000;
 const PAGE_CATALOGUE = 500;
 /** Pages demandées en même temps (au-delà, la base sature). */
 const PARALLELE = 4;
+
+/** Détail des ingrédients (nom, rayon, prix, poids), indexé par id — une seule requête (≈ 400 lignes). */
+export async function chargerIngredientsParId(supabase: SupabaseClient<Database>) {
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('id, nom, rayon, prix_unitaire, unite_prix, poids_unites')
+    .range(0, PAGE - 1);
+  if (error) throw new Error(error.message);
+  return new Map((data ?? []).map(i => [i.id, i]));
+}
 
 /**
  * Charge TOUT le catalogue public.
@@ -62,15 +86,29 @@ const PARALLELE = 4;
 export async function chargerCatalogue(
   supabase: SupabaseClient<Database>
 ): Promise<MealCatalogueEmbed[]> {
+  // Détail des ingrédients : chargé une seule fois, en parallèle du compte
+  const ingredientsParId = chargerIngredientsParId(supabase);
+
   const page = async (n: number): Promise<MealCatalogueEmbed[]> => {
     for (let essai = 0; ; essai++) {
       const { data, error } = await supabase
         .from('meals')
-        .select(SELECT_CATALOGUE)
+        .select(SELECT_CATALOGUE_LEGER)
         .eq('is_public', true)
         .order('id')
         .range(n * PAGE_CATALOGUE, (n + 1) * PAGE_CATALOGUE - 1);
-      if (!error) return (data ?? []) as unknown as MealCatalogueEmbed[];
+      if (!error) {
+        const ingredients = await ingredientsParId;
+        // Rattache le détail de chaque ingrédient : même forme que l'ancien embed
+        return ((data ?? []) as unknown as { meal_ingredients: { ingredient_id: number; quantite: number; unite: string; est_optionnel: boolean | null }[] | null }[])
+          .map(m => ({
+            ...m,
+            meal_ingredients: (m.meal_ingredients ?? []).map(l => ({
+              quantite: l.quantite, unite: l.unite, est_optionnel: l.est_optionnel,
+              ingredients: ingredients.get(l.ingredient_id) ?? null,
+            })),
+          })) as unknown as MealCatalogueEmbed[];
+      }
       if (essai >= 1) throw new Error(error.message);
     }
   };

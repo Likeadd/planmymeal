@@ -7,6 +7,7 @@ import type { Database } from '@/../supabase/database.types';
 import type { RecetteMoteur, Profile, DayPlan, RepasSlot } from '@/types';
 import { EQUIPEMENTS, type MealPreference, type Regime } from '@/types';
 import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses, budgetEffectif } from '@/lib/budget';
+import { chargerIngredientsParId } from '@/lib/catalogue';
 import { facteurDiversite, diversifierSemaine, penaliteDiversite, platsDeLaSemaine, rythmeBudget, RYTHME_STANDARD, type Rythme } from '@/lib/diversite';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/courses-budget';
 import {
@@ -828,30 +829,55 @@ function convertirPool(rows: RecetteMoteurEmbed[]) {
 let poolCache: { at: number; rows: RecetteMoteurEmbed[] } | null = null;
 let poolEnCours: Promise<RecetteMoteurEmbed[]> | null = null;
 
+/**
+ * Colonnes du moteur SANS le détail des ingrédients embarqué : l'objet
+ * ingrédient était répété sur chaque ligne de recette (≈ 55 000 lignes pour
+ * 7 000 recettes) ; il est maintenant chargé une fois et rattaché en mémoire.
+ */
+// (calculé à l'appel, pas au chargement du module : imports circulaires)
+const colonnesPoolLeger = () => COLONNES_RECETTE_MOTEUR.replace(
+  /meal_ingredients\([^)]*ingredients\([^)]*\)\)/,
+  'meal_ingredients(ingredient_id, quantite, unite, est_optionnel)',
+);
+
 async function chargerPoolDepuisBase(supabase: Db): Promise<RecetteMoteurEmbed[]> {
-  const TAILLE_PAGE = 1000;
+  // Pages de 500 recettes, 4 à la fois : au-delà, la base dépasse son délai maximal
+  const TAILLE_PAGE = 500;
+  const PARALLELE = 4;
+  const ingredientsParId = chargerIngredientsParId(supabase);
   const requete = () => supabase
-    .from('meals').select(COLONNES_RECETTE_MOTEUR)
+    .from('meals').select(colonnesPoolLeger())
     .eq('is_public', true)
     .in('type_repas', ['plat', 'dessert']);
 
-  // Compte d'abord, puis toutes les pages EN PARALLÈLE (un aller-retour au
-  // lieu d'un par page).
   const { count, error: erreurCompte } = await supabase
     .from('meals').select('id', { count: 'exact', head: true })
     .eq('is_public', true)
     .in('type_repas', ['plat', 'dessert']);
   if (erreurCompte || count == null) throw new Error('Erreur chargement repas');
 
-  const lots = await Promise.all(
-    Array.from({ length: Math.max(1, Math.ceil(count / TAILLE_PAGE)) }, (_, page) =>
-      requete().order('id').range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1)
-    )
-  );
+  const nbPages = Math.max(1, Math.ceil(count / TAILLE_PAGE));
   const lignes: RecetteMoteurEmbed[] = [];
-  for (const { data, error } of lots) {
-    if (error) throw new Error('Erreur chargement repas');
-    lignes.push(...((data ?? []) as unknown as RecetteMoteurEmbed[]));
+  const ingredients = await ingredientsParId;
+  for (let debut = 0; debut < nbPages; debut += PARALLELE) {
+    const lots = await Promise.all(
+      Array.from({ length: Math.min(PARALLELE, nbPages - debut) }, async (_, i) => {
+        const page = debut + i;
+        for (let essai = 0; ; essai++) {
+          const res = await requete().order('id').range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1);
+          if (!res.error) return res.data;
+          if (essai >= 1) throw new Error('Erreur chargement repas');
+        }
+      })
+    );
+    for (const data of lots) {
+      for (const m of (data ?? []) as unknown as (Omit<RecetteMoteurEmbed, 'meal_ingredients'> & { meal_ingredients: { ingredient_id: number; quantite: number; unite: string; est_optionnel: boolean | null }[] | null })[]) {
+        lignes.push({
+          ...m,
+          meal_ingredients: (m.meal_ingredients ?? []).map(l => ({ ...l, ingredients: ingredients.get(l.ingredient_id) ?? null })),
+        } as unknown as RecetteMoteurEmbed);
+      }
+    }
   }
   return lignes;
 }

@@ -7,6 +7,7 @@ import type { Database } from '@/../supabase/database.types';
 import type { RecetteMoteur, Profile, DayPlan, RepasSlot } from '@/types';
 import { EQUIPEMENTS, type MealPreference, type Regime } from '@/types';
 import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses, budgetEffectif } from '@/lib/budget';
+import { facteurDiversite, diversifierSemaine, penaliteDiversite, platsDeLaSemaine, rythmeBudget, RYTHME_STANDARD, type Rythme } from '@/lib/diversite';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/courses-budget';
 import {
   isDessert, pickPourSlot, optimiserRecoupement, eligiblePourSlot, SCORE_MIN_PLAT,
@@ -407,6 +408,16 @@ export async function generateWeeklyPlan(
     });
   }
 
+  // ⭐ Variété : poisson, bœuf, œufs, volaille… et pas 4 plats de pâtes ou de wraps
+  // dans la semaine. Après les restes (seuls les plats cuisinés comptent). Le
+  // batch cooking répète ses recettes par construction : laissé tel quel.
+  const profilBudget = profileRow as { budget_hebdo?: number | null; nb_personnes?: number | null; budget_strict?: boolean | null } | null;
+  const nbPersonnes = profilBudget?.nb_personnes || 2;
+  const b = budgetEffectif(profilBudget?.budget_hebdo, nbPersonnes, profilBudget?.budget_strict);
+  // Rythme simple / élaboré selon l'aisance du budget (serré → surtout simple)
+  const rythmeSemaine = rythmeBudget(b.montant, nbPersonnes);
+  if (!profile?.batch_cooking) days = diversifierSemaine(days, plats.slice(0, 400), slots, 10, rythmeSemaine);
+
   // ⭐ Desserts — le RYTHME choisi par le foyer pilote les attributions
   // (jamais le même dessert deux fois dans la semaine ; pool vide → semaine
   // sans). 'aucun' → semaine sans dessert (équivalent de l'ancien
@@ -442,12 +453,7 @@ export async function generateWeeklyPlan(
   // que pencher vers les recettes économiques, il ne garantit rien. Le tirage
   // pondéré pouvait donc composer une semaine à 111 € pour un budget de 50 €.
   // Sans budget défini : budget par défaut selon la taille du foyer (voir budgetEffectif).
-  {
-    const p = profileRow as { budget_hebdo?: number | null; nb_personnes?: number | null; budget_strict?: boolean | null } | null;
-    const nbPersonnes = p?.nb_personnes || 2;
-    const b = budgetEffectif(p?.budget_hebdo, nbPersonnes, p?.budget_strict);
-    days = respecterBudget(days, plats, b.montant, nbPersonnes, slots, b.strict);
-  }
+  days = respecterBudget(days, plats, b.montant, nbPersonnes, slots, b.strict, rythmeSemaine);
 
   return { days, fallbackUtilise, cuisinesDiversifiees };
 }
@@ -506,12 +512,17 @@ export function respecterBudget(
   nbPersonnes: number,
   slots: (jourIndex: number, repasType: RepasSlot) => SlotContexte,
   strict = true,
+  rythme: Rythme = RYTHME_STANDARD,
 ): DayPlan[] {
   const cible = budgetHebdo * (strict ? CIBLE_STRICT : CIBLE_SOUPLE);
   const pp = (m: unknown) => prixParPortion(m as RecetteMoteur) ?? 0;
   const cout = (d: DayPlan[]) => coutSemaine(d, nbPersonnes);
   let semaine = days.map(d => ({ ...d }));
   let courant = cout(semaine);
+  // La variété (protéines, féculents) n'est jamais dégradée par un remplacement de budget
+  let penCourante = penaliteDiversite(platsDeLaSemaine(semaine), rythme);
+  // Le budget prime sur la variété : le garde-fou est levé quand il bloque toute baisse du coût
+  let garde = true;
 
   const remplacer = (d: DayPlan[], idCher: number, creneaux: { jour: number; type: 'dejeuner' | 'diner' }[], c: Candidate): DayPlan[] =>
     d.map((j, i) => {
@@ -553,6 +564,7 @@ export function respecterBudget(
         const essai = remplacer(semaine, idCher, groupe.creneaux, c);
         const coutEssai = cout(essai);
         if (coutEssai >= courant - 0.01) continue;
+        if (garde && penaliteDiversite(platsDeLaSemaine(essai), rythme) > penCourante) continue;
         // Atteint la cible : le mieux noté gagne. Sinon : la plus forte baisse.
         const atteint = coutEssai <= cible;
         const meilleurAtteint = meilleur != null && meilleur.cout <= cible;
@@ -562,7 +574,8 @@ export function respecterBudget(
         if (mieux) meilleur = { semaine: essai, cout: coutEssai, score: c.score };
       }
     }
-    if (meilleur) { semaine = meilleur.semaine; courant = meilleur.cout; continue; }
+    if (meilleur) { semaine = meilleur.semaine; courant = meilleur.cout; penCourante = penaliteDiversite(platsDeLaSemaine(semaine), rythme); garde = true; continue; }
+    if (garde) { garde = false; continue; }
 
     // Plus aucun plat ne peut baisser : on retire le dessert le plus cher
     let pire: { i: number; cle: 'dessert' | 'dessertMidi'; p: number } | null = null;
@@ -1356,10 +1369,12 @@ function buildStandardWeek(
 
   const used = new Set<number>();
   for (let i = 0; i < JOURS_NOMS.length; i++) {
-    const dejeuner = pickPourSlot(topPool, used, slots(i, 'dejeuner'), rng);
+    // Variété : le facteur décourage la protéine / le féculent déjà bien servis cette semaine
+    const choisis = () => days.flatMap(d => [d.dejeuner, d.diner]).filter((m): m is NonNullable<typeof m> => m != null) as unknown as RecetteMoteur[];
+    const dejeuner = pickPourSlot(topPool, used, slots(i, 'dejeuner'), rng, c => facteurDiversite(c.meal, choisis()));
     if (dejeuner) { used.add(dejeuner.meal.id); days[i].dejeuner = dejeuner.meal; }
 
-    const diner = pickPourSlot(topPool, used, slots(i, 'diner'), rng);
+    const diner = pickPourSlot(topPool, used, slots(i, 'diner'), rng, c => facteurDiversite(c.meal, choisis()));
     if (diner) { used.add(diner.meal.id); days[i].diner = diner.meal; }
   }
   optimiserRecoupement(days, topPool, slots);

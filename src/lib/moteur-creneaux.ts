@@ -104,14 +104,16 @@ export function pickPourSlot(
   pool: Candidate[],
   usedMealIds: Set<number>,
   slot: SlotContexte,
-  rng: Rng = Math.random
+  rng: Rng = Math.random,
+  /** Facteur multiplicatif propre à l'appelant (variété de la semaine) */
+  ajuste?: (c: Candidate) => number,
 ): Candidate | null {
   const disponible = pool.filter(c => !usedMealIds.has(c.meal.id));
   const eligibles = disponible.filter(c => eligiblePourSlot(c, slot));
   const tirage = eligibles.length > 0 ? eligibles : disponible;
   if (tirage.length === 0) return null;
 
-  const scores = tirage.map(c => Math.max(scorePourSlot(c, slot), SCORE_MIN_PLAT));
+  const scores = tirage.map(c => Math.max(scorePourSlot(c, slot) * (ajuste ? ajuste(c) : 1), SCORE_MIN_PLAT));
   const total = scores.reduce((s, v) => s + v, 0);
   let r = rng() * total;
   for (let i = 0; i < tirage.length; i++) {

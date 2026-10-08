@@ -1,0 +1,92 @@
+// ============================================================================
+// Classiques ACCESSIBLES : un peu plus élaborés que les recettes rapides (30 à
+// 60 min) mais au budget maîtrisé — steak-frites, wraps, chili, moussaka,
+// hachis parmentier… Rédigées à la main ; noms d'ingrédients = table
+// `ingredients`. Insérées par scripts/ajouter-recettes-generees.ts --rapides.
+// ============================================================================
+
+import type { RecetteSaisie } from './recettes-proteinees';
+
+type L = [string, number, string, boolean?];
+
+const c = (
+  titre: string, cuisine: string, prep: number, cuisson: number, ingredients: L[], etapes: string[],
+  ustensiles: string[] = ['Poêle'],
+): RecetteSaisie => ({ titre, type: 'plat', cuisine, prep, cuisson, difficulte: 'facile', portions: 2, conservation: 3, ustensiles, ingredients, etapes });
+
+const HUILE = 'Huile d’olive';
+
+export const RECETTES_CLASSIQUES_ACCESSIBLES: RecetteSaisie[] = [
+  c('Steak-frites et tomates provençales', 'Française', 10, 25,
+    [['Steak haché', 2, 'pcs'], ['Frites surgelées', 300, 'g'], ['Tomate', 2, 'pcs'], ['Ail', 1, 'pcs'], ['Persil', 0.5, 'botte'], [HUILE, 1, 'cas']],
+    ['Enfournez les frites 20 à 25 min à 220 °C en les retournant à mi-cuisson.',
+      'Coupez les tomates en deux, parsemez-les d’ail et de persil hachés et faites-les cuire 12 min à feu doux à la poêle avec un filet d’huile.',
+      'Poêlez les steaks 3 min de chaque côté, salez et poivrez à la fin.',
+      'Servez le steak avec les frites et les tomates.'], ['Four', 'Poêle']),
+  c('Wraps poulet-avocat', 'Mexicaine', 15, 8,
+    [['Tortillas de blé', 4, 'pcs'], ['Filet de poulet', 250, 'g'], ['Avocat', 1, 'pcs'], ['Tomate', 1, 'pcs'], ['Salade verte', 0.5, 'pcs'], ['Yaourt nature', 1, 'pcs'], ['Citron', 0.5, 'pcs']],
+    ['Coupez le poulet en lanières et faites-le dorer 7 min à la poêle, salez et poivrez.',
+      'Écrasez l’avocat avec le yaourt et le jus de citron.',
+      'Réchauffez les tortillas 20 secondes à la poêle.',
+      'Tartinez de crème d’avocat, garnissez de poulet, de tomate et de salade, puis roulez.']),
+  c('Chili con carne express', 'Tex-Mex', 10, 30,
+    [['Bœuf haché 5 %', 250, 'g'], ['Haricots rouges (bte)', 240, 'g'], ['Tomate', 3, 'pcs'], ['Oignon', 1, 'pcs'], ['Paprika', 1, 'cac'], ['Cumin', 1, 'cac'], ['Riz', 100, 'g']],
+    ['Faites revenir l’oignon puis le bœuf haché 5 min en l’émiettant.',
+      'Ajoutez les tomates en dés, le paprika, le cumin, du sel, et laissez mijoter 10 min.',
+      'Incorporez les haricots rouges égouttés et poursuivez 12 min à feu doux.',
+      'Servez avec le riz cuit à l’eau bouillante salée.'], ['Sauteuse']),
+  c('Moussaka express au bœuf haché', 'Grecque', 15, 40,
+    [['Aubergine', 2, 'pcs'], ['Bœuf haché 5 %', 250, 'g'], ['Tomate', 3, 'pcs'], ['Oignon', 1, 'pcs'], ['Yaourt grec', 2, 'pcs'], ['Œuf', 1, 'pcs'], ['Emmental', 40, 'g']],
+    ['Coupez les aubergines en tranches, faites-les dorer 8 min à la poêle ou au four à 200 °C.',
+      'Faites revenir l’oignon et le bœuf haché 5 min, ajoutez les tomates et laissez réduire 10 min.',
+      'Mélangez le yaourt, l’œuf et l’emmental râpé pour la couverture.',
+      'Superposez aubergines et viande dans un plat, nappez de couverture et enfournez 20 min à 200 °C.'], ['Four', 'Poêle']),
+  c('Hachis parmentier express', 'Française', 15, 35,
+    [['Bœuf haché 5 %', 300, 'g'], ['Pomme de terre', 500, 'g'], ['Oignon', 1, 'pcs'], ['Carotte', 1, 'pcs'], ['Lait', 100, 'ml'], ['Beurre', 20, 'g'], ['Emmental', 30, 'g']],
+    ['Cuisez les pommes de terre en cubes 15 min à l’eau salée puis écrasez-les avec le lait et le beurre.',
+      'Faites revenir l’oignon et la carotte râpée 4 min, ajoutez le bœuf haché et cuisez 6 min.',
+      'Étalez la viande dans un plat, couvrez de purée et d’emmental râpé.',
+      'Passez 15 min au four à 200 °C jusqu’à ce que le dessus soit doré.'], ['Four', 'Casserole']),
+  c('Cordon bleu maison, haricots verts et pommes de terre', 'Française', 15, 25,
+    [['Escalope de poulet', 300, 'g'], ['Jambon blanc', 2, 'tranche'], ['Emmental', 50, 'g'], ['Œuf', 1, 'pcs'], ['Pomme de terre', 400, 'g'], ['Haricots verts', 200, 'g']],
+    ['Ouvrez chaque escalope en deux dans l’épaisseur, garnissez de jambon et d’emmental, refermez et maintenez avec un pique.',
+      'Battez l’œuf, passez-y les escalopes puis roulez-les dans de la mie de pain émiettée.',
+      'Dorez 5 min de chaque côté à la poêle, puis finissez 8 min au four à 190 °C.',
+      'Servez avec les pommes de terre cuites à l’eau et les haricots verts.'], ['Four', 'Poêle']),
+  c('Poulet rôti aux herbes et pommes de terre', 'Française', 10, 40,
+    [['Cuisses de poulet', 700, 'g'], ['Pomme de terre', 500, 'g'], ['Ail', 2, 'pcs'], ['Herbes de Provence', 2, 'g'], ['Citron', 1, 'pcs'], [HUILE, 1, 'cas']],
+    ['Préchauffez le four à 200 °C. Disposez les cuisses et les pommes de terre en quartiers dans un plat.',
+      'Ajoutez l’ail écrasé, les herbes de Provence, l’huile, du sel et du poivre, et mélangez.',
+      'Enfournez 40 min en retournant à mi-cuisson.',
+      'Arrosez de jus de citron au moment de servir.'], ['Four']),
+  c('Gratin de pommes de terre, jambon et emmental', 'Française', 15, 40,
+    [['Pomme de terre', 600, 'g'], ['Jambon blanc', 3, 'tranche'], ['Crème fraîche', 4, 'cas'], ['Emmental', 60, 'g'], ['Ail', 1, 'pcs'], ['Lait', 100, 'ml']],
+    ['Épluchez les pommes de terre et coupez-les en fines rondelles.',
+      'Frottez un plat d’ail, alternez couches de pommes de terre, jambon en lanières et emmental.',
+      'Versez le mélange de crème et de lait, salez, poivrez.',
+      'Enfournez 40 min à 190 °C.'], ['Four']),
+  c('Saumon en papillote, riz et haricots verts', 'Française', 10, 20,
+    [['Pavé de saumon', 2, 'pcs'], ['Haricots verts', 200, 'g'], ['Riz', 120, 'g'], ['Citron', 1, 'pcs'], ['Ciboulette', 0.5, 'botte']],
+    ['Posez chaque pavé sur une feuille de papier cuisson avec des rondelles de citron, salez et poivrez, puis fermez en papillote.',
+      'Enfournez 15 min à 200 °C.',
+      'Cuisez le riz et les haricots verts à l’eau bouillante salée.',
+      'Ouvrez les papillotes, parsemez de ciboulette et servez.'], ['Four']),
+  c('Tortilla de pommes de terre aux oignons', 'Espagnole', 10, 25,
+    [['Pomme de terre', 400, 'g'], ['Œuf', 6, 'pcs'], ['Oignon', 1, 'pcs'], [HUILE, 2, 'cas'], ['Salade verte', 1, 'pcs']],
+    ['Coupez les pommes de terre en fines rondelles et l’oignon en lamelles, faites-les cuire à feu doux 15 min dans l’huile, à couvert.',
+      'Battez les œufs avec du sel, mélangez-les aux pommes de terre égouttées.',
+      'Reversez dans la poêle et cuisez 5 min, puis retournez la tortilla à l’aide d’une assiette et cuisez 4 min.',
+      'Servez tiède avec la salade.']),
+  c('Poulet basquaise et riz', 'Française', 10, 35,
+    [['Cuisses de poulet', 700, 'g'], ['Poivron rouge', 2, 'pcs'], ['Tomate', 3, 'pcs'], ['Oignon', 1, 'pcs'], ['Paprika', 1, 'cac'], ['Riz', 120, 'g']],
+    ['Faites dorer les cuisses de poulet 8 min dans une cocotte, puis réservez.',
+      'Faites revenir l’oignon et les poivrons en lanières 5 min, ajoutez les tomates et le paprika.',
+      'Remettez le poulet, couvrez et laissez mijoter 25 min.',
+      'Servez avec le riz cuit à l’eau bouillante salée.'], ['Cocotte']),
+  c('Bœuf haché et pommes de terre gratinés à la tomate', 'Française', 15, 40,
+    [['Bœuf haché 5 %', 250, 'g'], ['Pomme de terre', 500, 'g'], ['Tomate', 3, 'pcs'], ['Oignon', 1, 'pcs'], ['Emmental', 50, 'g'], ['Herbes de Provence', 2, 'g']],
+    ['Cuisez les pommes de terre en rondelles 10 min à l’eau salée.',
+      'Faites revenir l’oignon et le bœuf haché 5 min, ajoutez les tomates et les herbes, laissez réduire 8 min.',
+      'Alternez pommes de terre et viande dans un plat, couvrez d’emmental.',
+      'Gratinez 20 min à 200 °C.'], ['Four', 'Poêle']),
+];

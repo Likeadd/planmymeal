@@ -29,11 +29,19 @@ describe('respecterBudget', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('respecte le temps max du créneau', () => {
+  it('préfère les plats compatibles avec le temps du jour', () => {
+    const days = semaine(() => recette(10));
+    const lents = Array.from({ length: 20 }, () => cand(recette(2, 90), 5));
+    const rapides = Array.from({ length: 20 }, () => cand(recette(3, 20), 1));
+    const res = respecterBudget(days, [...lents, ...rapides], 50, 2, slot(30));
+    expect(coutSemaine(res, 2)).toBeLessThanOrEqual(50);
+    expect(res.every(d => d.diner!.temps_preparation <= 30)).toBe(true);
+  });
+
+  it('sans plat compatible avec le temps du jour, le budget prime', () => {
     const days = semaine(() => recette(10));
     const pool = Array.from({ length: 20 }, () => cand(recette(2, 90)));
-    const res = respecterBudget(days, pool, 50, 2, slot(30));
-    expect(coutSemaine(res, 2)).toBe(140); // aucun plat moins cher compatible : semaine inchangée
+    expect(coutSemaine(respecterBudget(days, pool, 50, 2, slot(30)), 2)).toBeLessThanOrEqual(50);
   });
 
   it('le coût suit la liste de courses : un ingrédient partagé est additionné puis arrondi', () => {

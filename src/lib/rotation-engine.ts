@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/../supabase/database.types';
 import type { RecetteMoteur, Profile, DayPlan, RepasSlot } from '@/types';
 import { EQUIPEMENTS, type MealPreference, type Regime } from '@/types';
-import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses } from '@/lib/budget';
+import { facteurBudget, prixParPortion, prixMoyenPortions, chiffrerListeCourses, budgetEffectif } from '@/lib/budget';
 import { recomputeShoppingList, snapshotBudget } from '@/lib/courses-budget';
 import {
   isDessert, pickPourSlot, optimiserRecoupement, eligiblePourSlot, SCORE_MIN_PLAT,
@@ -441,12 +441,12 @@ export async function generateWeeklyPlan(
   // ⭐ Budget hebdo = contrainte DURE : le facteur de score ci-dessus ne fait
   // que pencher vers les recettes économiques, il ne garantit rien. Le tirage
   // pondéré pouvait donc composer une semaine à 111 € pour un budget de 50 €.
-  const budgetHebdo = (profileRow as { budget_hebdo?: number | null } | null)?.budget_hebdo ?? null;
-  if (budgetHebdo && budgetHebdo > 0) {
-    const nbPersonnes = (profileRow as { nb_personnes?: number | null } | null)?.nb_personnes || 2;
-    // Mode du budget (profil) : strict par défaut ; false = « souple », autour du budget
-    const strict = (profileRow as { budget_strict?: boolean | null } | null)?.budget_strict !== false;
-    days = respecterBudget(days, plats, budgetHebdo, nbPersonnes, slots, strict);
+  // Sans budget défini : budget par défaut selon la taille du foyer (voir budgetEffectif).
+  {
+    const p = profileRow as { budget_hebdo?: number | null; nb_personnes?: number | null; budget_strict?: boolean | null } | null;
+    const nbPersonnes = p?.nb_personnes || 2;
+    const b = budgetEffectif(p?.budget_hebdo, nbPersonnes, p?.budget_strict);
+    days = respecterBudget(days, plats, b.montant, nbPersonnes, slots, b.strict);
   }
 
   return { days, fallbackUtilise, cuisinesDiversifiees };
@@ -510,7 +510,6 @@ export function respecterBudget(
   const cible = budgetHebdo * (strict ? CIBLE_STRICT : CIBLE_SOUPLE);
   const pp = (m: unknown) => prixParPortion(m as RecetteMoteur) ?? 0;
   const cout = (d: DayPlan[]) => coutSemaine(d, nbPersonnes);
-  const figes = new Set<number>();
   let semaine = days.map(d => ({ ...d }));
   let courant = cout(semaine);
 
@@ -522,47 +521,48 @@ export function respecterBudget(
       return n;
     });
 
-  for (let iter = 0; iter < 60 && courant > cible; iter++) {
-    const groupes = new Map<number, { cout: number; creneaux: { jour: number; type: 'dejeuner' | 'diner' }[] }>();
+  for (let iter = 0; iter < 80 && courant > cible; iter++) {
+    // Plats principaux achetés (le déjeuner « reste » ne coûte rien), regroupés
+    // par recette : toutes les occurrences sont remplacées ensemble.
+    const groupes = new Map<number, { creneaux: { jour: number; type: 'dejeuner' | 'diner' }[] }>();
     semaine.forEach((d, i) => {
       for (const type of ['dejeuner', 'diner'] as const) {
         const m = d[type];
-        if (!m || (type === 'dejeuner' && d.restesDe) || figes.has(m.id)) continue;
-        const g = groupes.get(m.id) ?? { cout: 0, creneaux: [] };
-        g.cout += pp(m);
+        if (!m || (type === 'dejeuner' && d.restesDe)) continue;
+        const g = groupes.get(m.id) ?? { creneaux: [] };
         g.creneaux.push({ jour: i, type });
         groupes.set(m.id, g);
       }
     });
-    const chers = [...groupes.entries()].sort((a, b) => b[1].cout - a[1].cout).slice(0, 4);
 
-    if (chers.length > 0) {
-      const utilises = new Set(semaine.flatMap(d => [d.dejeuner?.id, d.diner?.id]).filter((id): id is number => id != null));
-      let meilleur: { id: number; semaine: DayPlan[]; cout: number; score: number } | null = null;
-      for (const [idCher, groupe] of chers) {
-        const actuel = pp(semaine[groupe.creneaux[0].jour][groupe.creneaux[0].type]);
-        const candidats = plats
-          .filter(c => !utilises.has(c.meal.id))
-          .filter(c => { const p = prixParPortion(c.meal); return p != null && p > 0 && p < actuel; })
-          .filter(c => groupe.creneaux.every(cr => eligiblePourSlot(c, slots(semaine[cr.jour].jourIndex, cr.type))))
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 40);
-        for (const c of candidats) {
-          const essai = remplacer(semaine, idCher, groupe.creneaux, c);
-          const coutEssai = cout(essai);
-          if (coutEssai >= courant - 0.01) continue;
-          // Sous la cible : le mieux noté gagne ; sinon : le moins cher
-          const meilleurSousCible = meilleur != null && meilleur.cout <= cible;
-          const ok = coutEssai <= cible
-            ? (!meilleurSousCible || c.score > meilleur!.score)
-            : (!meilleurSousCible && (meilleur == null || coutEssai < meilleur.cout));
-          if (ok) meilleur = { id: idCher, semaine: essai, cout: coutEssai, score: c.score };
-        }
+    // Tous les remplacements possibles qui font baisser le coût réel de la liste
+    const utilises = new Set(semaine.flatMap(d => [d.dejeuner?.id, d.diner?.id]).filter((id): id is number => id != null));
+    let meilleur: { semaine: DayPlan[]; cout: number; score: number } | null = null;
+    for (const [idCher, groupe] of groupes) {
+      const actuel = pp(semaine[groupe.creneaux[0].jour][groupe.creneaux[0].type]);
+      const moinsChers = plats
+        .filter(c => !utilises.has(c.meal.id))
+        .filter(c => { const p = prixParPortion(c.meal); return p != null && p > 0 && p < actuel; });
+      // Temps du jour : contrainte respectée quand c'est possible, comme au tirage
+      // (pickPourSlot) — sinon un temps irréaliste bloquait toute baisse du coût.
+      const eligibles = moinsChers.filter(c => groupe.creneaux.every(cr => eligiblePourSlot(c, slots(semaine[cr.jour].jourIndex, cr.type))));
+      const candidats = (eligibles.length > 0 ? eligibles : moinsChers)
+        .sort((x, y) => y.score - x.score)
+        .slice(0, 60);
+      for (const c of candidats) {
+        const essai = remplacer(semaine, idCher, groupe.creneaux, c);
+        const coutEssai = cout(essai);
+        if (coutEssai >= courant - 0.01) continue;
+        // Atteint la cible : le mieux noté gagne. Sinon : la plus forte baisse.
+        const atteint = coutEssai <= cible;
+        const meilleurAtteint = meilleur != null && meilleur.cout <= cible;
+        const mieux = meilleur == null
+          || (atteint && (!meilleurAtteint || c.score > meilleur.score))
+          || (!atteint && !meilleurAtteint && coutEssai < meilleur.cout);
+        if (mieux) meilleur = { semaine: essai, cout: coutEssai, score: c.score };
       }
-      if (meilleur) { semaine = meilleur.semaine; courant = meilleur.cout; continue; }
-      chers.forEach(([id]) => figes.add(id));
-      continue;
     }
+    if (meilleur) { semaine = meilleur.semaine; courant = meilleur.cout; continue; }
 
     // Plus aucun plat ne peut baisser : on retire le dessert le plus cher
     let pire: { i: number; cle: 'dessert' | 'dessertMidi'; p: number } | null = null;
@@ -1087,8 +1087,8 @@ export async function buildCandidates(
   // laisse la place aux recettes plus chères (viande, poisson...).
   // L'intention « budget » AMPLIFIE ce facteur existant (×2) plutôt que d'en
   // créer un second : une seule loi par dimension, jamais deux poids rivaux.
-  const budgetHebdo = profile.budget_hebdo ?? null;
-  if (budgetHebdo && budgetHebdo > 0) {
+  const budgetHebdo = budgetEffectif(profile.budget_hebdo, profile.nb_personnes, null).montant;
+  {
     const prixMoyen = prixMoyenPortions(candidats);
     if (prixMoyen > 0) {
       // Le budget par repas était calculé sur les 14 déjeuners/dîners
@@ -1110,18 +1110,6 @@ export async function buildCandidates(
           facteurBudget(pp, budgetHebdo, profile.nb_personnes || 2, prixMoyen, nbRepasReel),
           poidsIntention.budget
         );
-      }
-    }
-  } else if (poidsIntention.budget !== 1.0) {
-    // Intention « budget » SANS budget défini : on ne peut pas pénaliser les
-    // recettes chères sans référence de prix hebdo (aucune donnée inventée) —
-    // mais on peut récompenser les recettes objectivement économiques :
-    // moins cher que la moitié du prix moyen du catalogue → bonus doux.
-    const prixMoyen = prixMoyenPortions(candidats);
-    if (prixMoyen > 0) {
-      for (const c of candidats) {
-        const pp = prixParPortion(c.meal);
-        if (pp != null && pp <= prixMoyen / 2) c.score *= 1.25;
       }
     }
   }
@@ -1188,7 +1176,11 @@ export async function regeneratePlanSlots(
     .select('jour_semaine, repas_type, meal_id').eq('plan_id', plan.id);
 
   // 2. Candidats scorés (mêmes règles que la génération complète)
-  const { candidats } = await buildCandidates(userId, supabase, intention);
+  const [{ candidats }, { data: profilBudget }] = await Promise.all([
+    buildCandidates(userId, supabase, intention),
+    supabase.from('profiles').select('budget_hebdo').eq('id', userId).maybeSingle(),
+  ]);
+  const budgetActif = (profilBudget?.budget_hebdo ?? 0) > 0;
   if (candidats.length === 0) throw new UserError('Aucun plat disponible pour régénérer');
 
   const poolSize = Math.max(28, Math.floor(candidats.length * 0.3));
@@ -1213,9 +1205,15 @@ export async function regeneratePlanSlots(
     const current = (currentPlanMeals || []).find(
       pm => pm.jour_semaine === slot.jour_semaine && pm.repas_type === slot.repas_type
     );
-    const poolDuSlot = slot.repas_type === 'dessert' ? dessertPool
+    const poolBase = slot.repas_type === 'dessert' ? dessertPool
       : slot.repas_type === 'dessert_midi' ? (dessertMidiPool.length > 0 ? dessertMidiPool : dessertPool)
       : platPool;
+    // Budget défini : le remplaçant ne coûte pas plus cher que le plat remplacé
+    // (sinon un simple « Changer » pouvait faire dépasser le budget de la semaine).
+    const ancien = current?.meal_id != null ? candidats.find(c => c.meal.id === current.meal_id) : undefined;
+    const prixAncien = budgetActif && ancien ? prixParPortion(ancien.meal) : null;
+    const moinsCher = prixAncien != null ? poolBase.filter(c => (prixParPortion(c.meal) ?? Infinity) <= prixAncien) : [];
+    const poolDuSlot = moinsCher.length > 0 ? moinsCher : poolBase;
     const next = pickWeightedFromPool(poolDuSlot, usedMealIds, rng);
     if (!next) break; // pool épuisé
     usedMealIds.add(next.meal.id); // l'ancien plat reste exclu (il vient d'être refusé)

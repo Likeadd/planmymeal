@@ -312,6 +312,33 @@ export function calculerEconomieReference(
   };
 }
 
+// ─── Budget effectif (défini par l'utilisateur, sinon budget par défaut) ────
+
+/**
+ * Budget courses par personne et par semaine retenu quand l'utilisateur n'en
+ * a défini aucun : ~2,9 € par repas (14 repas), dans la fourchette d'un foyer
+ * français qui cuisine maison. Le moteur compose ainsi une semaine raisonnable
+ * même sans aucun réglage, au lieu d'ignorer le coût.
+ */
+export const BUDGET_DEFAUT_PAR_PERSONNE = 40;
+
+export interface BudgetEffectif {
+  montant: number;
+  /** true = ne pas dépasser ; false = « autour » du budget (toujours le cas du budget par défaut) */
+  strict: boolean;
+  /** true = budget par défaut (rien n'a été réglé) */
+  implicite: boolean;
+}
+
+export function budgetEffectif(
+  budget: number | null | undefined,
+  nbPersonnes: number | null | undefined,
+  strict: boolean | null | undefined,
+): BudgetEffectif {
+  if (budget != null && budget > 0) return { montant: budget, strict: strict !== false, implicite: false };
+  return { montant: Math.round(BUDGET_DEFAUT_PAR_PERSONNE * Math.max(1, nbPersonnes || 2)), strict: false, implicite: true };
+}
+
 // ─── Facteur budget pour le moteur de rotation ─────────────────────────────
 
 /**

@@ -49,7 +49,10 @@ export function parseTempsMaxParJour(raw: unknown): (number | null)[] {
   const arr = Array.isArray(raw) ? raw : [];
   return Array.from({ length: NB_JOURS }, (_, i) => {
     const v = arr[i];
-    return typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v) : null;
+    if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return null;
+    // Le champ est en minutes ; une valeur < 5 est une saisie en heures (« 1 », « 3 ») :
+    // la lire en minutes excluait toutes les recettes de la journée.
+    return Math.min(240, Math.round(v < 5 ? v * 60 : v));
   });
 }
 

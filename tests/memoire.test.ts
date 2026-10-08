@@ -135,6 +135,11 @@ describe('normalisation de la mémoire', () => {
       .toEqual([null, 20, null, null, 45, null, 120]);
   });
 
+  it('parseTempsMaxParJour lit une saisie en heures (< 5) comme des heures, plafonnée à 4 h', () => {
+    expect(parseTempsMaxParJour([1, 1, 1, 1, 1, 3, 3])).toEqual([60, 60, 60, 60, 60, 180, 180]);
+    expect(parseTempsMaxParJour([300])[0]).toBe(240);
+  });
+
   it('parseTempsMaxParJour tolère une entrée absente ou non-tableau', () => {
     expect(parseTempsMaxParJour(null)).toEqual(Array(7).fill(null));
     expect(parseTempsMaxParJour({})).toEqual(Array(7).fill(null));

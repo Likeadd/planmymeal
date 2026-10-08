@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { snapshotBudget, calculerDepenseSemaine } from '@/lib/rotation-engine';
-import { calculerEconomieReference } from '@/lib/budget';
+import { calculerEconomieReference, budgetEffectif } from '@/lib/budget';
 import { semaineOuLundi } from '@/lib/dates';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       budget: profile?.budget_hebdo ?? null,
       budget_strict: modeRow?.budget_strict !== false,
+      // Budget visé par le moteur quand l'utilisateur n'en a pas défini (null si un budget est réglé)
+      budget_defaut: profile?.budget_hebdo ? null : budgetEffectif(null, profile?.nb_personnes, null).montant,
       nb_personnes: profile?.nb_personnes ?? 2,
       prix_max_portion: profile?.prix_max_portion ?? null,
       depense,

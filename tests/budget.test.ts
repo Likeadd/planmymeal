@@ -10,6 +10,7 @@ import {
   prixMoyenPortions,
   calculerEconomies,
   calculerEconomieReference,
+  budgetEffectif,
 } from '@/lib/budget';
 import type { Ingredient, Meal } from '@/types';
 
@@ -253,5 +254,18 @@ describe('formatPrix', () => {
   it('tiret si null', () => {
     expect(formatPrix(null)).toBe('—');
     expect(formatPrix(undefined)).toBe('—');
+  });
+});
+
+describe('budgetEffectif', () => {
+  it('garde le budget fixé par l utilisateur et son mode', () => {
+    expect(budgetEffectif(50, 2, true)).toEqual({ montant: 50, strict: true, implicite: false });
+    expect(budgetEffectif(50, 2, false).strict).toBe(false);
+  });
+
+  it('sans budget : budget par défaut selon le foyer, toujours souple', () => {
+    expect(budgetEffectif(null, 2, true)).toEqual({ montant: 80, strict: false, implicite: true });
+    expect(budgetEffectif(0, 4, null).montant).toBe(160);
+    expect(budgetEffectif(undefined, undefined, null).montant).toBe(80);
   });
 });

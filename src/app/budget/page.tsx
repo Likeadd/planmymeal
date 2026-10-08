@@ -23,6 +23,8 @@ interface BudgetData {
   prix_max_portion: number | null;
   /** true = la semaine ne dépasse pas le budget ; false = autour du budget */
   budget_strict: boolean;
+  /** Budget visé par défaut tant qu'aucun budget n'est fixé */
+  budget_defaut: number | null;
   depense: number;
   economie: number;
   /** Base de dépense DÉCLARÉE par l'utilisateur (null = non saisie → widget masqué) */
@@ -343,7 +345,9 @@ export default function BudgetPage() {
               <p className="text-sm text-gray-500 mt-1">
                 {budget != null
                   ? `Soit environ ${formatPrix(budget / (data?.nb_personnes || 2))} par personne`
-                  : 'Aucun budget défini — cliquez pour le fixer'}
+                  : data?.budget_defaut != null
+                    ? `Aucun budget fixé : vos menus visent environ ${formatPrix(data.budget_defaut)} par semaine. Cliquez pour fixer le vôtre.`
+                    : 'Aucun budget défini — cliquez pour le fixer'}
               </p>
               {budget != null && (
                 <div className="mt-4">

@@ -226,11 +226,11 @@ function MobileTopbar() {
 function BottomNav() {
   const pathname = usePathname();
   const items: Array<{ href: string; label: string; icon: typeof CalendarDays; match: string[] }> = [
-    { href: '/aujourdhui', label: "Auj.", icon: Home, match: ['/aujourdhui'] },
+    { href: '/aujourdhui', label: "Aujourd'hui", icon: Home, match: ['/aujourdhui'] },
     { href: '/dashboard', label: 'Planning', icon: CalendarDays, match: ['/dashboard'] },
     { href: '/frigo', label: 'Frigo', icon: Refrigerator, match: ['/frigo'] },
     { href: '/recettes', label: 'Recettes', icon: BookOpen, match: ['/recettes'] },
-    { href: '/compte', label: 'Compte', icon: Settings, match: ['/compte'] },
+    { href: '/compte', label: 'Mon compte', icon: Settings, match: ['/compte'] },
   ];
 
   return (

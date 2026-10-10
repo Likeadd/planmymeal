@@ -42,7 +42,7 @@ export function CookieBanner() {
   // carte qui masquait ~40 % de l'écran d'un téléphone.
   return (
     <div role="region" aria-label="Information cookies"
-      className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-50 px-3 pointer-events-none">
+      className="fixed inset-x-0 bottom-3 [body:has([data-tour=nav-compte])_&]:bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 lg:[body:has([data-tour=nav-compte])_&]:bottom-4 z-50 px-3 pointer-events-none">
       <div className="pointer-events-auto max-w-xl mx-auto bg-white/95 backdrop-blur border border-gray-200 rounded-full shadow-pop pl-4 pr-1.5 py-1.5 flex items-center gap-3">
         <Cookie className="w-4 h-4 text-brand-500 shrink-0" aria-hidden />
         <p className="text-xs text-gray-600 flex-1 leading-snug">

@@ -54,14 +54,12 @@ const SELECT_CATALOGUE_LEGER = `
 export const PAGE = 1000;
 
 /**
- * Pages du catalogue : 500 recettes (≈ 4 500 lignes d'ingrédients embarquées).
- * À 1 000 par page et 6 pages simultanées, certaines requêtes dépassaient le
- * délai maximal du rôle anonyme (statement timeout) une fois le catalogue
- * passé à 5 000 recettes — la page affichait alors 0 recette.
+ * Fenêtre d'identifiants par requête (≈ 500 recettes, ≈ 4 500 lignes d'ingrédients embarquées).
+ * Des requêtes plus grosses dépassaient le délai maximal du rôle anonyme (statement timeout).
  */
-const PAGE_CATALOGUE = 500;
-/** Pages demandées en même temps (au-delà, la base sature). */
-const PARALLELE = 4;
+const FENETRE_ID = 500;
+/** Fenêtres demandées en même temps (au-delà, la base sature). */
+const PARALLELE = 6;
 
 /** Détail des ingrédients (nom, rayon, prix, poids), indexé par id — une seule requête (≈ 400 lignes). */
 export async function chargerIngredientsParId(supabase: SupabaseClient<Database>) {
@@ -76,12 +74,12 @@ export async function chargerIngredientsParId(supabase: SupabaseClient<Database>
 /**
  * Charge TOUT le catalogue public.
  *
- * 1. Paginer : PostgREST plafonne chaque réponse à 1000 lignes. Tri sur la clé
- *    primaire seule (`id`) : ordre total, et l'offset suit l'index — trier par
- *    titre obligeait la base à trier tout le catalogue pour chaque page.
- * 2. Paralléliser par vagues : un compte exact d'abord (requête « head »),
- *    puis les pages partent par groupes de PARALLELE.
- * 3. Une page en échec (délai dépassé, réseau) est retentée une fois.
+ * 1. Paginer : PostgREST plafonne chaque réponse à 1000 lignes. On découpe par FENÊTRES
+ *    D'IDENTIFIANTS (`id >= x and id < y`, index de la clé primaire) : coût constant par
+ *    requête, contrairement à un offset qui relit toutes les lignes précédentes.
+ * 2. Paralléliser : un pool de PARALLELE requêtes, chacune reprend la fenêtre suivante
+ *    dès qu'elle termine (pas d'attente du plus lent d'une vague).
+ * 3. Une fenêtre en échec (délai dépassé, réseau) est retentée une fois.
  */
 export async function chargerCatalogue(
   supabase: SupabaseClient<Database>
@@ -89,14 +87,17 @@ export async function chargerCatalogue(
   // Détail des ingrédients : chargé une seule fois, en parallèle du compte
   const ingredientsParId = chargerIngredientsParId(supabase);
 
-  const page = async (n: number): Promise<MealCatalogueEmbed[]> => {
+  // Fenêtres sur l'identifiant (index) plutôt que offset : pas de balayage des lignes déjà lues,
+  // donc des pages de coût constant, qui partent toutes en parallèle (pool de PARALLELE).
+  const fenetre = async (debut: number, fin: number): Promise<MealCatalogueEmbed[]> => {
     for (let essai = 0; ; essai++) {
       const { data, error } = await supabase
         .from('meals')
         .select(SELECT_CATALOGUE_LEGER)
         .eq('is_public', true)
-        .order('id')
-        .range(n * PAGE_CATALOGUE, (n + 1) * PAGE_CATALOGUE - 1);
+        .gte('id', debut)
+        .lt('id', fin)
+        .order('id');
       if (!error) {
         const ingredients = await ingredientsParId;
         // Rattache le détail de chaque ingrédient : même forme que l'ancien embed
@@ -113,30 +114,22 @@ export async function chargerCatalogue(
     }
   };
 
-  const { count, error: erreurCompte } = await supabase
-    .from('meals')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_public', true);
-  if (!erreurCompte && count && count > 0) {
-    const nbPages = Math.ceil(count / PAGE_CATALOGUE);
-    const lignes: MealCatalogueEmbed[] = [];
-    for (let debut = 0; debut < nbPages; debut += PARALLELE) {
-      const lots = await Promise.all(
-        Array.from({ length: Math.min(PARALLELE, nbPages - debut) }, (_, i) => page(debut + i))
-      );
-      for (const lot of lots) lignes.push(...lot);
-    }
-    return lignes;
-  }
+  const { data: dernier, error: erreurMax } = await supabase
+    .from('meals').select('id').eq('is_public', true).order('id', { ascending: false }).limit(1);
+  if (erreurMax) throw new Error(erreurMax.message);
+  const idMax = dernier?.[0]?.id ?? 0;
 
-  // Repli séquentiel : compte indisponible (quota, réseau instable…).
-  const lignes: MealCatalogueEmbed[] = [];
-  for (let n = 0; ; n++) {
-    const lot = await page(n);
-    lignes.push(...lot);
-    if (lot.length < PAGE_CATALOGUE) break;
-  }
-  return lignes;
+  const fenetres: [number, number][] = [];
+  for (let debut = 0; debut <= idMax; debut += FENETRE_ID) fenetres.push([debut, debut + FENETRE_ID]);
+  const resultats: MealCatalogueEmbed[][] = new Array(fenetres.length);
+  let suivante = 0;
+  await Promise.all(Array.from({ length: Math.min(PARALLELE, fenetres.length) }, async () => {
+    while (suivante < fenetres.length) {
+      const i = suivante++;
+      resultats[i] = await fenetre(fenetres[i][0], fenetres[i][1]);
+    }
+  }));
+  return resultats.flat();
 }
 
 // ─── Suggestions de remplacement ────────────────────────────────────────────

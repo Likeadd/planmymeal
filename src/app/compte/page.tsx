@@ -129,6 +129,13 @@ function AccountContent() {
             </button>
           </div>
 
+          {/* Sur mobile, la barre du bas n'a pas Budget, Favoris ni Historique : accès ici (desktop : menu utilisateur) */}
+          <nav aria-label="Raccourcis" className="lg:hidden grid grid-cols-3 gap-2 text-center text-sm font-semibold text-gray-700">
+            {[['/budget', 'Budget'], ['/favoris', 'Favoris'], ['/planning', 'Historique']].map(([href, label]) => (
+              <Link key={href} href={href} className="py-3 bg-white border border-gray-200 rounded-2xl hover:border-brand-300">{label}</Link>
+            ))}
+          </nav>
+
           {/* Relance du parcours d'intégration (seul accès sur mobile) */}
           <button onClick={lancerVisiteGuidee}
             className="w-full flex items-center gap-3 px-4 py-3 min-h-[52px] text-left bg-white border border-gray-200 rounded-2xl hover:border-brand-300 hover:bg-brand-50/40 transition-colors">

@@ -98,7 +98,7 @@ const ETAPES: Etape[] = [
     titre: 'Des recettes avec ce qu’il reste',
     texte: 'Cochez les aliments à écouler, puis touchez « Trouver des recettes » : on vous propose des plats qui utilisent votre sélection. Le bouton apparaît dès que votre frigo contient des produits.' },
   { emoji: '📖', route: '/recettes', cibles: ['nav-recettes'],
-    titre: 'Recettes : plus de 6 000 idées',
+    titre: 'Recettes : plus de 10 000 idées',
     texte: 'Le catalogue complet : plats, entrées, desserts, cuisines du monde, recettes protéinées, rapides ou économiques. Touchez une recette pour voir les ingrédients, les étapes, les calories et le coût par portion.' },
   { emoji: '🔎', route: '/recettes', cibles: ['recettes-recherche'],
     titre: 'Cherchez un plat ou un ingrédient',

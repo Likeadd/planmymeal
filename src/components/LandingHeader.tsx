@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Menu, X, UserCircle, LogOut, LayoutDashboard,
-  Star, BookOpen, Calendar, Settings,
+  Star, BookOpen, Calendar, Settings, Wallet,
 } from 'lucide-react';
 import { BrandMark } from '@/components/BrandMark';
 import { useAuth } from '@/components/AuthProvider';
@@ -30,8 +30,9 @@ const ACCOUNT_LINKS = [
   { href: '/aujourdhui', label: "Aujourd'hui", icon: LayoutDashboard },
   { href: '/favoris', label: 'Favoris', icon: Star },
   { href: '/recettes', label: 'Recettes', icon: BookOpen },
-  { href: '/dashboard', label: 'Mon planning', icon: Calendar },
-  { href: '/planning', label: 'Historique', icon: Calendar },
+  { href: '/dashboard', label: 'Planning', icon: Calendar },
+  { href: '/planning', label: 'Historique des semaines', icon: Calendar },
+  { href: '/budget', label: 'Budget', icon: Wallet },
   { href: '/compte', label: 'Mon compte', icon: Settings },
 ];
 
@@ -105,22 +106,29 @@ export default function LandingHeader() {
                   className="text-[11px] font-semibold tracking-[0.18em] uppercase text-gray-800 hover:text-brand-600 transition-colors">
                   Connexion
                 </Link>
-                <Link href="/signup"
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-500 text-white text-[11px] font-semibold tracking-[0.14em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
-                  Optimiser ma semaine
-                </Link>
+                {pathname !== '/signup' && (
+                  <Link href="/signup"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-brand-500 text-white text-[11px] font-semibold tracking-[0.14em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
+                    Optimiser ma semaine
+                  </Link>
+                )}
               </>
             )}
           </div>
 
           {/* Mobile : l'action principale reste visible sans ouvrir le menu */}
           <div className="lg:hidden flex justify-end">
-            {!isLoggedIn && (
+            {!isLoggedIn && (pathname === '/signup' ? (
+              <Link href="/login"
+                className="inline-flex items-center px-3.5 py-2 border border-gray-300 text-gray-800 text-[10px] font-semibold tracking-[0.12em] uppercase rounded-full">
+                Connexion
+              </Link>
+            ) : (
               <Link href="/signup"
                 className="inline-flex items-center px-3.5 py-2 bg-brand-500 text-white text-[10px] font-semibold tracking-[0.12em] uppercase rounded-full hover:bg-brand-600 transition-colors shadow-cta">
                 Optimiser
               </Link>
-            )}
+            ))}
           </div>
         </div>
       </div>

@@ -156,7 +156,7 @@ function PuceFiltre({
         : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'}`}>
       {children}
       {compteur != null && (
-        <span className={`ml-1 ${actif ? 'text-white/70' : 'text-gray-500'}`}>({compteur})</span>
+        <span className={`ml-1 ${actif ? 'text-white/70' : 'text-gray-500'}`}>({fmt(compteur)})</span>
       )}
     </button>
   );
@@ -196,6 +196,8 @@ export interface CatalogueInitial { total: number; items: MealCatalogue[]; facet
 // Signature de la tranche serveur (tri par défaut, sans filtre). Lien avec
 // filtres (?cuisine=…) : signature différente → rechargement via l'API.
 const SIGNATURE_SERVEUR = new URLSearchParams({ tri: 'idees', offset: '0', limite: String(TRANCHE_GRILLE) }).toString();
+
+const fmt = (n: number) => n.toLocaleString('fr-FR');
 
 export default function RecettesClient({ initial }: { initial: CatalogueInitial | null }) {
   const [meals, setMeals] = useState<MealCatalogue[]>(initial?.items ?? []);
@@ -353,7 +355,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
           <p className="text-gray-500 mt-2">
             {loading
               ? 'Chargement du catalogue...'
-              : `${facettes?.total ?? 0} recette${(facettes?.total ?? 0) > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
+              : `${fmt(facettes?.total ?? 0)} recette${(facettes?.total ?? 0) > 1 ? 's' : ''} · Parcourez tout le catalogue et cliquez pour voir le détail`}
           </p>
           {/* Sélections prêtes à l'emploi (pages catégories) */}
           <div className="mt-3 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto sm:flex-wrap [scrollbar-width:none]">
@@ -405,7 +407,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
                     ? 'bg-brand-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                     {f.label}
-                    <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({count})</span>
+                    <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({fmt(count)})</span>
                   </button>
                 );
               })}
@@ -456,7 +458,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
               )}
 
               {/* Compteur résultats */}
-              <span className="ml-auto text-xs text-gray-500">{total} résultat{total > 1 ? 's' : ''}</span>
+              <span className="ml-auto text-xs text-gray-500">{fmt(total)} résultat{total > 1 ? 's' : ''}</span>
             </div>
 
             {/* Panneau de filtres avancés */}
@@ -478,7 +480,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
                   className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === eq
                     ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
-                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({count})</span>
+                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({fmt(count)})</span>
                   </button>
                 );
               })}

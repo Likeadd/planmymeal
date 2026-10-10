@@ -222,7 +222,7 @@ function Features() {
 const PRODUCTS = [
   { e: '🍛', pastel: 'bg-orange-50', title: 'Curry de pois chiches', sub: 'Réconfortant & épicé', meta: '35 min · 480 kcal', prix: '1,85 €/portion', ingrédients: ['Pois chiches', 'Lait de coco'] },
   { e: '🐟', pastel: 'bg-rose-50', title: 'Saumon, riz & brocoli', sub: 'Frais & équilibré', meta: '30 min · 540 kcal', prix: '3,20 €/portion', ingrédients: ['Saumon frais', 'Riz basmati'] },
-  { e: '🥧', pastel: 'bg-green-50', title: 'Tarte aux légumes d’été', sub: 'Gourmande & légère', meta: '45 min · 520 kcal', prix: '2,10 €/portion', ingrédients: ['Pâte brisée', 'Courgettes'] },
+  { e: '🥧', pastel: 'bg-green-50', title: 'Tarte aux légumes rôtis', sub: 'Gourmande & légère', meta: '45 min · 520 kcal', prix: '2,10 €/portion', ingrédients: ['Pâte brisée', 'Légumes rôtis'] },
 ];
 
 function Collection() {
@@ -459,7 +459,7 @@ const PLANS = [
       'Votre semaine composée sur mesure',
       `Aperçu de ${JOURS_VISIBLES_GRATUIT} jours sur 7 et de la liste de courses`,
       `${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} optimisation de semaine / 7 jours`,
-      'Catalogue de plus de 6 000 recettes',
+      'Catalogue de plus de 10 000 recettes',
       'Inventaire du frigo',
     ],
     cta: 'Commencer gratuitement', highlighted: false,

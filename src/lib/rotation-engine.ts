@@ -841,42 +841,42 @@ const colonnesPoolLeger = () => COLONNES_RECETTE_MOTEUR.replace(
 );
 
 async function chargerPoolDepuisBase(supabase: Db): Promise<RecetteMoteurEmbed[]> {
-  // Pages de 500 recettes, 4 à la fois : au-delà, la base dépasse son délai maximal
-  const TAILLE_PAGE = 500;
-  const PARALLELE = 4;
+  // Fenêtres d'identifiants (index de la clé primaire, coût constant — pas d'offset), 6 à la fois,
+  // chacune reprend la suivante dès qu'elle termine ; au-delà la base dépasse son délai maximal.
+  const FENETRE = 500;
+  const PARALLELE = 6;
   const ingredientsParId = chargerIngredientsParId(supabase);
-  const requete = () => supabase
-    .from('meals').select(colonnesPoolLeger())
-    .eq('is_public', true)
-    .in('type_repas', ['plat', 'dessert']);
+  const { data: dernier, error: erreurMax } = await supabase
+    .from('meals').select('id').eq('is_public', true).in('type_repas', ['plat', 'dessert'])
+    .order('id', { ascending: false }).limit(1);
+  if (erreurMax) throw new Error('Erreur chargement repas');
+  const idMax = dernier?.[0]?.id ?? 0;
 
-  const { count, error: erreurCompte } = await supabase
-    .from('meals').select('id', { count: 'exact', head: true })
-    .eq('is_public', true)
-    .in('type_repas', ['plat', 'dessert']);
-  if (erreurCompte || count == null) throw new Error('Erreur chargement repas');
-
-  const nbPages = Math.max(1, Math.ceil(count / TAILLE_PAGE));
-  const lignes: RecetteMoteurEmbed[] = [];
-  const ingredients = await ingredientsParId;
-  for (let debut = 0; debut < nbPages; debut += PARALLELE) {
-    const lots = await Promise.all(
-      Array.from({ length: Math.min(PARALLELE, nbPages - debut) }, async (_, i) => {
-        const page = debut + i;
-        for (let essai = 0; ; essai++) {
-          const res = await requete().order('id').range(page * TAILLE_PAGE, (page + 1) * TAILLE_PAGE - 1);
-          if (!res.error) return res.data;
-          if (essai >= 1) throw new Error('Erreur chargement repas');
-        }
-      })
-    );
-    for (const data of lots) {
-      for (const m of (data ?? []) as unknown as (Omit<RecetteMoteurEmbed, 'meal_ingredients'> & { meal_ingredients: { ingredient_id: number; quantite: number; unite: string; est_optionnel: boolean | null }[] | null })[]) {
-        lignes.push({
-          ...m,
-          meal_ingredients: (m.meal_ingredients ?? []).map(l => ({ ...l, ingredients: ingredients.get(l.ingredient_id) ?? null })),
-        } as unknown as RecetteMoteurEmbed);
+  const fenetres: number[] = [];
+  for (let debut = 0; debut <= idMax; debut += FENETRE) fenetres.push(debut);
+  const resultats: unknown[][] = new Array(fenetres.length);
+  let suivante = 0;
+  await Promise.all(Array.from({ length: Math.min(PARALLELE, fenetres.length) }, async () => {
+    while (suivante < fenetres.length) {
+      const i = suivante++;
+      for (let essai = 0; ; essai++) {
+        const res = await supabase.from('meals').select(colonnesPoolLeger())
+          .eq('is_public', true).in('type_repas', ['plat', 'dessert'])
+          .gte('id', fenetres[i]).lt('id', fenetres[i] + FENETRE).order('id');
+        if (!res.error) { resultats[i] = res.data ?? []; break; }
+        if (essai >= 1) throw new Error('Erreur chargement repas');
       }
+    }
+  }));
+
+  const ingredients = await ingredientsParId;
+  const lignes: RecetteMoteurEmbed[] = [];
+  for (const data of resultats) {
+    for (const m of data as (Omit<RecetteMoteurEmbed, 'meal_ingredients'> & { meal_ingredients: { ingredient_id: number; quantite: number; unite: string; est_optionnel: boolean | null }[] | null })[]) {
+      lignes.push({
+        ...m,
+        meal_ingredients: (m.meal_ingredients ?? []).map(l => ({ ...l, ingredients: ingredients.get(l.ingredient_id) ?? null })),
+      } as unknown as RecetteMoteurEmbed);
     }
   }
   return lignes;

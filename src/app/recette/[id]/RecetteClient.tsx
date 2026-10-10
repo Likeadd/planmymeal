@@ -183,7 +183,7 @@ export default function RecetteClient({
                 )}
                 {meal.saison !== 'toutes' && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-sauge-50 text-sauge-700">
-                    {meal.saison}
+                    {SAISON_LABEL[meal.saison] ?? meal.saison}
                   </span>
                 )}
               </div>
@@ -308,10 +308,10 @@ export default function RecetteClient({
                           </span>
                           <span className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">
-                              {iq.quantite} {iq.unite}
+                              {quantiteLisible(iq.quantite, iq.unite)}
                             </span>
-                            <span className={`text-xs ${prix != null ? 'text-gray-500' : 'hidden'}`}>
-                              {formatPrix(prix)}
+                            <span className="text-xs text-gray-500 min-w-10 text-right">
+                              {prix != null ? formatPrix(prix) : '—'}
                             </span>
                           </span>
                         </div>
@@ -376,12 +376,14 @@ export default function RecetteClient({
                 {meal.instructions && meal.instructions.length > 0 ? (
                   <div className="space-y-6">
                     {meal.instructions.map((step, i) => {
+                      if (i === 0 && step.startsWith('Mise en place')) return <MiseEnPlace key={i} texte={step} />;
                       const ustensile = detecterUstensile(step);
+                      const numero = meal.instructions![0].startsWith('Mise en place') ? i : i + 1;
                       return (
                         <div key={i} className="flex gap-4 group">
                           {/* Numéro */}
                           <div className="shrink-0 w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
-                            {i + 1}
+                            {numero}
                           </div>
                           {/* Texte */}
                           <div className="flex-1 pt-1">
@@ -488,6 +490,29 @@ function InfoChip({
 
 // ─── Ustensiles : icônes + détection automatique (voir src/lib/ustensiles.ts) ──
 
+const SAISON_LABEL: Record<string, string> = { ete: 'Été', hiver: 'Hiver', printemps: 'Printemps', automne: 'Automne' };
+
+/** « 2 pcs » → « 2 pièces », « 1 cac » → « 1 c. à café », décimales en virgule */
+function quantiteLisible(q: number, unite: string): string {
+  const mots: Record<string, string> = { pcs: q > 1 ? 'pièces' : 'pièce', cas: 'c. à soupe', cac: 'c. à café', tranche: q > 1 ? 'tranches' : 'tranche', botte: q > 1 ? 'bottes' : 'botte' };
+  return `${String(Math.round(q * 10) / 10).replace('.', ',')} ${mots[unite] ?? unite}`;
+}
+
+/** L'étape « Mise en place » : liste à puces (non numérotée), le reste des étapes est numéroté à partir de 1 */
+function MiseEnPlace({ texte }: { texte: string }) {
+  const m = texte.match(/^Mise en place[^.]*\.\s*Pesez et préparez : (.+?)\.\s+((?:Sortez|Temps)[\s\S]*)$/);
+  if (!m) return <p className="text-gray-700 leading-relaxed">{texte}</p>;
+  return (
+    <div className="rounded-xl bg-sable-50 border border-sable-100 p-4 text-sm text-gray-700">
+      <p className="font-semibold text-gray-900 mb-2">Mise en place — tout peser avant de commencer</p>
+      <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc pl-5">
+        {m[1].split(' ; ').map(l => <li key={l}>{l}</li>)}
+      </ul>
+      {m[2] && <p className="mt-2 text-gray-600">{m[2]}</p>}
+    </div>
+  );
+}
+
 function MacroBar({
   label,
   value,
@@ -507,7 +532,7 @@ function MacroBar({
       <div className="flex justify-between text-sm mb-1">
         <span className="text-gray-600">{label}</span>
         <span className="font-medium text-gray-900">
-          {value != null ? `${value} ${unit}` : '—'}
+          {value != null ? `${String(value).replace('.', ',')} ${unit}` : '—'}
         </span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

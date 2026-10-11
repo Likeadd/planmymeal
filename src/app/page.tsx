@@ -20,7 +20,8 @@ import { ApercuPlanning } from '@/components/ApercuPlanning';
 import { FAQ_CATEGORIES } from '@/app/faq/faq-data';
 import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
-import { STRIPE_PLANS } from '@/lib/stripe';
+import { STRIPE_PLANS, prixPlan, type Periode } from '@/lib/stripe';
+import { SelecteurPeriode } from '@/components/SelecteurPeriode';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
 import { IMPORTS_GRATUITS_PAR_MOIS, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, RECHERCHES_FRIGO_GRATUITES_PAR_SEMAINE, REMPLACEMENTS_GRATUITS_PAR_SEMAINE } from '@/lib/limites';
 
@@ -36,9 +37,10 @@ const jsonLdApp = {
   description: 'Planificateur de repas : menus de la semaine personnalisés, liste de courses automatique, anti-gaspillage et suivi du budget.',
   offers: [
     { '@type': 'Offer', name: 'Gratuit', price: '0', priceCurrency: 'EUR' },
-    ...Object.values(STRIPE_PLANS).map(p => ({
-      '@type': 'Offer', name: p.name, price: p.price.toFixed(2), priceCurrency: 'EUR',
-    })),
+    ...Object.values(STRIPE_PLANS).flatMap(p => [
+      { '@type': 'Offer', name: p.name, price: p.price.toFixed(2), priceCurrency: 'EUR' },
+      { '@type': 'Offer', name: `${p.name} (annuel)`, price: p.priceAnnuel.toFixed(2), priceCurrency: 'EUR' },
+    ]),
   ],
   publisher: { '@id': `${SITE_URL}/#organisation` },
 };
@@ -453,7 +455,7 @@ function Promo() {
 
 const PLANS = [
   {
-    name: 'Gratuit', price: '0', emoji: '🎁',
+    name: 'Gratuit', plan: null, emoji: '🎁',
     desc: 'Pour découvrir, sans carte bancaire',
     features: [
       'Votre semaine composée sur mesure',
@@ -465,13 +467,13 @@ const PLANS = [
     cta: 'Commencer gratuitement', highlighted: false,
   },
   {
-    name: 'Pro', price: '5,99', emoji: '👨‍🍳',
+    name: 'Pro', plan: 'pro' as const, emoji: '👨‍🍳',
     desc: 'Votre semaine complète, sans limite',
     features: [...STRIPE_PLANS.pro.features],
     cta: 'Passer à Pro', highlighted: true,
   },
   {
-    name: 'Famille', price: '9,99', emoji: '👨‍👩‍👧‍👦',
+    name: 'Famille', plan: 'famille' as const, emoji: '👨‍👩‍👧‍👦',
     desc: 'Pour toute la famille',
     features: [...STRIPE_PLANS.famille.features],
     cta: 'Passer à Famille', highlighted: false,
@@ -515,12 +517,12 @@ function CellulePlan({ value }: { value: CelluleComparatif }) {
   return <span className="text-sm font-semibold text-gray-900">{value}</span>;
 }
 
-function Comparatif({ onUpgrade, loadingPlan }: { onUpgrade: (plan: 'pro' | 'famille') => void; loadingPlan: 'pro' | 'famille' | null }) {
+function Comparatif({ onUpgrade, loadingPlan, periode }: { onUpgrade: (plan: 'pro' | 'famille') => void; loadingPlan: 'pro' | 'famille' | null; periode: Periode }) {
   const reduceMotion = useReducedMotion();
   const cols: { key: 'gratuit' | 'pro' | 'famille'; name: string; prix: string; cta?: boolean; accent?: boolean }[] = [
     { key: 'gratuit', name: 'Gratuit', prix: '0 €' },
-    { key: 'pro', name: 'Pro', prix: '5,99 €/mois', cta: true, accent: true },
-    { key: 'famille', name: 'Famille', prix: '9,99 €/mois', cta: true },
+    { key: 'pro', name: 'Pro', prix: `${prixPlan('pro', periode).montant} €/${prixPlan('pro', periode).unite}`, cta: true, accent: true },
+    { key: 'famille', name: 'Famille', prix: `${prixPlan('famille', periode).montant} €/${prixPlan('famille', periode).unite}`, cta: true },
   ];
 
   return (
@@ -609,6 +611,8 @@ function Pricing() {
   const { user } = useAuth();
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<'pro' | 'famille' | null>(null);
+  // L'annuel est mis en avant par défaut (meilleur prix, moins de résiliations)
+  const [periode, setPeriode] = useState<Periode>('annuel');
 
   const handleUpgrade = async (plan: 'pro' | 'famille') => {
     if (!user) {
@@ -617,7 +621,7 @@ function Pricing() {
     }
     setLoadingPlan(plan);
     try {
-      await redirectToCheckout(plan);
+      await redirectToCheckout(plan, periode);
     } catch {
       // Le blocage est louable : on offre une porte de sortie au lieu d'un
       // clic mort.
@@ -637,6 +641,7 @@ function Pricing() {
           <p className="mt-6 text-gray-600 text-lg">
             Commencez gratuitement, passez à un plan payant quand vous le souhaitez.
           </p>
+          <SelecteurPeriode valeur={periode} onChange={setPeriode} className="mt-6" />
         </Reveal>
 
         <div className="mt-10 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -651,10 +656,21 @@ function Pricing() {
               <h3 className={`font-display text-xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>
                 {plan.name}
               </h3>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>{plan.price}€</span>
-                <span className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-gray-500'}`}>/mois</span>
-              </div>
+              {(() => {
+                const prix = plan.plan ? prixPlan(plan.plan, periode) : null;
+                return (
+                  <>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>{prix ? prix.montant : '0'}€</span>
+                      <span className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-gray-500'}`}>/{prix ? prix.unite : 'mois'}</span>
+                    </div>
+                    {/* Ligne de réassurance : équivalent mensuel + économie (réserve la hauteur en mensuel) */}
+                    <p className={`text-xs mt-1 min-h-4 font-semibold ${plan.highlighted ? 'text-white/90' : 'text-sauge-700'}`}>
+                      {prix && periode === 'annuel' ? `soit ${prix.parMois} €/mois · économisez ${prix.economie} %` : ''}
+                    </p>
+                  </>
+                );
+              })()}
               <p className={`text-sm mt-1 ${plan.highlighted ? 'text-white/70' : 'text-gray-500'}`}>{plan.desc}</p>
 
               <ul className="mt-6 mb-8 space-y-2.5 flex-1">
@@ -686,7 +702,7 @@ function Pricing() {
           ))}
         </div>
 
-        <Comparatif onUpgrade={handleUpgrade} loadingPlan={loadingPlan} />
+        <Comparatif onUpgrade={handleUpgrade} loadingPlan={loadingPlan} periode={periode} />
 
         {/* Garanties : résiliation depuis Mon compte, paiement Stripe, FAQ */}
  <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">

@@ -3,12 +3,12 @@
 // ============================================================================
 
 import { createBrowserClient } from '@/lib/supabase';
-import { STRIPE_ENABLED } from '@/lib/stripe';
+import { STRIPE_ENABLED, type Periode } from '@/lib/stripe';
 
 /**
  * Redirige vers la page de checkout Stripe pour le plan choisi
  */
-export async function redirectToCheckout(plan: 'pro' | 'famille') {
+export async function redirectToCheckout(plan: 'pro' | 'famille', periode: Periode = 'mensuel') {
   // Garde de sécurité : aucun bouton de l'app n'appelle cette fonction tant
   // que STRIPE_ENABLED est à false, mais on la bloque aussi ici en dernier
   // recours (défense en profondeur).
@@ -30,7 +30,7 @@ export async function redirectToCheckout(plan: 'pro' | 'famille') {
         'Authorization': `Bearer ${authSession.access_token}`,
         'apikey': supabaseAnonKey,
       },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, periode }),
     }
   );
 

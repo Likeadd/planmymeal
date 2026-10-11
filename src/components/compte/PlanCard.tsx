@@ -6,15 +6,17 @@
 // ============================================================================
 
 import { ArrowRight, Check, Crown, Loader2, Users } from 'lucide-react';
-import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
+import { STRIPE_PLANS, prixPlan, type Periode, type PlanType } from '@/lib/stripe';
 
 export function PlanCard({
   plan,
+  periode,
   currentPlan,
   upgrading,
   onUpgrade,
 }: {
   plan: PlanType;
+  periode: Periode;
   currentPlan: string;
   upgrading: PlanType | null;
   onUpgrade: (plan: PlanType) => void;
@@ -22,6 +24,7 @@ export function PlanCard({
   const p = STRIPE_PLANS[plan];
   const isCurrent = currentPlan === plan;
   const isLoading = upgrading === plan;
+  const prix = prixPlan(plan, periode);
 
   return (
     <div className={`bg-white rounded-2xl p-6 border-2 transition-all ${
@@ -39,8 +42,11 @@ export function PlanCard({
 
       {/* Prix */}
       <div className="mb-4">
-        <span className="text-3xl font-bold font-display text-gray-900">{p.price}€</span>
-        <span className="text-gray-500 text-sm">/mois</span>
+        <span className="text-3xl font-bold font-display text-gray-900">{prix.montant}€</span>
+        <span className="text-gray-500 text-sm">/{prix.unite}</span>
+        {periode === 'annuel' && (
+          <p className="text-xs font-semibold text-sauge-700 mt-1">soit {prix.parMois} €/mois · économisez {prix.economie} %</p>
+        )}
       </div>
 
       {/* Features */}

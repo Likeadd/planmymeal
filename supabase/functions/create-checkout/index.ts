@@ -4,7 +4,8 @@
 //
 // Déploiement Supabase :
 //   supabase functions deploy create-checkout
-//   → Secrets requis : STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_FAMILLE
+//   → Secrets requis : STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_FAMILLE,
+//     STRIPE_PRICE_ID_PRO_ANNUEL, STRIPE_PRICE_ID_FAMILLE_ANNUEL (prix récurrents annuels)
 //   → JWT vérification : activée (l'utilisateur doit être connecté)
 // ============================================================================
 
@@ -15,6 +16,8 @@ import Stripe from 'https://esm.sh/stripe@14';
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!;
 const STRIPE_PRICE_ID_PRO = Deno.env.get('STRIPE_PRICE_ID_PRO')!;
 const STRIPE_PRICE_ID_FAMILLE = Deno.env.get('STRIPE_PRICE_ID_FAMILLE')!;
+const STRIPE_PRICE_ID_PRO_ANNUEL = Deno.env.get('STRIPE_PRICE_ID_PRO_ANNUEL');
+const STRIPE_PRICE_ID_FAMILLE_ANNUEL = Deno.env.get('STRIPE_PRICE_ID_FAMILLE_ANNUEL');
 // URL de retour fixe (jamais l'en-tête Origin, falsifiable) — secret APP_URL
 const APP_URL = (Deno.env.get('APP_URL') ?? 'https://getplanmymeal.com').replace(/\/$/, '');
 
@@ -62,10 +65,14 @@ serve(async (req: Request) => {
     const body = await req.json();
     const plan: 'pro' | 'famille' = body.plan === 'famille' ? 'famille' : 'pro';
 
-    // Déterminer le price_id selon le plan
-    const priceId = plan === 'famille'
-      ? STRIPE_PRICE_ID_FAMILLE
-      : STRIPE_PRICE_ID_PRO;
+    // Mensuel par défaut ; l'annuel exige son propre price_id (jamais déduit côté client)
+    const periode: 'mensuel' | 'annuel' = body.periode === 'annuel' ? 'annuel' : 'mensuel';
+
+    // Déterminer le price_id selon le plan et la périodicité
+    const priceId = periode === 'annuel'
+      ? (plan === 'famille' ? STRIPE_PRICE_ID_FAMILLE_ANNUEL : STRIPE_PRICE_ID_PRO_ANNUEL)
+      : (plan === 'famille' ? STRIPE_PRICE_ID_FAMILLE : STRIPE_PRICE_ID_PRO);
+    if (!priceId) throw new PublicError('Cette formule n’est pas encore disponible.');
 
     // Créer ou récupérer le customer Stripe
     let customerId = profile.stripe_customer_id;
@@ -96,12 +103,13 @@ serve(async (req: Request) => {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      subscription_data: { metadata: { supabase_user_id: user.id, plan } },
+      subscription_data: { metadata: { supabase_user_id: user.id, plan, periode } },
       success_url: `${APP_URL}/compte?success=true`,
       cancel_url: `${APP_URL}/compte?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
         plan,
+        periode,
       },
     });
 

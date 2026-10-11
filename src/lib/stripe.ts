@@ -15,6 +15,8 @@ export const STRIPE_PLANS = {
   pro: {
     name: 'Pro',
     price: 5.99,
+    /** Prix de l'abonnement annuel (facturé en une fois, 12 mois) */
+    priceAnnuel: 49.99,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO || 'price_pro',
     features: [
       'Votre semaine complète et toute la liste de courses',
@@ -31,6 +33,7 @@ export const STRIPE_PLANS = {
   famille: {
     name: 'Famille',
     price: 9.99,
+    priceAnnuel: 79.99,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_FAMILLE || 'price_famille',
     features: [
       'Tout le plan Pro',
@@ -43,3 +46,26 @@ export const STRIPE_PLANS = {
 } as const;
 
 export type PlanType = keyof typeof STRIPE_PLANS;
+
+/** Périodicité de facturation : l'annuel est facturé en une fois, 12 mois d'accès. */
+export type Periode = 'mensuel' | 'annuel';
+
+const euros = (n: number) => n.toFixed(2).replace('.', ',');
+
+/**
+ * Prix d'un plan pour une périodicité, prêt à afficher.
+ * `montant` = prix facturé (« 49,99 »), `unite` = « mois » ou « an », `parMois` =
+ * équivalent mensuel (« 4,17 »), `economie` = remise annuelle en % (0 en mensuel).
+ */
+export function prixPlan(plan: PlanType, periode: Periode) {
+  const p = STRIPE_PLANS[plan];
+  if (periode === 'mensuel') {
+    return { montant: euros(p.price), unite: 'mois' as const, parMois: euros(p.price), economie: 0 };
+  }
+  return {
+    montant: euros(p.priceAnnuel),
+    unite: 'an' as const,
+    parMois: euros(p.priceAnnuel / 12),
+    economie: Math.round(100 - (p.priceAnnuel / (p.price * 12)) * 100),
+  };
+}

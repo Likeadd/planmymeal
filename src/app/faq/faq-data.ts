@@ -56,7 +56,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     items: [
       {
         q: 'Quels sont les plans disponibles ?',
-        a: 'Trois plans : Gratuit (une optimisation de semaine tous les 7 jours, sans desserts), Pro à 5,99 €/mois (tout illimité, desserts, optimisations ciblées, semaines planifiées automatiquement) et Famille à 9,99 €/mois (tout Pro, plus 5 profils avec les allergies et les goûts de chacun et le foyer partagé).',
+        a: 'Trois plans : Gratuit (une optimisation de semaine tous les 7 jours, sans desserts), Pro à 5,99 €/mois ou 49,99 €/an (tout illimité, desserts, optimisations ciblées, semaines planifiées automatiquement) et Famille à 9,99 €/mois ou 79,99 €/an (tout Pro, plus 5 profils avec les allergies et les goûts de chacun et le foyer partagé).',
       },
       {
         q: 'Puis-je annuler à tout moment ?',

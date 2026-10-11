@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { EVENEMENT_PAYWALL, type DetailPaywall } from '@/lib/paywall';
 import { estPayant, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, type RaisonPaywall } from '@/lib/limites';
-import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
+import { STRIPE_PLANS, prixPlan, type Periode, type PlanType } from '@/lib/stripe';
+import { SelecteurPeriode } from '@/components/SelecteurPeriode';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,7 @@ export function Paywall() {
   const { profile } = useAuth();
   const [detail, setDetail] = useState<DetailPaywall | null>(null);
   const [plan, setPlan] = useState<PlanType>('pro');
+  const [periode, setPeriode] = useState<Periode>('annuel');
   const [chargement, setChargement] = useState(false);
   const bouton = useRef<HTMLButtonElement>(null);
   const payant = estPayant(profile?.plan);
@@ -76,7 +78,7 @@ export function Paywall() {
   const essayer = async () => {
     setChargement(true);
     try {
-      await redirectToCheckout(plan);
+      await redirectToCheckout(plan, periode);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Paiement momentanément indisponible.');
       setChargement(false);
@@ -105,6 +107,8 @@ export function Paywall() {
           <h2 id="paywall-titre" className="font-display text-2xl font-bold text-gray-900 pr-8 leading-snug">{titre}</h2>
           <p className="mt-2 text-sm text-gray-600 leading-relaxed">{texte}</p>
 
+          <SelecteurPeriode valeur={periode} onChange={setPeriode} className="mt-5" />
+
           {/* Choix du plan */}
           <div role="radiogroup" aria-label="Choisir un plan" className="mt-5 grid grid-cols-2 gap-2">
             {(Object.keys(STRIPE_PLANS) as PlanType[]).map(p => (
@@ -113,7 +117,7 @@ export function Paywall() {
                   plan === p ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-brand-200')}>
                 <span className="block text-sm font-bold text-gray-900">{STRIPE_PLANS[p].name}</span>
                 <span className="block text-xs text-gray-600 mt-0.5">
-                  {STRIPE_PLANS[p].price.toFixed(2).replace('.', ',')} €/mois
+                  {prixPlan(p, periode).montant} €/{prixPlan(p, periode).unite}
                 </span>
               </button>
             ))}
@@ -131,7 +135,7 @@ export function Paywall() {
             <>
               <button ref={bouton} onClick={essayer} disabled={chargement}
                 className="mt-6 w-full inline-flex items-center justify-center gap-2 min-h-[48px] text-sm font-semibold text-white bg-brand-500 rounded-full hover:bg-brand-600 shadow-cta disabled:opacity-60 transition-colors">
-                {chargement ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirection…</> : `Débloquer avec ${offre.name} · ${offre.price.toFixed(2).replace('.', ',')} €/mois`}
+                {chargement ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirection…</> : `Débloquer avec ${offre.name} · ${prixPlan(plan, periode).montant} €/${prixPlan(plan, periode).unite}`}
               </button>
               <p className="mt-2.5 text-center text-xs text-gray-500 leading-relaxed">
                 Paiement sécurisé par Stripe. Sans engagement, résiliable à tout moment depuis votre compte.

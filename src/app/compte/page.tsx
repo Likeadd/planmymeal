@@ -11,7 +11,9 @@ import { useAuth } from '@/components/AuthProvider';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { lancerVisiteGuidee } from '@/components/VisiteGuidee';
-import { STRIPE_PLANS, type PlanType } from '@/lib/stripe';
+import { STRIPE_PLANS, type Periode, type PlanType } from '@/lib/stripe';
+import { SelecteurPeriode } from '@/components/SelecteurPeriode';
+import { JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE } from '@/lib/limites';
 import { PlanCard } from '@/components/compte/PlanCard';
 import { MaCuisineSettings } from '@/components/compte/MaCuisineSettings';
 import { NutritionSettings } from '@/components/compte/NutritionSettings';
@@ -44,6 +46,7 @@ function AccountContent() {
   const searchParams = useSearchParams();
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const [upgrading, setUpgrading] = useState<PlanType | null>(null);
+  const [periode, setPeriode] = useState<Periode>('annuel');
   const [error, setError] = useState('');
 
   // Messages de retour Stripe
@@ -75,7 +78,7 @@ function AccountContent() {
     setError('');
 
     try {
-      await redirectToCheckout(plan);
+      await redirectToCheckout(plan, periode);
     } catch {
       setError('Erreur lors de la redirection vers Stripe. Vérifiez la configuration.');
       toast.error('Impossible d\'accéder au paiement');
@@ -96,10 +99,10 @@ function AccountContent() {
         name: 'Gratuit',
         price: 0,
         features: [
-          '4 optimisations de semaine / 7 jours',
-          'Planning déjeuner + dîner complet',
-          'Liste de courses automatique',
-          'Budget & dépense de la semaine',
+          `${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} optimisation de semaine / 7 jours`,
+          `Aperçu de ${JOURS_VISIBLES_GRATUIT} jours sur 7 et de la liste de courses`,
+          'Catalogue de plus de 10 000 recettes',
+          'Inventaire du frigo',
         ],
       }
     : STRIPE_PLANS[profile.plan as PlanType] ?? STRIPE_PLANS.pro;
@@ -189,8 +192,8 @@ function AccountContent() {
                 </h2>
                 <p className="text-sm text-gray-500">
                   {profile.plan === 'gratuit'
-                    ? '1 semaine générée par mois'
-                    : `${currentPlan.price}€/mois`}
+                    ? `${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} optimisation de semaine / 7 jours`
+                    : 'Abonnement actif'}
                 </p>
               </div>
               {profile.plan === 'gratuit' && (
@@ -226,12 +229,14 @@ function AccountContent() {
             <h2 className="text-xl font-bold font-display text-gray-900 mb-6">
               {profile.plan === 'gratuit' ? 'Passer à la version supérieure' : 'Changer de plan'}
             </h2>
+            <SelecteurPeriode valeur={periode} onChange={setPeriode} className="mb-6" />
 
             <div className="grid sm:grid-cols-2 gap-6">
               {/* Plan Pro */}
               {profile.plan !== 'pro' && (
                 <PlanCard
                   plan="pro"
+                  periode={periode}
                   currentPlan={profile.plan}
                   upgrading={upgrading}
                   onUpgrade={handleUpgrade}
@@ -242,6 +247,7 @@ function AccountContent() {
               {profile.plan !== 'famille' && (
                 <PlanCard
                   plan="famille"
+                  periode={periode}
                   currentPlan={profile.plan}
                   upgrading={upgrading}
                   onUpgrade={handleUpgrade}

@@ -24,7 +24,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
       <>
         <p>Trois formules d’abonnement sont proposées :</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Gratuit</strong> : une semaine de menus par mois, accès découverte.</li>
+          <li><strong>Gratuit</strong> : une optimisation de semaine tous les 7 jours, aperçu de 2 jours sur 7.</li>
           <li><strong>Pro</strong> : génération illimitée, mémoire des goûts, batch cooking, liste triée par rayon.</li>
           <li><strong>Famille</strong> : toutes les fonctionnalités Pro, jusqu’à 5 profils familiaux et allergies par personne.</li>
         </ul>
@@ -38,9 +38,13 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
         <p>Les prix sont indiqués en euros, toutes taxes comprises :</p>
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Gratuit</strong> : 0 € / mois</li>
-          <li><strong>Pro</strong> : 5,99 € / mois</li>
-          <li><strong>Famille</strong> : 9,99 € / mois</li>
+          <li><strong>Pro</strong> : 5,99 € / mois ou 49,99 € / an</li>
+          <li><strong>Famille</strong> : 9,99 € / mois ou 79,99 € / an</li>
         </ul>
+        <p>
+          La formule annuelle est facturée en une seule fois pour douze mois
+          d’accès, soit une remise d’environ 30 % par rapport au paiement mensuel.
+        </p>
         <p>
           La première semaine de génération est offerte, sans carte bancaire,
           afin de tester le service avant de souscrire.
@@ -53,9 +57,13 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     body: (
       <p>
         L’abonnement est souscrit en ligne, depuis la page Compte. Il est conclu
-        pour une durée d’un mois et se renouvelle par tacite reconduction,
-        sauf résiliation par le client avant la date d’échéance. Le client peut
-        résilier à tout moment, directement depuis son espace, sans frais.
+        pour une durée d’un mois (formule mensuelle) ou d’un an (formule annuelle)
+        et se renouvelle par tacite reconduction pour une durée identique, sauf
+        résiliation par le client avant la date d’échéance. Le client peut
+        résilier à tout moment, directement depuis son espace, sans frais ;
+        l’accès reste alors ouvert jusqu’à la fin de la période déjà payée.
+        Les sommes déjà versées pour la période en cours ne sont pas remboursées,
+        sauf obligation légale.
       </p>
     ),
   },
@@ -65,8 +73,9 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
       <p>
         Le paiement est effectué par carte bancaire via le prestataire de
         paiement sécurisé Stripe. Aucune donnée bancaire n’est stockée sur nos
-        serveurs. La facturation est mensuelle et le prélèvement intervient à
-        chaque échéance tant que l’abonnement n’est pas résilié.
+        serveurs. La facturation est mensuelle ou annuelle selon la formule choisie
+        et le prélèvement intervient à chaque échéance tant que l’abonnement
+        n’est pas résilié.
       </p>
     ),
   },

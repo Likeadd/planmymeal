@@ -4,6 +4,7 @@ import Link from 'next/link';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
+import { DELAI_RETRACTATION_JOURS, EMAIL_CONTACT, MEDIATEUR, mediateurConfigure } from '@/lib/legal';
 
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
@@ -82,22 +83,69 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
   {
     title: 'Droit de rétractation',
     body: (
-      <p>
-        Conformément à l’article L221-28 du Code de la consommation, le droit de
-        rétractation de 14 jours ne s’applique pas aux contenus numériques dont
-        l’exécution a commencé avec l’accord du consommateur. En souscrivant,
-        vous acceptez que le service soit fourni immédiatement.
-      </p>
+      <>
+        <p>
+          Conformément aux articles L221-18 et suivants du Code de la consommation,
+          le client consommateur dispose de <strong>{DELAI_RETRACTATION_JOURS} jours</strong> à compter de la
+          souscription de l’abonnement pour exercer son droit de rétractation,
+          sans avoir à justifier de motif ni à supporter de pénalités.
+        </p>
+        <p>
+          PlanMyMeal accorde ce droit sans condition : même si le service a été
+          utilisé pendant ce délai, <strong>le client est remboursé intégralement</strong>.
+        </p>
+        <p>Pour l’exercer, le client peut au choix :</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>
+            cliquer sur « Me rétracter et être remboursé » depuis{' '}
+            <Link href="/compte#abonnement" className="text-brand-600 underline underline-offset-2">Compte, rubrique Mon abonnement</Link>{' '}
+            (effet immédiat) ;
+          </li>
+          <li>
+            ou adresser une demande dépourvue d’ambiguïté à{' '}
+            <a href={`mailto:${EMAIL_CONTACT}`} className="text-brand-600 underline underline-offset-2">{EMAIL_CONTACT}</a>,
+            par exemple avec le modèle de formulaire ci-dessous.
+          </li>
+        </ul>
+        <p>
+          L’abonnement prend fin dès l’exercice du droit et le remboursement de la
+          totalité des sommes versées intervient au plus tard {DELAI_RETRACTATION_JOURS} jours après la
+          rétractation, sur le moyen de paiement utilisé lors de la souscription.
+        </p>
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700">
+          <p className="font-semibold mb-1">Modèle de formulaire de rétractation</p>
+          <p>
+            À l’attention de PlanMyMeal ({EMAIL_CONTACT}) : je vous notifie par la présente ma rétractation
+            du contrat portant sur la fourniture de l’abonnement PlanMyMeal souscrit le [date].
+            Nom du client : [nom] — Adresse email du compte : [email] — Date : [date].
+          </p>
+        </div>
+      </>
     ),
   },
   {
     title: 'Résiliation',
     body: (
-      <p>
-        La résiliation est effective à la fin de la période d’abonnement en
-        cours, sans frais supplémentaires. En cas de non-paiement, l’accès au
-        service peut être suspendu jusqu’à régularisation.
-      </p>
+      <>
+        <p>
+          Le client peut résilier son abonnement <strong>à tout moment, en un clic</strong>, sans motif et sans
+          frais, depuis{' '}
+          <Link href="/compte#abonnement" className="text-brand-600 underline underline-offset-2">Compte, rubrique Mon abonnement</Link>{' '}
+          ou depuis la page{' '}
+          <Link href="/resiliation" className="text-brand-600 underline underline-offset-2">Résilier mon abonnement</Link>{' '}
+          (lien disponible dans le pied de page de chaque page du site). Une confirmation lui est
+          envoyée par email.
+        </p>
+        <p>
+          La résiliation prend effet à la fin de la période d’abonnement en cours (mois ou année
+          déjà payé) : le client conserve l’accès au service jusqu’à cette date et aucun nouveau
+          prélèvement n’est effectué. Elle peut être annulée avant cette date depuis la même page.
+          Hors exercice du droit de rétractation, la période déjà payée n’est pas remboursée.
+        </p>
+        <p>
+          En cas de non-paiement, l’accès au service peut être suspendu jusqu’à régularisation.
+        </p>
+      </>
     ),
   },
   {
@@ -116,12 +164,31 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     title: 'Droit applicable et litiges',
     body: (
       <p>
-        Les présentes CGV sont soumises au droit français. En cas de litige, une
-        résolution amiable sera recherchée en priorité. Le consommateur peut
-        également recourir à une procédure de médiation conventionnelle.
+        Les présentes CGV sont soumises au droit français. En cas de litige, le client est invité
+        à adresser d’abord une réclamation écrite à{' '}
+        <a href={`mailto:${EMAIL_CONTACT}`} className="text-brand-600 underline underline-offset-2">{EMAIL_CONTACT}</a> :
+        une résolution amiable est recherchée en priorité.
       </p>
     ),
   },
+  ...(mediateurConfigure ? [{
+    title: 'Médiation de la consommation',
+    body: (
+      <>
+        <p>
+          Conformément aux articles L611-1 et suivants du Code de la consommation, le client
+          consommateur peut recourir gratuitement au médiateur de la consommation dont relève
+          PlanMyMeal, après une réclamation écrite restée sans réponse satisfaisante sous un mois :
+        </p>
+        <p>
+          <strong>{MEDIATEUR.nom}</strong>
+          {MEDIATEUR.adresse && <> — {MEDIATEUR.adresse}</>}
+          {' — '}
+          <a href={MEDIATEUR.url} target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2">{MEDIATEUR.url}</a>
+        </p>
+      </>
+    ),
+  }] : []),
 ];
 
 export const metadata: Metadata = {

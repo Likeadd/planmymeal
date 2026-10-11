@@ -54,6 +54,16 @@ export const ENV_SPECS: EnvSpec[] = [
     usage: 'Prix du plan Famille (fallback « price_famille » sinon)',
   },
   {
+    key: 'NEXT_PUBLIC_MEDIATEUR_NOM',
+    severity: 'recommended',
+    usage: 'Médiateur de la consommation (obligation légale, CGV) — avec NEXT_PUBLIC_MEDIATEUR_URL (https) et NEXT_PUBLIC_MEDIATEUR_ADRESSE',
+  },
+  {
+    key: 'NEXT_PUBLIC_MEDIATEUR_URL',
+    severity: 'recommended',
+    usage: 'Site du médiateur de la consommation (CGV)',
+  },
+  {
     key: 'NEXT_PUBLIC_APP_URL',
     severity: 'recommended',
     usage: 'URL de retour du portail client Stripe (/api/billing-portal) — fallback origin de la requête',

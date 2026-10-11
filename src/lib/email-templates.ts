@@ -236,3 +236,12 @@ export function newsletterConfirmationHtml(lienConfirmation: string, baseUrl: st
   </p>
 </div>`;
 }
+
+/** Email transactionnel d'abonnement (confirmation de résiliation, de rétractation…). */
+export function abonnementEmailHtml(d: { titre: string; paragraphes: string[] }, baseUrl: string): string {
+  return wrap(
+    `<h1 style="color:#332A1E;font-size:20px;margin:0 0 12px;">${esc(d.titre)}</h1>` +
+    d.paragraphes.map(p => `<p style="color:#605242;margin:0 0 12px;line-height:1.5;">${esc(p)}</p>`).join(''),
+    baseUrl,
+  );
+}

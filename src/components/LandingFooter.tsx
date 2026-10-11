@@ -10,6 +10,7 @@ const FOOTER_LINKS = [
   ['FAQ', '/faq'],
   ['Mentions légales', '/mentions-legales'],
   ['CGV', '/cgv'],
+  ['Résilier', '/resiliation'],
   ['Contact', '/contact'],
 ];
 

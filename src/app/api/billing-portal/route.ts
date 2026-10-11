@@ -1,23 +1,10 @@
-import type Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { STRIPE_ENABLED } from '@/lib/stripe';
-
-// Import dynamique : Stripe peut ne pas être configuré (clé absente) — la
-// route (et donc le build, qui charge ce module pour collecter les métadonnées
-// de page) ne doit jamais planter pour autant. `new Stripe(undefined!, …)` au
-// niveau module lève immédiatement et cassait tout le build sur Vercel dès que
-// STRIPE_SECRET_KEY manquait pour l'environnement déployé (preview/prod).
-async function getStripeClient(): Promise<Stripe | null> {
-  if (!process.env.STRIPE_SECRET_KEY) return null;
-  const { default: StripeCtor } = await import('stripe');
-  return new StripeCtor(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-06-30.basil' as Stripe.LatestApiVersion,
-  });
-}
+import { getStripeClient } from '@/lib/stripe-serveur';
 
 /**
  * POST /api/billing-portal — crée une session du portail client Stripe.

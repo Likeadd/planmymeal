@@ -13,6 +13,7 @@ import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { lancerVisiteGuidee } from '@/components/VisiteGuidee';
 import { STRIPE_PLANS, type Periode, type PlanType } from '@/lib/stripe';
 import { SelecteurPeriode } from '@/components/SelecteurPeriode';
+import { AbonnementSettings } from '@/components/compte/AbonnementSettings';
 import { JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE } from '@/lib/limites';
 import { PlanCard } from '@/components/compte/PlanCard';
 import { MaCuisineSettings } from '@/components/compte/MaCuisineSettings';
@@ -223,6 +224,9 @@ function AccountContent() {
               ))}
             </ul>
           </div>
+
+          {/* Abonnement payant : résiliation, rétractation, factures */}
+          {profile.plan !== 'gratuit' && <AbonnementSettings onChange={refreshProfile} />}
 
           {/* Plans disponibles */}
           <div>

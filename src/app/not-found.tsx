@@ -38,7 +38,7 @@ export default function NotFoundPage() {
             href="/aujourdhui"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-600 font-semibold text-sm rounded-xl hover:bg-gray-200 transition-colors"
           >
-            <LayoutDashboard className="w-4 h-4" /> Mon dashboard
+            <LayoutDashboard className="w-4 h-4" /> Mon planning
           </Link>
         </div>
       </div>

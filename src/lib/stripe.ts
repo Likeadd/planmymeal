@@ -21,7 +21,7 @@ export const STRIPE_PLANS = {
     features: [
       'Votre semaine complète et toute la liste de courses',
       'Optimisations de semaine illimitées',
-      'Desserts planifiés, du rythme léger au Gourmand',
+      'Desserts planifiés, du rythme léger au rythme gourmand',
       'Changements de repas illimités',
       'Optimisations Budget, Gain de temps et Anti-gaspi',
       'Recettes avec votre frigo illimitées',

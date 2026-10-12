@@ -29,7 +29,7 @@ const TITRES: Record<RaisonPaywall, { titre: string; texte: string }> = {
   generation: { titre: 'Votre semaine idéale, sans limite', texte: `Avec Pro, accédez à votre semaine complète et optimisez-la autant que vous voulez, desserts compris.` },
   optimisations: { titre: 'Vous avez utilisé votre optimisation de la semaine', texte: `Le plan gratuit inclut ${OPTIMISATIONS_GRATUITES_PAR_SEMAINE} optimisation tous les 7 jours. Passez à Pro pour optimiser sans limite.` },
   remplacements: { titre: 'Changez vos repas sans limite', texte: 'Vous avez utilisé vos remplacements automatiques de la semaine. Avec Pro, changez autant de repas que vous voulez.' },
-  desserts: { titre: 'Les desserts sont inclus dans Pro', texte: 'Le moteur ajoute des desserts à vos semaines, du rythme léger au Gourmand, avec leurs ingrédients dans la liste de courses.' },
+  desserts: { titre: 'Les desserts sont inclus dans Pro', texte: 'Le moteur ajoute des desserts à vos semaines, du rythme léger au rythme gourmand, avec leurs ingrédients dans la liste de courses.' },
   intentions: { titre: 'Optimisez selon votre priorité', texte: 'Budget serré, peu de temps ou frigo à vider : les optimisations ciblées sont incluses dans Pro.' },
   frigo: { titre: 'Cuisinez votre frigo sans limite', texte: 'Vous avez utilisé vos recherches de la semaine. Avec Pro, trouvez des recettes avec vos restes à volonté.' },
   imports: { titre: 'Importez toutes vos recettes', texte: 'Le plan gratuit inclut un import par mois. Avec Pro, importez vos recettes préférées sans limite.' },
@@ -138,7 +138,7 @@ export function Paywall() {
                 {chargement ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirection…</> : `Débloquer avec ${offre.name} · ${prixPlan(plan, periode).montant} €/${prixPlan(plan, periode).unite}`}
               </button>
               <p className="mt-2.5 text-center text-xs text-gray-500 leading-relaxed">
-                Paiement sécurisé par Stripe. Sans engagement, résiliable à tout moment depuis votre compte.
+                Paiement sécurisé par Stripe. Résiliable à tout moment depuis votre compte, en un clic.
               </p>
             </>
           )}

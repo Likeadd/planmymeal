@@ -49,6 +49,8 @@ export interface FiltresCatalogue {
 export interface Facettes {
   total: number;
   cuisines: string[];
+  /** Nombre de recettes par cuisine (page d'accueil) */
+  parCuisine: Record<string, number>;
   types: Record<string, number>;
   equipements: Record<string, number>;
   temps: Record<number, number>;
@@ -96,6 +98,7 @@ function construire(meals: MealCatalogue[]): Index {
   const facettes: Facettes = {
     total: entrees.length,
     cuisines: Array.from(new Set(meals.map(m => m.cuisine).filter(Boolean))).sort() as string[],
+    parCuisine: {},
     types: {},
     equipements: Object.fromEntries(EQUIPEMENTS.map(eq => [eq, compte(e => equipementOk(e.m, eq))])),
     temps: Object.fromEntries(TEMPS_MAX.map(v => [v, compte(e => e.temps <= v)])),
@@ -105,7 +108,10 @@ function construire(meals: MealCatalogue[]): Index {
     proteines: compte(e => (e.m.proteines ?? 0) >= PROTEINES_MIN_G),
     regimes: Object.fromEntries(REGIMES_FILTRES.map(r => [r, compte(e => recetteServable(e.ingredientsRegime, [r]))])),
   };
-  for (const m of meals) facettes.types[m.type_repas] = (facettes.types[m.type_repas] ?? 0) + 1;
+  for (const m of meals) {
+    facettes.types[m.type_repas] = (facettes.types[m.type_repas] ?? 0) + 1;
+    if (m.cuisine) facettes.parCuisine[m.cuisine] = (facettes.parCuisine[m.cuisine] ?? 0) + 1;
+  }
   return { entrees, facettes, charge: Date.now() };
 }
 

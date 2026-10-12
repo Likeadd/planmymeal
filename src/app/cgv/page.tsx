@@ -26,8 +26,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
         <p>Trois formules d’abonnement sont proposées :</p>
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Gratuit</strong> : une optimisation de semaine tous les 7 jours, aperçu de 2 jours sur 7.</li>
-          <li><strong>Pro</strong> : génération illimitée, mémoire des goûts, batch cooking, liste triée par rayon.</li>
-          <li><strong>Famille</strong> : toutes les fonctionnalités Pro, jusqu’à 5 profils familiaux et allergies par personne.</li>
+          <li><strong>Pro</strong> : semaine complète et liste de courses complète, optimisations illimitées, desserts planifiés, changements de repas illimités, optimisations ciblées (budget, gain de temps, anti-gaspi), semaines planifiées automatiquement.</li>
+          <li><strong>Famille</strong> : toutes les fonctionnalités Pro, jusqu’à 5 profils avec les allergies et les goûts de chacun, foyer partagé entre plusieurs comptes.</li>
         </ul>
       </>
     ),
@@ -47,8 +47,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           d’accès, soit une remise d’environ 30 % par rapport au paiement mensuel.
         </p>
         <p>
-          La première semaine de génération est offerte, sans carte bancaire,
-          afin de tester le service avant de souscrire.
+          Le plan Gratuit s’utilise sans carte bancaire et sans limite de durée,
+          afin de découvrir le service avant de souscrire.
         </p>
       </>
     ),
@@ -152,7 +152,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     title: 'Responsabilité',
     body: (
       <p>
-        Les menus générés le sont par intelligence artificielle et restent
+        Les menus sont composés automatiquement par notre moteur de planification et restent
         fournis à titre indicatif. Il appartient à l’utilisateur de vérifier les
         allergènes et de respecter les règles de sécurité alimentaire. L’éditeur
         ne saurait être tenu responsable d’un dommage résultant d’un usage des
@@ -247,7 +247,7 @@ export default function CgvPage() {
                 modification du texte, pas « aujourd'hui ». `new Date()` au
                 rendu affichait la date du build côté serveur et celle de la
                 visite côté client → mismatch (et date trompeuse). */}
-            Dernière mise à jour : 15 septembre 2026.
+            Dernière mise à jour : 12 octobre 2026.
           </p>
 
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-center">

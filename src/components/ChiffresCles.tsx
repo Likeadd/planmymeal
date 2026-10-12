@@ -9,32 +9,33 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@/lib/supabase';
 import { CountUp } from '@/components/CountUp';
 
 interface Chiffres { recettes: number; cuisines: number }
 
 const arrondi = (n: number, pas: number) => Math.max(pas, Math.floor(n / pas) * pas);
 
-export function ChiffresCles() {
-  const [chiffres, setChiffres] = useState<Chiffres | null>(null);
-
+/** Compteurs du catalogue public, partagés par les blocs de la page d'accueil (une seule requête). */
+let requete: Promise<{ total: number; parCuisine: Record<string, number> } | null> | null = null;
+export function useFacettesCatalogue() {
+  const [facettes, setFacettes] = useState<{ total: number; parCuisine: Record<string, number> } | null>(null);
   useEffect(() => {
     let alive = true;
-    const supabase = createBrowserClient();
-    (async () => {
-      const [rec, cui] = await Promise.all([
-        supabase.from('meals').select('id', { count: 'exact', head: true }).eq('is_public', true),
-        supabase.from('meals').select('cuisine').eq('is_public', true).not('cuisine', 'is', null).limit(5000),
-      ]);
-      if (!alive || rec.count == null) return;
-      setChiffres({
-        recettes: rec.count,
-        cuisines: new Set((cui.data ?? []).map(r => r.cuisine)).size,
-      });
-    })().catch(() => { /* bandeau masqué si la base ne répond pas */ });
+    requete ??= fetch('/api/recettes?limite=1')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => (d?.facettes ? { total: d.facettes.total as number, parCuisine: (d.facettes.parCuisine ?? {}) as Record<string, number> } : null))
+      .catch(() => null);
+    requete.then(f => { if (alive) setFacettes(f); });
     return () => { alive = false; };
   }, []);
+  return facettes;
+}
+
+export function ChiffresCles() {
+  const facettes = useFacettesCatalogue();
+  const chiffres: Chiffres | null = facettes
+    ? { recettes: facettes.total, cuisines: Object.keys(facettes.parCuisine).length }
+    : null;
 
   if (!chiffres) return null;
 

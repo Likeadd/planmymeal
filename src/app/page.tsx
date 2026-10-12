@@ -15,7 +15,7 @@ import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
 import { Reveal } from '@/components/Reveal';
-import { ChiffresCles } from '@/components/ChiffresCles';
+import { ChiffresCles, useFacettesCatalogue } from '@/components/ChiffresCles';
 import { ApercuPlanning } from '@/components/ApercuPlanning';
 import { FAQ_CATEGORIES } from '@/app/faq/faq-data';
 import { useAuth } from '@/components/AuthProvider';
@@ -200,7 +200,7 @@ function Features() {
           </p>
         </Reveal>
 
-        {/* Mobile : cartes compactes (icône + titre, description repliée) —
+        {/* Mobile : cartes compactes (description limitée à 3 lignes) —
             la grille complète doublait la hauteur de la page sur téléphone. */}
         <div className="mt-10 sm:mt-14 grid grid-cols-2 lg:grid-cols-8 gap-3 sm:gap-5">
           {FEATURES.map((f, i) => (
@@ -210,7 +210,7 @@ function Features() {
                 <f.icon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <h3 className="mt-3 sm:mt-5 font-display text-base sm:text-lg font-bold text-gray-900 leading-snug">{f.title}</h3>
-              <p className="hidden sm:block mt-2 text-sm text-gray-600 leading-relaxed">{f.desc}</p>
+              <p className="mt-2 text-[13px] sm:text-sm text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-none">{f.desc}</p>
             </Reveal>
           ))}
         </div>
@@ -289,20 +289,20 @@ function Collection() {
 
 // ─── Nouveautés du monde ────────────────────────────────────────────────────
 
-// Comptes issus du seed world healthy (scripts/seed-world-healthy.ts) —
-// ne pas augmenter sans lancer le seed correspondant.
+// Les nombres de recettes sont lus dans le catalogue (facettes de /api/recettes).
 const NOUVEAUTES = [
-  { flag: 'lb.svg', nom: 'Libanaise', n: 48 },
-  { flag: 'gr.svg', nom: 'Grecque', n: 48 },
-  { flag: 'vn.svg', nom: 'Vietnamienne', n: 30 },
-  { flag: 'es.png', nom: 'Espagnole', n: 30 },
-  { flag: 'br.svg', nom: 'Brésilienne', n: 30 },
-  { flag: 'kr.svg', nom: 'Coréenne', n: 40 },
-  { flag: 'et.svg', nom: 'Éthiopienne', n: 64 },
-  { flag: 'jp.svg', nom: 'Japonaise', n: 62 },
+  { flag: 'lb.svg', nom: 'Libanaise' },
+  { flag: 'gr.svg', nom: 'Grecque' },
+  { flag: 'vn.svg', nom: 'Vietnamienne' },
+  { flag: 'es.png', nom: 'Espagnole' },
+  { flag: 'br.svg', nom: 'Brésilienne' },
+  { flag: 'kr.svg', nom: 'Coréenne' },
+  { flag: 'et.svg', nom: 'Éthiopienne' },
+  { flag: 'jp.svg', nom: 'Japonaise' },
 ];
 
 function NouveautesMonde() {
+  const facettes = useFacettesCatalogue();
   return (
     <section id="nouveautes" className="pb-20 sm:pb-28 -mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -328,11 +328,13 @@ function NouveautesMonde() {
             {NOUVEAUTES.map((c) => (
               <Link key={c.nom} href={`/recettes?cuisine=${encodeURIComponent(c.nom)}`}
                 title={`Voir les recettes ${c.nom.toLowerCase()}s`}
-                className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 hover:border-brand-300 hover:bg-brand-50 transition-colors">
+                className="group flex items-center gap-2 sm:gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 hover:border-brand-300 hover:bg-brand-50 transition-colors">
                 <Image src={`/flags/${c.flag}`} alt="" width={28} height={21} unoptimized className="w-7 h-[21px] rounded-[3px] border border-gray-200 object-cover shrink-0" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-gray-900 truncate">{c.nom}</span>
-                  <span className="block text-[11px] text-gray-500">{c.n} recettes</span>
+                  <span className="block text-[12px] sm:text-sm font-semibold text-gray-900 whitespace-nowrap">{c.nom}</span>
+                  <span className="block text-[11px] text-gray-500 min-h-4">
+                    {facettes?.parCuisine[c.nom] ? `${facettes.parCuisine[c.nom].toLocaleString('fr-FR')} recettes` : ''}
+                  </span>
                 </span>
                 <ArrowRight className="hidden sm:block w-4 h-4 ml-auto shrink-0 text-gray-300 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
               </Link>
@@ -430,10 +432,10 @@ function Promo() {
           ) : (
             <>
               {/* Pas encore de vrai avis : statistiques produit à la place */}
-              <div className="grid grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-3 gap-2 sm:gap-6">
                 {PROMO_STATS.map(s => (
                   <div key={s.label} className="flex flex-col items-center">
-                    <span className="font-sans text-2xl font-bold text-brand-600 whitespace-nowrap">{s.value}</span>
+                    <span className="font-sans text-xl sm:text-2xl font-bold text-brand-600 whitespace-nowrap">{s.value}</span>
                     <span className="mt-1.5 text-[11px] font-semibold tracking-[0.1em] uppercase text-gray-600 leading-snug">{s.label}</span>
                   </div>
                 ))}
@@ -708,7 +710,7 @@ function Pricing() {
  <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
           <span className="flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-brand-500" />
-            Sans engagement — annulable à tout moment
+            Résiliable à tout moment, en un clic
           </span>
           <span className="flex items-center gap-2">
             <BadgeEuro className="w-4 h-4 text-brand-500" />

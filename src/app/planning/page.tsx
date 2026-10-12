@@ -376,7 +376,7 @@ function WeekDetailCard({
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-1">Semaine du {period}</h2>
         <p className="text-sm text-gray-500 mb-6">
-          Aucun planning pour cette semaine — optimisez-le en un clic{isCurrent ? ' ou depuis le dashboard' : ''}.
+          Aucun planning pour cette semaine — optimisez-le en un clic{isCurrent ? ' ou depuis votre planning' : ''}.
         </p>
         <button onClick={onGenerate} disabled={isRegenerating}
           className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 text-white font-semibold rounded-full hover:bg-brand-600 disabled:opacity-60 transition-all shadow-cta">

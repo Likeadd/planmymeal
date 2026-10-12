@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BrandMark } from '@/components/BrandMark';
+import LandingHeader from '@/components/LandingHeader';
+import LandingFooter from '@/components/LandingFooter';
 
 export const metadata: Metadata = {
   title: 'Confidentialité & RGPD',
@@ -12,20 +13,14 @@ export const metadata: Metadata = {
 export default function ConfidentialitePage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-gray-50 border-b border-gray-200">
-        <div className="container-app py-4 flex items-center justify-between">
-          {/* Identité verrouillée : BrandMark (wordmark gris comme la landing) */}
-          <BrandMark href="/" compact />
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">← Accueil</Link>
-        </div>
-      </header>
+      <LandingHeader />
 
       <div className="container-app py-12">
         <article className="max-w-3xl mx-auto bg-white rounded-3xl border border-gray-100 shadow-xs p-8 sm:p-12 space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Confidentialité &amp; RGPD</h1>
             <p className="text-gray-500 mt-2 text-sm">
-              Dernière mise à jour : septembre 2026
+              Dernière mise à jour : 12 octobre 2026
             </p>
           </div>
 
@@ -34,7 +29,7 @@ export default function ConfidentialitePage() {
             <p className="text-gray-600 text-sm leading-relaxed">
               PlanMyMeal est un service de planification de repas. Le responsable de traitement est
               l&apos;exploitant du site (ci-après « PlanMyMeal »). Pour toute question relative à vos
-              données : <strong>privacy@getplanmymeal.com</strong>.
+              données : <strong>contact@getplanmymeal.com</strong>.
             </p>
           </section>
 
@@ -43,7 +38,7 @@ export default function ConfidentialitePage() {
             <ul className="list-disc pl-5 text-gray-600 text-sm space-y-1.5 leading-relaxed">
               <li><strong>Compte :</strong> email, nom (facultatif), mot de passe (haché par Supabase Auth, jamais lisible par nous).</li>
               <li><strong>Préférences alimentaires :</strong> nombre de personnes du foyer, allergies, intolérances, régimes (végan, halal…), budget hebdomadaire, appareils de cuisine.</li>
-              <li><strong>Usage du service :</strong> plannings générés, recettes likées/dislikées, historique de rotation, listes de courses, prix personnalisés, snapshots budgétaires.</li>
+              <li><strong>Usage du service :</strong> plannings générés, recettes aimées ou écartées, historique de rotation, listes de courses, prix personnalisés, snapshots budgétaires.</li>
               <li><strong>Paiement :</strong> géré intégralement par Stripe. Nous ne voyons jamais votre carte bancaire ; nous conservons uniquement l&apos;identifiant de votre abonnement.</li>
             </ul>
             <p className="text-gray-600 text-sm leading-relaxed">
@@ -67,8 +62,12 @@ export default function ConfidentialitePage() {
             <h2 className="text-xl font-bold text-gray-900">4. Sous-traitants (hébergement &amp; outils)</h2>
             <ul className="list-disc pl-5 text-gray-600 text-sm space-y-1.5 leading-relaxed">
               <li><strong>Supabase</strong> (base de données + authentification) — hébergement UE, chiffrement au repos et en transit.</li>
-              <li><strong>Vercel / hébergeur de l&apos;application</strong> — hébergement du site.</li>
+              <li><strong>Vercel Inc.</strong> (hébergement du site) — société établie aux États-Unis : les transferts éventuels de données hors de l&apos;Union européenne sont encadrés par les clauses contractuelles types de la Commission européenne et le Data Privacy Framework.</li>
               <li><strong>Stripe</strong> (paiements) — conforme PCI-DSS.</li>
+              <li><strong>Resend</strong> (envoi des emails : confirmation de compte, résiliation, récapitulatif et newsletter) — reçoit votre adresse email et le contenu du message.</li>
+              <li><strong>Plausible Analytics</strong> (mesure d&apos;audience) — hébergé dans l&apos;UE, sans cookie et sans donnée personnelle.</li>
+              <li><strong>Anthropic</strong> (uniquement si vous importez une recette depuis une page web ou un texte) — reçoit le texte de la recette à analyser, jamais vos données de compte.</li>
+              <li><strong>Google</strong> (uniquement si vous choisissez « Continuer avec Google ») — authentification de votre compte.</li>
             </ul>
           </section>
 
@@ -95,7 +94,7 @@ export default function ConfidentialitePage() {
               préférences). Aucune question posée.
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Pour les autres droits : <strong>privacy@getplanmymeal.com</strong> — réponse sous 30 jours.
+              Pour les autres droits : <strong>contact@getplanmymeal.com</strong> — réponse sous 30 jours.
               Vous pouvez également saisir la CNIL (cnil.fr).
             </p>
           </section>
@@ -118,6 +117,7 @@ export default function ConfidentialitePage() {
           </section>
         </article>
       </div>
+      <LandingFooter />
     </div>
   );
 }

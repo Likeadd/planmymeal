@@ -188,8 +188,12 @@ export const SAUCES: Sauce[] = [
 ];
 
 /** Phrase pour associer une sauce préparée à une poêle. */
-export const lierSauce = (sauce: Sauce) =>
-  `Versez la sauce ${sauce.t} dans la poêle et laissez réduire 1 à 2 min à feu moyen en remuant, jusqu’à ce qu’elle nappe les ingrédients`;
+/** Sauces à base de yaourt, fromage frais, pesto ou tahini : jamais chauffées (elles tranchent ou perdent leur goût). */
+export const SAUCE_FROIDE = /yaourt|fromage frais|pesto|tahini/;
+
+export const lierSauce = (sauce: Sauce) => SAUCE_FROIDE.test(sauce.t)
+  ? `Retirez la poêle du feu et laissez tiédir 1 min, puis nappez avec la sauce ${sauce.t} sans la faire cuire : chauffée, elle tournerait`
+  : `Versez la sauce ${sauce.t} dans la poêle et laissez réduire 1 à 2 min à feu moyen en remuant, jusqu’à ce qu’elle nappe les ingrédients`;
 
 /** Ustensiles d'une base selon sa cuisson */
 export const ustensilesBase = (b: Base) => (b.t.startsWith('frites') ? ['Four', 'Papier cuisson'] : ['Casserole']);

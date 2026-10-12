@@ -521,7 +521,7 @@ export default function OnboardingPage() {
 
                 {form.batch_cooking && (
                   <div className="mt-6 p-5 bg-brand-50 rounded-xl border border-brand-100">
-                    <h3 className="font-semibold text-gray-900 mb-3">🗓️ Quel jour batch cookez-vous ?</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">🗓️ Quel jour cuisinez-vous en batch ?</h3>
                     <div className="grid grid-cols-7 gap-2">
                       {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((nom, idx) => (
                         <button

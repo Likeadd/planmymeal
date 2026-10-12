@@ -97,7 +97,7 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          Les menus et recettes générés par l’intelligence artificielle sont
+          Les menus composés automatiquement par notre moteur de planification et les recettes sont
           fournis à titre indicatif. Il vous appartient de vérifier la présence
           d’allergènes et de respecter les règles d’hygiène alimentaire. L’éditeur
           ne saurait être tenu responsable d’un usage inapproprié des contenus.
@@ -175,7 +175,7 @@ export default function MentionsLegalesPage() {
                 modification du texte, pas « aujourd'hui ». `new Date()` au
                 rendu affichait la date du build côté serveur et celle de la
                 visite côté client → mismatch (et date trompeuse). */}
-            Dernière mise à jour : 27 septembre 2026.
+            Dernière mise à jour : 12 octobre 2026.
           </p>
 
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-center">

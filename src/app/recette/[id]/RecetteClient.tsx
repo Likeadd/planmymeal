@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import {
   Clock, Flame, ChefHat as ChefIcon, Heart, ThumbsDown,
@@ -27,6 +29,7 @@ export default function RecetteClient({
   initial: MealWithIngredients | null;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
   const supabase = createBrowserClient();
 
   const [initialMeal] = useState<Meal | null>(() => (initial ? toMeal(initial) : null));
@@ -96,7 +99,13 @@ export default function RecetteClient({
   // Avis via l'API serveur : un second clic sur le même bouton RETIRE vraiment
   // l'avis (avant, l'annulation n'était qu'affichée, la base gardait le like).
   const handleFeedback = async (status: 'liked' | 'disliked') => {
-    if (!user || !meal) return;
+    if (!meal) return;
+    // Sans compte : un clic ne doit jamais rester sans effet
+    if (!user) {
+      toast('Créez un compte gratuit pour enregistrer vos favoris.');
+      router.push('/signup');
+      return;
+    }
     setSaving(true);
     const newStatus = feedback === status ? null : status;
     try {
@@ -123,7 +132,8 @@ export default function RecetteClient({
   // ─── Error ───────────────────────────────────────
   if (error || !meal) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <DashboardShell>
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center">
           <AlertTriangle className="w-12 h-12 text-red-300 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900 mb-2">{error || 'Recette introuvable'}</h1>
@@ -132,6 +142,7 @@ export default function RecetteClient({
           </Link>
         </div>
       </div>
+      </DashboardShell>
     );
   }
 
@@ -274,7 +285,7 @@ export default function RecetteClient({
           {/* Mobile : ingrédients → étapes → ustensiles & nutrition (on cuisine
               avec les étapes, elles ne doivent pas arriver en dernier).
               Desktop : ingrédients + extras à gauche, étapes à droite. */}
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+          <div className="grid lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-6 lg:gap-8 items-start">
             <div className="lg:col-span-1 lg:col-start-1 lg:row-start-1 space-y-6">
               {/* Ingrédients avec prix */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
@@ -308,7 +319,7 @@ export default function RecetteClient({
                           </span>
                           <span className="flex items-center gap-2">
                             <span className="font-medium text-gray-900">
-                              {quantiteLisible(iq.quantite, iq.unite)}
+                              {quantiteLisible(iq.quantite, iq.unite, iq.ingredient.nom)}
                             </span>
                             <span className="text-xs text-gray-500 min-w-10 text-right">
                               {prix != null ? formatPrix(prix) : '—'}
@@ -493,7 +504,8 @@ function InfoChip({
 const SAISON_LABEL: Record<string, string> = { ete: 'Été', hiver: 'Hiver', printemps: 'Printemps', automne: 'Automne' };
 
 /** « 2 pcs » → « 2 pièces », « 1 cac » → « 1 c. à café », décimales en virgule */
-function quantiteLisible(q: number, unite: string): string {
+function quantiteLisible(q: number, unite: string, nom = ''): string {
+  if (unite === 'pcs' && /^Ail$/i.test(nom)) return `${String(Math.round(q * 10) / 10).replace('.', ',')} gousse${q > 1 ? 's' : ''}`;
   const mots: Record<string, string> = { pcs: q > 1 ? 'pièces' : 'pièce', cas: 'c. à soupe', cac: 'c. à café', tranche: q > 1 ? 'tranches' : 'tranche', botte: q > 1 ? 'bottes' : 'botte' };
   return `${String(Math.round(q * 10) / 10).replace('.', ',')} ${mots[unite] ?? unite}`;
 }

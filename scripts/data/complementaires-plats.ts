@@ -45,7 +45,7 @@ const CRUS: Cru[] = [
 
 export function bowls(n: number): RecetteSaisie[] {
   return combiner<[Proteine, Base, Cru, Sauce]>([PROTEINES, GRAINS, CRUS, SAUCES], n, 102).map(([p, b, c, s]) =>
-    recette('plat', `Bowl ${p.a}, ${b.t} et ${c.t}, sauce ${s.t}`,
+    recette('plat', `Bowl ${p.a}, ${b.t}, ${c.t}, sauce ${s.t}`,
       p.prep + b.prep + 5, Math.max(b.cuis, p.cuis + 2),
       [...b.i, ...p.i, ...c.i, ...s.i],
       [`${b.x}.`, `${p.x}.`, `${c.x}.`, `${s.x}.`,

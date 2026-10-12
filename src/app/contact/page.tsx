@@ -61,8 +61,7 @@ export default function ContactPage() {
 
           <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
             <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 text-balance">
-              Parlons{' '}
-              <Underlined color="#7C5FBF">en.</Underlined>
+              <Underlined color="#7C5FBF">Parlons-en.</Underlined>
             </h1>
             <p className="mt-6 text-gray-600 text-base sm:text-lg leading-relaxed max-w-xl mx-auto">
               Une question, une idée, un souci ? Notre équipe répond avec

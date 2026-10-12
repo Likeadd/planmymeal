@@ -70,7 +70,7 @@ function etapesFinales(r: RecetteSaisie): string[] {
 
 /** Recette complète : mise en place précise + étapes + service et conservation. */
 export function enrichirEtapes(r: RecetteSaisie): string[] {
-  const lignes = r.ingredients.map(([nom, q, u, optionnel]) => `${nom} (${formaterQuantite(q, u)}${optionnel ? ', facultatif' : ''})`);
+  const lignes = r.ingredients.map(([nom, q, u, optionnel]) => `${nom} (${nom === 'Ail' && u === 'pcs' ? `${String(q).replace('.', ',')} gousse${q > 1 ? 's' : ''}` : formaterQuantite(q, u)}${optionnel ? ', facultatif' : ''})`);
   const total = r.prep + r.cuisson;
   const mise = [
     `Mise en place — pour ${r.portions} personne${r.portions > 1 ? 's' : ''}. Pesez et préparez : ${lignes.join(' ; ')}.`,

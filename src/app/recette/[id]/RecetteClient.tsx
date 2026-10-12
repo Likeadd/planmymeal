@@ -14,10 +14,12 @@ import { toMeal, type MealWithIngredients } from '@/lib/db-rows';
 import { createBrowserClient } from '@/lib/supabase';
 import { formatMinutes, formatCalories, formatTypeRepas, titreRecette, emojiRecette } from '@/lib/utils';
 import { prixParPortion, prixRecette, prixLigne, formatPrix } from '@/lib/budget';
+import { quantiteLisible } from '@/lib/quantites';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { USTENSILE_ICONS, detecterUstensile } from '@/lib/ustensiles';
 import { useAuth } from '@/components/AuthProvider';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
+import { AjouterSemaine } from '@/components/AjouterSemaine';
 
 
 export default function RecetteClient({
@@ -237,6 +239,9 @@ export default function RecetteClient({
             </div>
           </div>
 
+          {/* ─── Appel à l'action en haut de fiche : visiteur → inscription gratuite, connecté → planning ─── */}
+          <AjouterSemaine mealId={meal.id} typeRepas={meal.type_repas} className="mb-6" />
+
           {/* ─── Infos rapides (macros + temps + prix) ─── */}
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-8">
             <InfoChip
@@ -442,7 +447,7 @@ export default function RecetteClient({
               </p>
               <Link href="/signup?ref=recette"
                 className="mt-5 inline-flex items-center justify-center rounded-full bg-brand-500 text-white font-semibold px-6 py-3 hover:bg-brand-600 transition-colors shadow-cta">
-                Planifier ma semaine gratuitement
+                Ajouter à ma semaine — gratuit
               </Link>
             </div>
           )}
@@ -502,13 +507,6 @@ function InfoChip({
 // ─── Ustensiles : icônes + détection automatique (voir src/lib/ustensiles.ts) ──
 
 const SAISON_LABEL: Record<string, string> = { ete: 'Été', hiver: 'Hiver', printemps: 'Printemps', automne: 'Automne' };
-
-/** « 2 pcs » → « 2 pièces », « 1 cac » → « 1 c. à café », décimales en virgule */
-function quantiteLisible(q: number, unite: string, nom = ''): string {
-  if (unite === 'pcs' && /^Ail$/i.test(nom)) return `${String(Math.round(q * 10) / 10).replace('.', ',')} gousse${q > 1 ? 's' : ''}`;
-  const mots: Record<string, string> = { pcs: q > 1 ? 'pièces' : 'pièce', cas: 'c. à soupe', cac: 'c. à café', tranche: q > 1 ? 'tranches' : 'tranche', botte: q > 1 ? 'bottes' : 'botte' };
-  return `${String(Math.round(q * 10) / 10).replace('.', ',')} ${mots[unite] ?? unite}`;
-}
 
 /** L'étape « Mise en place » : liste à puces (non numérotée), le reste des étapes est numéroté à partir de 1 */
 function MiseEnPlace({ texte }: { texte: string }) {

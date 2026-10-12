@@ -49,6 +49,14 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           exploitation, totale ou partielle, sans autorisation écrite préalable
           de l’éditeur est interdite.
         </p>
+        <p>
+          Les recettes publiées (titres, listes d’ingrédients, étapes,
+          descriptions) sont des créations originales de PlanMyMeal, rédigées ou
+          composées par l’éditeur : aucun texte n’est repris d’un autre site ni
+          d’un ouvrage. Les noms de plats traditionnels sont d’usage courant.
+          Toute photographie affichée est libre de droits ou sous licence, avec
+          mention de son auteur.
+        </p>
       </>
     ),
   },

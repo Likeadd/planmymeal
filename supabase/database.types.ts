@@ -437,6 +437,7 @@ export type Database = {
           fibres: number | null
           glucides: number | null
           id: number
+          indexable: boolean
           image_url: string | null
           image_source: string | null
           image_auteur: string | null
@@ -468,6 +469,7 @@ export type Database = {
           fibres?: number | null
           glucides?: number | null
           id?: number
+          indexable?: boolean
           image_url?: string | null
           image_source?: string | null
           image_auteur?: string | null
@@ -499,6 +501,7 @@ export type Database = {
           fibres?: number | null
           glucides?: number | null
           id?: number
+          indexable?: boolean
           image_url?: string | null
           image_source?: string | null
           image_auteur?: string | null

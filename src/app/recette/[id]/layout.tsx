@@ -7,6 +7,7 @@
 import type { Metadata } from 'next';
 import { SITE_URL, serialiserJsonLd, parseRecetteId, recetteHref } from '@/lib/seo';
 import { getRecettePublique } from './data';
+import { ingredientTexte } from '@/lib/quantites';
 
 export const revalidate = 86400; // ISR : revalide 1× par jour
 
@@ -28,10 +29,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = meal.description
     || `Recette ${meal.titre} : ${meal.temps_preparation + (meal.temps_cuisson || 0)} min, ${meal.calories_par_portion || '—'} kcal/portion. Planifiez-la avec PlanMyMeal.`;
 
+  const etiquette = meal.difficulte === 'facile' ? 'Recette facile' : 'Recette pas à pas';
+
   return {
-    title: `${meal.titre} — Recette facile`,
+    title: `${meal.titre} — ${etiquette}`,
     description,
     alternates: { canonical: url },
+    // Indexation prudente : seules les recettes rédigées à la main sont proposées aux moteurs de recherche
+    // (colonne `indexable`, voir scripts/definir-indexation.ts). Les autres restent consultables.
+    robots: meal.indexable ? undefined : { index: false, follow: true },
     openGraph: {
       title: meal.titre,
       description,
@@ -70,21 +76,26 @@ export default async function RecetteLayout({
         prepTime: `PT${meal.temps_preparation || 0}M`,
         cookTime: meal.temps_cuisson ? `PT${meal.temps_cuisson}M` : undefined,
         totalTime: `PT${(meal.temps_preparation || 0) + (meal.temps_cuisson || 0)}M`,
-        recipeYield: `${meal.portions_par_defaut} portions`,
+        datePublished: meal.created_at ? meal.created_at.slice(0, 10) : undefined,
+        recipeYield: [String(meal.portions_par_defaut), `${meal.portions_par_defaut} portions`],
         recipeCategory: CATEGORIES[meal.type_repas] ?? 'Plat principal',
         recipeCuisine: meal.cuisine || undefined,
         keywords: ['recette', meal.cuisine, meal.difficulte].filter(Boolean).join(', '),
         recipeIngredient: meal.meal_ingredients
           .filter(mi => mi.ingredients?.nom)
-          .map(mi => `${mi.quantite} ${mi.unite} ${mi.ingredients!.nom}`),
-        recipeInstructions: (meal.instructions ?? []).map((texte, i) => ({
-          '@type': 'HowToStep',
-          position: i + 1,
-          text: texte,
-        })),
+          .map(mi => ingredientTexte(mi.quantite, mi.unite, mi.ingredients!.nom)),
+        // La « Mise en place » récapitule les ingrédients déjà listés : hors balisage
+        recipeInstructions: (meal.instructions ?? [])
+          .filter(texte => !texte.startsWith('Mise en place'))
+          .map((texte, i) => ({
+            '@type': 'HowToStep',
+            position: i + 1,
+            text: texte,
+          })),
         nutrition: meal.calories_par_portion
           ? {
               '@type': 'NutritionInformation',
+              servingSize: '1 portion',
               calories: `${meal.calories_par_portion} kcal`,
               proteinContent: meal.proteines ? `${meal.proteines} g` : undefined,
               carbohydrateContent: meal.glucides ? `${meal.glucides} g` : undefined,

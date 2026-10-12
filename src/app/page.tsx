@@ -19,6 +19,7 @@ import { ChiffresCles, useFacettesCatalogue } from '@/components/ChiffresCles';
 import { ApercuPlanning } from '@/components/ApercuPlanning';
 import { FAQ_CATEGORIES } from '@/app/faq/faq-data';
 import { useAuth } from '@/components/AuthProvider';
+import { track } from '@/lib/analytics';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { STRIPE_PLANS, prixPlan, type Periode } from '@/lib/stripe';
 import { SelecteurPeriode } from '@/components/SelecteurPeriode';
@@ -621,6 +622,7 @@ function Pricing() {
       router.push('/signup');
       return;
     }
+    track('Clic abonnement', { plan, periode });
     setLoadingPlan(plan);
     try {
       await redirectToCheckout(plan, periode);

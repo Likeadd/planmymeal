@@ -20,6 +20,7 @@ import { EVENEMENT_PAYWALL, type DetailPaywall } from '@/lib/paywall';
 import { estPayant, JOURS_VISIBLES_GRATUIT, OPTIMISATIONS_GRATUITES_PAR_SEMAINE, type RaisonPaywall } from '@/lib/limites';
 import { STRIPE_PLANS, prixPlan, type Periode, type PlanType } from '@/lib/stripe';
 import { SelecteurPeriode } from '@/components/SelecteurPeriode';
+import { track } from '@/lib/analytics';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { cn } from '@/lib/utils';
 
@@ -76,6 +77,7 @@ export function Paywall() {
   const offre = STRIPE_PLANS[plan];
 
   const essayer = async () => {
+    track('Clic abonnement', { plan, periode, origine: detail.raison });
     setChargement(true);
     try {
       await redirectToCheckout(plan, periode);

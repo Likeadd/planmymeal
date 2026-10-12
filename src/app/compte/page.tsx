@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
+import { track } from '@/lib/analytics';
 import { redirectToCheckout } from '@/lib/stripe-client';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 import { lancerVisiteGuidee } from '@/components/VisiteGuidee';
@@ -75,6 +76,7 @@ function AccountContent() {
 
   const handleUpgrade = async (plan: PlanType) => {
     if (plan === profile.plan) return;
+    track('Clic abonnement', { plan, periode });
     setUpgrading(plan);
     setError('');
 

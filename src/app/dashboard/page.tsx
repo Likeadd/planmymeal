@@ -17,6 +17,9 @@ import { BandeauVerrou, useJoursVerrouilles } from '@/components/dashboard/Verro
 import { useWeeklyPlan, WEEK_OFFSET_MIN, WEEK_OFFSET_MAX } from '@/lib/useWeeklyPlan';
 import type { RepasSlot } from '@/types';
 import { useSearchParams } from 'next/navigation';
+import { BoutonPartager } from '@/components/BoutonPartager';
+import { InvitationPartage } from '@/components/InvitationPartage';
+import { lienPublicMenu } from '@/lib/partage-menu';
 import { formatWeekRange, formatDateLongueFr, parseSemaineParam, offsetOfSemaine, getMondayWithOffset, JOURS_NOMS } from '@/lib/dates';
 import { useTodayIndex } from '@/lib/useTodayIndex';
 import { WeekSkeleton } from '@/components/AppSkeleton';
@@ -367,6 +370,11 @@ function DashboardInner() {
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Le sous-titre affiche déjà « Semaine du … » → nav compacte sans doublon */}
               <WeekNav semaineDebut={semaineDebut} weekOffset={weekOffset} estSemaineCourante={estSemaineCourante} onGo={goToWeek} compact />
+              {/* Partage public du menu (lecture seule, sans compte) */}
+              {stats.totalMeals > 0 && (
+                <BoutonPartager type="menu" variante="icone" titre={`Mon menu de la semaine du ${formatWeekRange(semaineDebut)}`}
+                  texte="Voici mon menu de la semaine, composé avec PlanMyMeal :" resoudreUrl={() => lienPublicMenu(semaineDebut)} />
+              )}
               {/* Accent lavande : action secondaire. Mesure mobile réelle (390px) :
                   le libellé complet faisait passer la rangée sur DEUX lignes
                   (+42px avant le 1er repas) → icône seule < sm, texte ≥ sm. */}
@@ -379,6 +387,7 @@ function DashboardInner() {
           </div>
 
           {/* ── Barre de résumé fine : Économies · Budget · Temps · Anti-gaspi ── */}
+          <InvitationPartage semaineDebut={semaineDebut} />
           <div data-tour="resume"><SummaryBar days={days} semaineDebut={semaineDebut} /></div>
           {/* L'action CENTRALE (audit UX) : le libellé et la promesse disent ce
               que le moteur fait — arbitrer budget, goûts, temps, stock, restes,

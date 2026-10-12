@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { CalendarPlus, Check, Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { cn } from '@/lib/utils';
+import { track } from '@/lib/analytics';
 import { JOURS_NOMS, getMondayWithOffset, formatWeekRange } from '@/lib/dates';
 
 const bouton = 'inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-full text-sm font-semibold transition-colors disabled:opacity-60';
@@ -59,6 +60,7 @@ export function AjouterSemaine({ mealId, typeRepas, className }: { mealId: numbe
       if (!res.ok) throw new Error(data.error ?? 'Ajout impossible.');
       const quand = `${JOURS_NOMS[jour].toLowerCase()}${estDessert ? '' : repas === 'dejeuner' ? ' midi' : ' soir'}`;
       setFait(quand);
+      track('Ajout à ma semaine', { repas: estDessert ? 'dessert' : repas });
       toast.success(`Ajouté à votre semaine : ${quand}.`);
     } catch (e) {
       setErreur(e instanceof Error ? e.message : 'Ajout impossible.');

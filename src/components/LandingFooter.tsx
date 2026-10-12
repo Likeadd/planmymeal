@@ -1,5 +1,6 @@
 'use client';
 
+import { track } from '@/lib/analytics';
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
         body: JSON.stringify({ email: email.trim() }),
       });
       setStatut(res.ok ? 'ok' : 'erreur');
+      if (res.ok) track('Newsletter', { page: window.location.pathname === '/' ? 'accueil' : window.location.pathname.split('/')[1] || 'autre' });
     } catch {
       setStatut('erreur');
     }

@@ -20,6 +20,8 @@ import { USTENSILE_ICONS, detecterUstensile } from '@/lib/ustensiles';
 import { useAuth } from '@/components/AuthProvider';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { AjouterSemaine } from '@/components/AjouterSemaine';
+import { BoutonPartager } from '@/components/BoutonPartager';
+import { recetteHref } from '@/lib/seo';
 
 
 export default function RecetteClient({
@@ -206,8 +208,10 @@ export default function RecetteClient({
               )}
             </div>
 
-            {/* Like / Dislike */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Partager / Like / Dislike */}
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <BoutonPartager type="recette" titre={titreRecette(meal.titre)}
+                texte={`Une recette à essayer : ${titreRecette(meal.titre)}`} chemin={recetteHref(meal)} />
               <button
                 onClick={() => handleFeedback('liked')}
                 disabled={saving}

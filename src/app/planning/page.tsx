@@ -1,12 +1,14 @@
 'use client';
 
+import { BoutonPartager } from '@/components/BoutonPartager';
+import { lienPublicMenu } from '@/lib/partage-menu';
 import { useState, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Calendar, ChevronLeft, ChevronRight, RefreshCw,
   Clock, Flame, Loader2, AlertTriangle, Sparkles,
-  UtensilsCrossed, Hash, Copy, Share2,
+  UtensilsCrossed, Hash, Copy,
 } from 'lucide-react';
 import type { RecetteResume } from '@/types';
 import { usePlanningHistory, type WeekSummary } from '@/lib/usePlanningHistory';
@@ -104,29 +106,6 @@ function PlanningInner() {
     else toast.error('Copie impossible dans ce navigateur');
   };
 
-  const [sharing, setSharing] = useState(false);
-
-  // Partage public (lecture seule, sans compte) : /menu/[token]
-  const sharePublicLink = async () => {
-    if (!displayed?.plan || sharing) return;
-    setSharing(true);
-    try {
-      const res = await fetch('/api/planning/partager', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ semaine_debut: displayed.semaineDebut }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Erreur');
-      const ok = await copyToClipboard(json.url);
-      if (ok) toast.success('Lien public copié — à partager sans compte 🔗');
-      else toast.error('Copie impossible dans ce navigateur');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Partage impossible');
-    } finally {
-      setSharing(false);
-    }
-  };
 
   const handleRegenConfirm = async (semaineDebut: string) => {
     setConfirmRegen(null);
@@ -197,11 +176,8 @@ function PlanningInner() {
 
             {/* Partage public (lecture seule, sans compte) : /menu/[token] */}
             {displayed?.plan && (
-              <button onClick={() => void sharePublicLink()} disabled={sharing}
-                className="p-2 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-all text-gray-500 disabled:opacity-50"
-                title="Partager ce menu publiquement" aria-label="Partager ce menu publiquement">
-                <Share2 className="w-5 h-5" />
-              </button>
+              <BoutonPartager type="menu" variante="icone" titre={`Mon menu de la semaine du ${formatWeekRange(displayed.semaineDebut)}`}
+                texte="Voici mon menu de la semaine, composé avec PlanMyMeal :" resoudreUrl={() => lienPublicMenu(displayed.semaineDebut)} />
             )}
           </div>
         </div>

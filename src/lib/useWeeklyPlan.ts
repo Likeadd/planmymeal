@@ -1,5 +1,6 @@
 'use client';
 
+import { track } from '@/lib/analytics';
 import { gererPaywall, ErreurPaywall } from '@/lib/paywall';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
@@ -343,6 +344,10 @@ export function useWeeklyPlan(initialOffset = 0): UseWeeklyPlanResult {
 
       // Recharger le planning depuis la DB
       await loadPlan();
+      track('Optimisation semaine', { intention: intention ?? 'equilibre' });
+      // Invitation à partager (affichée une seule fois : voir InvitationPartage)
+      try { sessionStorage.setItem('pmm_optimisation_reussie', '1'); } catch { /* best-effort */ }
+      window.dispatchEvent(new Event('pmm:optimisation-reussie'));
       // Célébration : la semaine est générée (roadmap animation n°6)
       celebrate();
     } catch (err) {

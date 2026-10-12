@@ -628,6 +628,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          acquisition_source: string | null
           auto_restes: boolean
           batch_cooking: boolean
           batch_cooking_jour: number
@@ -669,6 +670,7 @@ export type Database = {
           welcome_email_envoye_le: string | null
         }
         Insert: {
+          acquisition_source?: string | null
           desserts_activees?: boolean
           rythme_desserts?: string
           auto_restes?: boolean
@@ -710,6 +712,7 @@ export type Database = {
           welcome_email_envoye_le?: string | null
         }
         Update: {
+          acquisition_source?: string | null
           auto_restes?: boolean
           rythme_desserts?: string
           desserts_activees?: boolean

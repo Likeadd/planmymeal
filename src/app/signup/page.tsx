@@ -1,5 +1,6 @@
 'use client';
 
+import { lireSource, track } from '@/lib/analytics';
 import { ConnexionGoogle } from '@/components/ConnexionGoogle';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -102,6 +103,7 @@ export default function SignupPage() {
       password,
       website,
       elapsed_ms: Date.now() - montéLe,
+      source: lireSource(),
     });
 
     if (!ok) {
@@ -109,6 +111,8 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
+
+    track('Inscription', { source: lireSource() });
 
     if (json.session) {
       // Confirmation email désactivée dans Supabase → directement connecté

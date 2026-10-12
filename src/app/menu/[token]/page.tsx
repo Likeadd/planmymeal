@@ -1,3 +1,4 @@
+import { BoutonPartager } from '@/components/BoutonPartager';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import LandingHeader from '@/components/LandingHeader';
@@ -128,6 +129,9 @@ export default async function MenuPartagePage({ params }: { params: Promise<{ to
           className="inline-flex items-center justify-center rounded-full bg-brand-500 text-white font-semibold px-6 py-3 mt-4 hover:bg-brand-600 transition-colors">
           Commencer gratuitement
         </Link>
+        <div className="mt-4">
+          <BoutonPartager type="menu" titre="Un menu de la semaine PlanMyMeal" texte="Regarde ce menu de la semaine, avec sa liste de courses :" />
+        </div>
       </div>
     </main>
     <LandingFooter />

@@ -15,6 +15,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceRateLimit, rateLimit } from '@/lib/rate-limit';
 import { logRequestSecurityEvent } from '@/lib/security-log';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { nettoyerSource } from '@/lib/analytics';
 import {
   supabaseForResponse, magicLinkRedirect, normaliserEmail, normaliserPrenom,
   motDePasseValide, DUREE_MIN_FORMULAIRE_MS,
@@ -82,6 +84,12 @@ export async function POST(request: NextRequest) {
       }
       console.error('Erreur POST /api/auth/signup:', error.message);
       return NextResponse.json({ error: ERREUR_GENERIQUE }, { status: 500 });
+    }
+
+    // Source d'acquisition (jamais bloquante) : rattachée au profil créé par le trigger d'inscription
+    const source = nettoyerSource(typeof body.source === 'string' ? body.source : null);
+    if (source && data.user?.id) {
+      try { await getSupabaseAdmin().from('profiles').update({ acquisition_source: source }).eq('id', data.user.id); } catch { /* best-effort */ }
     }
 
     // Confirmation email désactivée côté Supabase → session immédiate.

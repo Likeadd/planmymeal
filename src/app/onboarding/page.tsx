@@ -1,5 +1,6 @@
 'use client';
 
+import { track } from '@/lib/analytics';
 import { errorMessage } from '@/lib/utils';
 
 import { useState, useEffect } from 'react';
@@ -165,6 +166,8 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ semaine_debut: getMonday() }),
       }).catch(() => { /* le planning proposera de générer */ });
+
+      track('Onboarding terminé');
 
       // Barre à 100 % un instant : l'utilisateur voit que le planning est prêt
       setEtapeFinale('fin');

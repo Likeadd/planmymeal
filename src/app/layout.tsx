@@ -8,6 +8,7 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { ScrollAncre } from '@/components/ScrollAncre';
 import { CookieBanner } from '@/components/CookieBanner';
+import { SuiviSource } from '@/components/SuiviSource';
 import { GlobalLoadingBar } from '@/components/GlobalLoadingBar';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { SITE_URL, serialiserJsonLd } from '@/lib/seo';
@@ -107,6 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </AuthProvider>
         <ServiceWorkerRegister />
         <CookieBanner />
+        <SuiviSource />
         <GlobalLoadingBar />
         {/* Sans JavaScript, les animations d'apparition ne se déclencheraient
             jamais : le contenu reste alors visible. */}

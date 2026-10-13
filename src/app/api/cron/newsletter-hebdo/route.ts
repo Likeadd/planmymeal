@@ -11,6 +11,7 @@
 //     "http://localhost:3000/api/cron/newsletter-hebdo?dry_run=1"
 // ============================================================================
 
+import { SITE_URL } from '@/lib/seo';
 import { bearerValide } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     const dryRun = request.nextUrl.searchParams.get('dry_run') === '1';
     const supabase = getSupabaseAdmin();
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com';
+    const baseUrl = SITE_URL;
 
     const { data: abonnes, error: erreurAbonnes } = await supabase
       .from('newsletter_subscribers')

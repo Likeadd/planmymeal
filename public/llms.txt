@@ -1,6 +1,6 @@
 # PlanMyMeal
 
-> PlanMyMeal est un planificateur de repas français : menus de la semaine personnalisés (budget, goûts, allergies, temps de préparation, contenu du frigo), liste de courses automatique triée par rayon et suivi des calories, protéines et du coût par portion. Plus de 6 000 recettes originales en français. Gratuit pour commencer, sans carte bancaire.
+> PlanMyMeal est un planificateur de repas français : menus de la semaine personnalisés (budget, goûts, allergies, temps de préparation, contenu du frigo), liste de courses automatique triée par rayon et suivi des calories, protéines et du coût par portion. Plus de 10 000 recettes originales en français. Gratuit pour commencer, sans carte bancaire.
 
 ## Pages principales
 - [Accueil](https://getplanmymeal.com/): présentation et tarifs

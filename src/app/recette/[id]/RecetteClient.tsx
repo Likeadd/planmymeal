@@ -21,16 +21,24 @@ import { useAuth } from '@/components/AuthProvider';
 import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { AjouterSemaine } from '@/components/AjouterSemaine';
 import { BoutonPartager } from '@/components/BoutonPartager';
-import { recetteHref } from '@/lib/seo';
+import { recetteHref, filArianeRecette } from '@/lib/seo';
+import { FilAriane } from '@/components/FilAriane';
 
+
+export interface RecetteSimilaire {
+  id: number; titre: string; href: string; cuisine: string | null;
+  minutes: number; kcal: number | null; prix: number | null;
+}
 
 export default function RecetteClient({
-  mealId, initial,
+  mealId, initial, similaires = [],
 }: {
   mealId: number;
   /** Recette publique rendue côté serveur (SEO + affichage immédiat) ;
    *  null pour une recette privée, alors chargée ici avec la session. */
   initial: MealWithIngredients | null;
+  /** Recettes proches, calculées côté serveur (liens internes) */
+  similaires?: RecetteSimilaire[];
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -159,6 +167,8 @@ export default function RecetteClient({
     <DashboardShell>
       <div className="container-app py-8">
         <div className="max-w-3xl mx-auto">
+          <FilAriane maillons={filArianeRecette(meal, titreRecette(meal.titre))} className="mb-4" />
+
           {/* ─── Bandeau illustratif (emoji selon le type, plus de photos) ── */}
           <div className="relative bg-brand-100 rounded-3xl h-40 sm:h-64 flex items-center justify-center mb-8 overflow-hidden">
             {/* Vague crème en bas de bandeau */}
@@ -454,6 +464,28 @@ export default function RecetteClient({
                 Ajouter à ma semaine — gratuit
               </Link>
             </div>
+          )}
+
+          {/* ─── Recettes similaires (maillage interne) ─── */}
+          {similaires.length > 0 && (
+            <section className="mt-12" aria-labelledby="titre-similaires">
+              <h2 id="titre-similaires" className="font-display font-bold text-xl text-gray-900 mb-4">Recettes similaires</h2>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {similaires.map(r => (
+                  <li key={r.id}>
+                    <Link href={r.href} className="block h-full rounded-2xl border border-gray-100 bg-white shadow-card hover:shadow-pop hover:-translate-y-0.5 transition-all p-4">
+                      <p className="font-display font-bold text-gray-900 leading-snug">{titreRecette(r.titre)}</p>
+                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500">
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" aria-hidden />{formatMinutes(r.minutes)}</span>
+                        {r.kcal != null && <span className="flex items-center gap-1"><Flame className="w-3.5 h-3.5" aria-hidden />{formatCalories(r.kcal)}</span>}
+                        {r.prix != null && <span className="font-semibold text-sauge-700">{formatPrix(r.prix)}/portion</span>}
+                        {r.cuisine && <span className="text-gray-400">{r.cuisine}</span>}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
           {/* ─── Navigation bas ──────────────────────── */}

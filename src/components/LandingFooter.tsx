@@ -10,6 +10,7 @@ import { BrandMark } from '@/components/BrandMark';
 const FOOTER_LINKS = [
   ['FAQ', '/faq'],
   ['Mentions légales', '/mentions-legales'],
+  ['Menus', '/menu-semaine'],
   ['CGV', '/cgv'],
   ['Résilier', '/resiliation'],
   ['Contact', '/contact'],
@@ -38,7 +39,7 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
   }
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200">
+    <footer className="bg-gray-50 border-t border-gray-200 print:hidden">
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${sansNewsletter ? 'py-10' : 'py-16'}`}>
         <div className={sansNewsletter ? 'flex justify-center' : 'grid md:grid-cols-3 gap-10 items-start'}>
           {!sansNewsletter && (<>

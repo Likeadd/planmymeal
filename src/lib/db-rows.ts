@@ -158,6 +158,8 @@ export interface MealCatalogue extends RecetteChiffrable {
   /** Tri « le plus protéiné » : seule macro lue par le catalogue (g/portion) */
   proteines: number | null;
   conservation_jours: number | null;
+  /** Fiche exposée aux moteurs de recherche (colonne `indexable`) : privilégiée dans les liens internes */
+  indexable?: boolean;
   /** Ingrédients AVEC rayon : le filtre « régime » du catalogue en a besoin */
   ingredients: LigneIngredientCatalogue[];
 }
@@ -219,6 +221,7 @@ export interface MealCatalogueEmbed {
   proteines: number | null;
   conservation_jours: number | null;
   portions_par_defaut: number;
+  indexable?: boolean;
   /** Embed avec `rayon` : le filtre « régime » du catalogue lit les rayons */
   meal_ingredients: {
     quantite: number;
@@ -255,6 +258,7 @@ export function toMealCatalogue(row: MealCatalogueEmbed): MealCatalogue {
     proteines: row.proteines,
     conservation_jours: row.conservation_jours,
     portions_par_defaut: row.portions_par_defaut,
+    indexable: row.indexable === true,
     ingredients: normaliserIngredients<{ rayon: string }>(row.meal_ingredients),
   };
 }

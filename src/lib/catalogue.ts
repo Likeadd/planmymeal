@@ -46,7 +46,7 @@ export const SELECT_CATALOGUE = `
 const SELECT_CATALOGUE_LEGER = `
   id, titre, type_repas, cuisine, saison, ustensiles, difficulte,
   temps_preparation, temps_cuisson, calories_par_portion, proteines,
-  conservation_jours, portions_par_defaut,
+  conservation_jours, portions_par_defaut, indexable,
   meal_ingredients(ingredient_id, quantite, unite, est_optionnel)
 `;
 

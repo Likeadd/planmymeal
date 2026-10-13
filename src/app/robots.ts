@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/seo';
 
 /** Robots d'IA explicitement autorisés sur le contenu public (référencement par les assistants). */
 const ROBOTS_IA = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-User', 'Claude-SearchBot', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot'];
 
 export default function robots(): MetadataRoute.Robots {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com').replace(/\/$/, '');
+  const base = SITE_URL;
 
   return {
     rules: [

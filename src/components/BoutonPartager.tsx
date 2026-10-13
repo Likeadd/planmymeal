@@ -16,7 +16,7 @@ import { cn, copyToClipboard } from '@/lib/utils';
 import { track } from '@/lib/analytics';
 
 interface Props {
-  type: 'recette' | 'menu';
+  type: 'recette' | 'menu' | 'liste';
   titre: string;
   texte: string;
   /** Chemin du site à partager (recette) — l'origine est ajoutée côté navigateur */
@@ -41,7 +41,7 @@ export function BoutonPartager({ type, titre, texte, chemin, resoudreUrl, varian
   const [chargement, setChargement] = useState(false);
   const [copie, setCopie] = useState(false);
   const conteneur = useRef<HTMLDivElement>(null);
-  const ref = type === 'recette' ? 'partage' : 'partage-menu';
+  const ref = type === 'recette' ? 'partage' : type === 'menu' ? 'partage-menu' : 'partage-liste';
 
   useEffect(() => {
     if (!ouvert) return;

@@ -12,6 +12,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
+import { getStripeClient } from '@/lib/stripe-serveur';
 
 export async function POST(request: NextRequest) {
   // Anti-abus : route irréversible (RGPD) — débit très serré.
@@ -56,13 +57,8 @@ export async function POST(request: NextRequest) {
       const { data: prof } = await admin.from('profiles')
         .select('stripe_customer_id, stripe_subscription_id').eq('id', user.id).maybeSingle();
       if (prof?.stripe_customer_id) {
-        // Import dynamique : Stripe peut ne pas être configuré (clé absente en
-        // dev) — la route ne doit jamais planter au chargement pour autant.
-        const { default: Stripe } = await import('stripe');
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-          apiVersion: '2026-07-29.dahlia' as import('stripe').Stripe.LatestApiVersion,
-        });
-        if (prof.stripe_subscription_id) {
+        const stripe = await getStripeClient();
+        if (stripe && prof.stripe_subscription_id) {
           await stripe.subscriptions.cancel(prof.stripe_subscription_id);
         }
       }
@@ -100,7 +96,17 @@ export async function POST(request: NextRequest) {
     await admin.from('family_members').delete().eq('user_id', user.id);
     await admin.from('shopping_lists').delete().eq('user_id', user.id);
     await admin.from('weekly_plans').delete().eq('user_id', user.id);
-    await admin.from('profiles').delete().eq('id', user.id);
+    // Recettes créées ou importées par l'utilisateur : `meals.created_by` référence profiles SANS cascade —
+    // sans cette purge, le compte d'un utilisateur ayant importé une recette ne pouvait pas être supprimé.
+    await admin.from('meals').delete().eq('created_by', user.id);
+    const { error: erreurProfil } = await admin.from('profiles').delete().eq('id', user.id);
+    if (erreurProfil) {
+      console.error('Suppression du profil impossible:', erreurProfil.message);
+      return NextResponse.json(
+        { error: 'La suppression du compte a échoué. Réessayez, ou contactez le support : nous la traiterons sous 48 h.' },
+        { status: 500 }
+      );
+    }
 
     // 2. Suppression du compte auth (service role requis)
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);

@@ -28,7 +28,13 @@
     "db:types": "npx supabase gen types typescript --linked --schema public > supabase/database.types.ts",
     "db:push": "npx supabase db push",
     "photos:chercher": "tsx scripts/photos-libres.ts",
-    "photos:appliquer": "tsx scripts/photos-appliquer.ts"
+    "photos:appliquer": "tsx scripts/photos-appliquer.ts",
+    "catalogue:stats": "tsx scripts/stats-catalogue.ts",
+    "catalogue:dosages": "tsx scripts/audit-dosages.ts",
+    "catalogue:corriger-dosages": "tsx scripts/corriger-dosages.ts",
+    "catalogue:macros": "tsx scripts/recalculer-macros.ts",
+    "catalogue:indexation": "tsx scripts/definir-indexation.ts",
+    "catalogue:ajouter": "tsx scripts/ajouter-recettes-generees.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
@@ -54,6 +60,7 @@
     "eslint-config-next": "^16.3.6",
     "playwright": "^1.62.1",
     "postcss": "^8.4.49",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",

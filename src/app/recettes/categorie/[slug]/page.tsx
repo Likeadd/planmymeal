@@ -6,7 +6,8 @@ import { notFound } from 'next/navigation';
 import { Clock, Flame } from 'lucide-react';
 import { CATEGORIES_SEO, getCategorieSeo } from '@/lib/categories-seo';
 import { getCatalogueSeo } from './data';
-import { recetteHref, SITE_URL } from '@/lib/seo';
+import { recetteHref, SITE_URL, serialiserJsonLd, jsonLdFilAriane } from '@/lib/seo';
+import { FilAriane } from '@/components/FilAriane';
 import { formatMinutes, formatCalories, titreRecette } from '@/lib/utils';
 import { formatPrix } from '@/lib/budget';
 import { prixParPortion } from '@/lib/budget';
@@ -43,16 +44,14 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
 
   const catalogue = await getCatalogueSeo();
   const recettes = catalogue.filter(categorie.filtre).sort(categorie.tri).slice(0, NB_AFFICHEES);
+  const maillons = [{ label: 'Accueil', href: '/' }, { label: 'Recettes', href: '/recettes' }, { label: categorie.h1 }];
 
   return (
     <>
     <LandingHeader />
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-      <nav className="text-sm text-gray-500 mb-4">
-        <Link href="/recettes" className="hover:text-brand-600">Recettes</Link>
-        <span className="mx-1.5">›</span>
-        <span className="text-gray-700">{categorie.h1}</span>
-      </nav>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdFilAriane(maillons)) }} />
+      <FilAriane maillons={maillons} className="mb-4" />
 
       <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">{categorie.h1}</h1>
       <p className="mt-2.5 text-gray-600 max-w-2xl">{categorie.intro}</p>

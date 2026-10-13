@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import RecetteClient from './RecetteClient';
 import { getRecettePublique } from './data';
 import { parseRecetteId, recetteHref } from '@/lib/seo';
+import { recettesSimilaires } from '@/lib/catalogue-index';
+import { prixParPortion } from '@/lib/budget';
 
 // Rendu serveur de la recette : titre, ingrédients et étapes sont dans le HTML
 // initial (indexables, affichés sans attendre le JavaScript). L'interactivité
@@ -25,5 +27,15 @@ export default async function RecettePage({ params }: { params: Promise<{ id: st
     if (`/recette/${id}` !== canonique) redirect(canonique);
   }
 
-  return <RecetteClient mealId={mealId ?? -1} initial={initial} />;
+  // Recettes proches (maillage interne) : lues dans l'index du catalogue ; jamais bloquant pour la fiche
+  const similaires = initial
+    ? await recettesSimilaires(initial.id, 6)
+        .then(liste => liste.map(m => ({
+          id: m.id, titre: m.titre, href: recetteHref(m), cuisine: m.cuisine,
+          minutes: m.temps_preparation + (m.temps_cuisson ?? 0), kcal: m.calories_par_portion, prix: prixParPortion(m),
+        })))
+        .catch(() => [])
+    : [];
+
+  return <RecetteClient mealId={mealId ?? -1} initial={initial} similaires={similaires} />;
 }

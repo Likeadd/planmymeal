@@ -11,7 +11,13 @@
 
 import { BoutonDebloquer } from '@/components/dashboard/Verrou';
 import { useState } from 'react';
-import { ShoppingCart, RotateCcw, Route, ArrowDownAZ } from 'lucide-react';
+import { toast } from 'sonner';
+import { ShoppingCart, RotateCcw, Route, ArrowDownAZ, ClipboardCopy } from 'lucide-react';
+import { BoutonPartager } from '@/components/BoutonPartager';
+import { lienPublicListe, listeEnTexte, rangMagasin } from '@/lib/liste-courses';
+import { copyToClipboard } from '@/lib/utils';
+import { formatWeekRange } from '@/lib/dates';
+import { track } from '@/lib/analytics';
 
 export interface ShoppingSection {
   rayon: string;
@@ -19,22 +25,8 @@ export interface ShoppingSection {
   items: { nom: string; quantite: string; checked: boolean }[];
 }
 
-/**
- * Ordre de parcours d'un supermarché (entrée → caisse) : frais d'abord pour
- * limiter le temps hors frigo, sec/sucré/boissons en fin de course.
- * Rayon inconnu → rangé à la fin (par ordre alphabétique).
- */
-const ORDRE_MAGASIN = [
-  'fruits_legumes', 'boulangerie', 'frais', 'viande_poisson', 'surgeles',
-  'epicerie_salee', 'conserves', 'epices', 'epicerie_sucree', 'boissons',
-];
-const rangMagasin = (rayon: string) => {
-  const i = ORDRE_MAGASIN.indexOf(rayon);
-  return i === -1 ? ORDRE_MAGASIN.length : i;
-};
-
 export function ShoppingListView({
-  sections, onToggle, onUncheckAll, limite,
+  sections, onToggle, onUncheckAll, limite, semaineDebut,
 }: {
   sections: ShoppingSection[];
   /** Plan gratuit : nombre d'articles visibles, le reste est verrouillé */
@@ -42,6 +34,8 @@ export function ShoppingListView({
   onToggle: (label: string, nom: string) => void;
   /** Tout décocher la liste (nouveau passage magasin) — fourni par le dashboard */
   onUncheckAll?: () => void;
+  /** Semaine affichée : active le partage public de la liste */
+  semaineDebut?: string;
 }) {
   // Tri des rayons : parcours magasin (défaut) ou alphabétique. État local :
   // une préférence de course ne vaut pas la complexité d'une persistance.
@@ -74,6 +68,20 @@ export function ShoppingListView({
             {totalCoche}/{totalItems} articles
           </span>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Partage : texte à coller (WhatsApp, notes) + lien public imprimable */}
+            <button type="button" title="Copier la liste en texte" onClick={async () => {
+                const ok = await copyToClipboard(listeEnTexte(semaineDebut ? `Liste de courses — semaine du ${formatWeekRange(semaineDebut)}` : 'Liste de courses',
+                  sectionsTriees.map(sec => ({ label: sec.label, items: sec.items.map(i => ({ nom: i.nom, quantite: i.quantite })) }))));
+                if (ok) { toast.success('Liste copiée : collez-la dans un message 📋'); track('Partage', { type: 'liste', canal: 'texte' }); }
+                else toast.error('Copie impossible dans ce navigateur.');
+              }}
+              className="flex items-center gap-1.5 text-[12.5px] font-semibold px-3 py-1.5 rounded-full bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 active:scale-95 transition-all">
+              <ClipboardCopy className="w-3.5 h-3.5" /> Copier
+            </button>
+            {semaineDebut && (
+              <BoutonPartager type="liste" variante="icone" titre="Ma liste de courses de la semaine"
+                texte="Ma liste de courses de la semaine :" resoudreUrl={() => lienPublicListe(semaineDebut)} />
+            )}
             {/* Tout décocher : nouveau passage magasin (visible seulement s'il y a des coches) */}
             {totalCoche > 0 && onUncheckAll && (
               <button onClick={onUncheckAll}

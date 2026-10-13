@@ -23,7 +23,7 @@ function numeroSemaine(lundiIso: string): number {
 
 /** Sélectionne NB_PLATS plats parmi les moins chers du catalogue, en faisant
  *  tourner le point de départ chaque semaine pour varier les envois. */
-export function choisirMenuSemaine(catalogue: MealCatalogue[]): MealCatalogue[] {
+function choisirMenuSemaine(catalogue: MealCatalogue[]): MealCatalogue[] {
   const plats = catalogue
     .filter(m => m.type_repas === 'plat')
     .filter(getCategorieSeo('pas-cher')!.filtre)
@@ -42,20 +42,24 @@ export function choisirMenuSemaine(catalogue: MealCatalogue[]): MealCatalogue[] 
 /** Agrège les ingrédients des plats choisis (sommés par ingrédient) puis les
  *  chiffre avec le moteur budget existant — même logique que la vraie liste
  *  de courses de l'app. */
-function construireListeCourses(meals: MealCatalogue[]): PricedShoppingSection[] {
+export function construireListeCourses(meals: MealCatalogue[], personnes?: number): PricedShoppingSection[] {
   const parIngredient = new Map<
     number,
     { quantite_totale: number; unite: string; rayon: string; ingredient: { id: number; nom: string; prix_unitaire: number | null; unite_prix: string | null } }
   >();
 
   for (const meal of meals) {
+    // Quantités de la recette (pour ses portions d'origine) ramenées au nombre de personnes demandé
+    const facteur = personnes ? personnes / (meal.portions_par_defaut || 2) : 1;
     for (const li of meal.ingredients) {
+      if (li.est_optionnel) continue;
+      const quantite = li.quantite * facteur;
       const existant = parIngredient.get(li.ingredient.id);
       if (existant && existant.unite === li.unite) {
-        existant.quantite_totale += li.quantite;
+        existant.quantite_totale += quantite;
       } else if (!existant) {
         parIngredient.set(li.ingredient.id, {
-          quantite_totale: li.quantite,
+          quantite_totale: quantite,
           unite: li.unite,
           rayon: li.ingredient.rayon || 'Autre',
           ingredient: {

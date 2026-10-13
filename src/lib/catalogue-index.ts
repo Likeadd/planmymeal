@@ -61,7 +61,7 @@ export interface Facettes {
   regimes: Record<string, number>;
 }
 
-interface Entree {
+export interface Entree {
   m: MealCatalogue;
   temps: number;
   prix: number | null;
@@ -70,10 +70,12 @@ interface Entree {
   ingredientsRegime: IngredientPourRegime[];
 }
 
-interface Index {
+export interface Index {
   entrees: Entree[];
   facettes: Facettes;
   charge: number;
+  /** Cache de similarité (construit à la première demande) */
+  similarite?: { parId: Map<number, number>; inverse: Map<number, number[]>; poids: Map<number, number> };
 }
 
 const DUREE_VALIDE_MS = 60 * 60_000;
@@ -174,4 +176,78 @@ export function interroger(idx: Index, f: FiltresCatalogue, offset: number, limi
     }
   });
   return { total: res.length, items: res.slice(offset, offset + limite).map(e => e.m) };
+}
+
+// ─── Recettes similaires ────────────────────────────────────────────────────
+
+function preparerSimilarite(idx: Index): NonNullable<Index['similarite']> {
+  if (idx.similarite) return idx.similarite;
+  const parId = new Map<number, number>();
+  const inverse = new Map<number, number[]>();
+  idx.entrees.forEach((e, pos) => {
+    parId.set(e.m.id, pos);
+    for (const li of e.ingredientsRegime) {
+      if (li.est_optionnel) continue;
+      const l = inverse.get(li.id);
+      if (l) l.push(pos); else inverse.set(li.id, [pos]);
+    }
+  });
+  // Poids de chaque ingrédient (idf) : les basiques présents dans plus de 15 % des recettes (huile, ail, sel…) ne comptent pas
+  const N = idx.entrees.length;
+  const poids = new Map<number, number>();
+  for (const [id, pos] of inverse) poids.set(id, pos.length > N * 0.15 ? 0 : Math.log(N / (1 + pos.length)));
+  idx.similarite = { parId, inverse, poids };
+  return idx.similarite;
+}
+
+/**
+ * Recettes proches d'une recette : mêmes ingrédients « distinctifs » (pondérés par leur rareté),
+ * même type de repas, bonus même cuisine et calories voisines. À score voisin, les fiches
+ * indexables passent devant (elles reçoivent le lien interne utile au référencement).
+ */
+export async function recettesSimilaires(id: number, n = 6): Promise<MealCatalogue[]> {
+  const idx = await getIndex();
+  const { parId, inverse, poids } = preparerSimilarite(idx);
+  const posCible = parId.get(id);
+  if (posCible == null) return [];
+  const cible = idx.entrees[posCible];
+  const ingCible = cible.ingredientsRegime.filter(li => !li.est_optionnel && (poids.get(li.id) ?? 0) > 0);
+  if (ingCible.length === 0) return [];
+  const poidsCible = ingCible.reduce((s, li) => s + (poids.get(li.id) ?? 0), 0);
+
+  const partages = new Map<number, number>();
+  for (const li of ingCible) {
+    for (const pos of inverse.get(li.id) ?? []) {
+      if (pos === posCible) continue;
+      partages.set(pos, (partages.get(pos) ?? 0) + (poids.get(li.id) ?? 0));
+    }
+  }
+
+  const kcalCible = cible.m.calories_par_portion ?? 0;
+  const notes: { pos: number; note: number }[] = [];
+  for (const [pos, commun] of partages) {
+    const e = idx.entrees[pos];
+    if (e.m.type_repas !== cible.m.type_repas) continue;
+    const poidsCand = e.ingredientsRegime.filter(li => !li.est_optionnel).reduce((s, li) => s + (poids.get(li.id) ?? 0), 0);
+    let note = commun / Math.sqrt(poidsCible * (poidsCand || 1));
+    if (cible.m.cuisine && e.m.cuisine === cible.m.cuisine) note += 0.08;
+    const kcal = e.m.calories_par_portion ?? 0;
+    if (kcalCible && kcal && Math.abs(kcal - kcalCible) / kcalCible < 0.3) note += 0.04;
+    if (e.m.indexable) note += 0.06;
+    notes.push({ pos, note });
+  }
+  notes.sort((a, b) => b.note - a.note || a.pos - b.pos);
+
+  // Pas de quasi-doublons : on évite d'afficher n variantes du même plat
+  const choisies: MealCatalogue[] = [];
+  const titresVus = new Set<string>();
+  for (const { pos } of notes) {
+    const m = idx.entrees[pos].m;
+    const racine = m.titre.toLowerCase().split(/[,(]/)[0].trim();
+    if (titresVus.has(racine)) continue;
+    titresVus.add(racine);
+    choisies.push(m);
+    if (choisies.length === n) break;
+  }
+  return choisies;
 }

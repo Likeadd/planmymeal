@@ -451,7 +451,7 @@ function DashboardInner() {
                   </p>
                 </div>
               )}
-              <ShoppingListView sections={shoppingSections} onToggle={toggleShoppingItem} onUncheckAll={uncheckAllShoppingItems}
+              <ShoppingListView sections={shoppingSections} onToggle={toggleShoppingItem} onUncheckAll={uncheckAllShoppingItems} semaineDebut={semaineDebut}
                 limite={estPayant(profile?.plan) ? undefined : ARTICLES_COURSES_GRATUITS} />
             </>
           )}          {weekOffset !== 0 && (

@@ -10,12 +10,13 @@
 //      repli sur l'économie vs budget hebdo si la base n'est pas saisie.
 // ============================================================================
 
+import { SITE_URL } from '@/lib/seo';
 import type { Db } from '@/lib/rotation-engine';
 import { sendEmail, sendEmailsBatch, type SendEmailInput } from '@/lib/email';
 import { welcomeEmailHtml, weeklyDigestEmailHtml, weeklyDigestSubject } from '@/lib/email-templates';
 import { formatWeekRange, getMondayWithOffset } from '@/lib/dates';
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com').replace(/\/$/, '');
+const BASE_URL = SITE_URL;
 
 // ─── Bienvenue (idempotent) ─────────────────────────────────────────────────
 

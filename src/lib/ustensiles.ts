@@ -16,18 +16,6 @@ export const USTENSILE_ICONS: Record<string, string> = {
   'Thermomètre': '🌡️', 'Presse-ail': '🧄', 'Écumoire': '🫕', 'Friteuse': '🫧',
 };
 
-/** Retourne l'emoji d'un ustensile (correspondance exacte puis partielle). */
-export function ustensileEmoji(nom: string): string | null {
-  if (USTENSILE_ICONS[nom]) return USTENSILE_ICONS[nom];
-  const lowered = nom.toLowerCase();
-  for (const [key, emoji] of Object.entries(USTENSILE_ICONS)) {
-    if (lowered.includes(key.toLowerCase()) || key.toLowerCase().includes(lowered)) {
-      return emoji;
-    }
-  }
-  return null;
-}
-
 /** Mots-clés → ustensile, pour détecter l'ustensile d'une étape de recette. */
 const USTENSILE_KEYWORDS: [RegExp, string][] = [
   [/\b(four|enfourner|cuisson au four|rôtir|gratiner|au grille)\b/i, 'Four'],

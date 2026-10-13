@@ -32,3 +32,31 @@ export function parseRecetteId(param: string): number | null {
   const id = Number(param.split('-', 1)[0]);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
+// ─── Fil d'Ariane ────────────────────────────────────────────────────────────
+
+export interface MaillonFil { label: string; href?: string }
+
+/** Balisage schema.org BreadcrumbList : le dernier maillon (page courante) n'a pas de lien. */
+export function jsonLdFilAriane(maillons: MaillonFil[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: maillons.map((m, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: m.label,
+      ...(m.href ? { item: `${SITE_URL}${m.href}` } : {}),
+    })),
+  };
+}
+
+/** Accueil › Recettes › cuisine › recette (même chaîne pour l'affichage et le balisage). */
+export function filArianeRecette(meal: { titre: string; cuisine: string | null }, titreAffiche: string): MaillonFil[] {
+  return [
+    { label: 'Accueil', href: '/' },
+    { label: 'Recettes', href: '/recettes' },
+    ...(meal.cuisine ? [{ label: meal.cuisine, href: `/recettes?cuisine=${encodeURIComponent(meal.cuisine)}` }] : []),
+    { label: titreAffiche },
+  ];
+}

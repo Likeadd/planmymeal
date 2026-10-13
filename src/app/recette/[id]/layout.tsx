@@ -5,7 +5,8 @@
 // ============================================================================
 
 import type { Metadata } from 'next';
-import { SITE_URL, serialiserJsonLd, parseRecetteId, recetteHref } from '@/lib/seo';
+import { SITE_URL, serialiserJsonLd, parseRecetteId, recetteHref, jsonLdFilAriane, filArianeRecette } from '@/lib/seo';
+import { titreRecette } from '@/lib/utils';
 import { getRecettePublique } from './data';
 import { ingredientTexte } from '@/lib/quantites';
 
@@ -109,6 +110,9 @@ export default async function RecetteLayout({
     <>
       {jsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLd) }} />
+      )}
+      {meal && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdFilAriane(filArianeRecette(meal, titreRecette(meal.titre)))) }} />
       )}
       {children}
     </>

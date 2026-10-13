@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { recetteHref } from '@/lib/seo';
+import { SITE_URL, recetteHref } from '@/lib/seo';
 import { CATEGORIES_SEO } from '@/lib/categories-seo';
+import { VARIANTES } from '@/lib/menu-public';
 
 /**
  * Sitemap dynamique : pages publiques + recettes INDEXABLES (rédigées à la main, colonne `indexable`).
@@ -13,7 +14,7 @@ export const revalidate = 86400; // 1× par jour
 const FENETRE = 1000; // identifiants par requête (plafond PostgREST : 1 000 lignes par réponse)
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://getplanmymeal.com').replace(/\/$/, '');
+  const base = SITE_URL;
 
   const statiques: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
@@ -23,6 +24,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     })),
+    { url: `${base}/menu-semaine`, changeFrequency: 'weekly', priority: 0.9 },
+    ...VARIANTES.map(v => ({ url: `${base}/menu-semaine/${v.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 })),
     { url: `${base}/faq`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/cgv`, changeFrequency: 'yearly', priority: 0.2 },

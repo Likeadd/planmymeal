@@ -48,6 +48,8 @@ interface AUtiliser {
 /** Deux repas du même jour, dans l'ordre réel de la journée */
 const ORDRE_CRENEAUX: Record<string, number> = { dejeuner: 0, dessert_midi: 1, diner: 2, dessert: 3 };
 type RepasType = string;
+/** Heure (Paris) après laquelle un créneau est considéré comme passé */
+const FIN_CRENEAU: Record<string, number> = { dejeuner: 14, dessert_midi: 15, diner: 21, dessert: 23 };
 
 export default function AujourdhuiPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -93,29 +95,34 @@ export default function AujourdhuiPage() {
           const planMeals = planEmbed?.plan_meals ?? [];
           // Déjeuner « restes » : meal_id garde l'ancien plat, le vrai repas est le dîner de la veille
           // (même règle que le planning, cf. WeekDayTabs).
-          const dinerVeille = planMeals.find(pm => pm.jour_semaine === todayIndex - 1 && pm.repas_type === 'diner')?.meals;
-          const slots = planMeals
-            .filter(pm => pm.jour_semaine === todayIndex)
-            .map(pm => {
-              const mealRaw = pm.repas_type === 'dejeuner' && pm.est_reste_de != null && dinerVeille ? dinerVeille : pm.meals;
-              return {
-                ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
-                repas_type: pm.repas_type,
-                est_reste_de: pm.est_reste_de,
-                meal: mealRaw ? toRecettePlanning(mealRaw) : pm.texte_libre ? repasPersonnalise(pm.texte_libre) : null,
-              };
-            })
-            .sort((a, b) => a.ordre - b.ordre);
-          const prochains = slots.filter(s => s.meal);
+          const creneauxDuJour = (jour: number) => {
+            const dinerVeille = planMeals.find(pm => pm.jour_semaine === jour - 1 && pm.repas_type === 'diner')?.meals;
+            return planMeals
+              .filter(pm => pm.jour_semaine === jour)
+              .map(pm => {
+                const mealRaw = pm.repas_type === 'dejeuner' && pm.est_reste_de != null && dinerVeille ? dinerVeille : pm.meals;
+                return {
+                  ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
+                  repas_type: pm.repas_type,
+                  meal: mealRaw ? toRecettePlanning(mealRaw) : pm.texte_libre ? repasPersonnalise(pm.texte_libre) : null,
+                };
+              })
+              .filter(x => x.meal)
+              .sort((x, y) => x.ordre - y.ordre);
+          };
+          // Prochain repas = premier créneau d'aujourd'hui dont l'heure n'est pas passée (heure de Paris) ;
+          // une fois la journée finie, le premier repas de demain.
+          const heure = Number(new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false }).format(new Date())) % 24;
+          const aVenir = creneauxDuJour(todayIndex).filter(x => heure < (FIN_CRENEAU[x.repas_type] ?? 24));
+          const demain = aVenir.length === 0 && todayIndex < 6 ? creneauxDuJour(todayIndex + 1) : [];
+          const prochains = aVenir.length > 0 ? aVenir : demain;
           setNbRepasRestants(prochains.length);
           const premier = prochains[0];
           if (premier?.meal) {
-            setProchain({
-              label: premier.repas_type === 'dejeuner' ? 'Déjeuner'
-                : premier.repas_type === 'diner' ? 'Dîner'
-                : premier.repas_type === 'dessert_midi' ? 'Dessert de midi' : 'Dessert',
-              meal: premier.meal,
-            });
+            const nom = premier.repas_type === 'dejeuner' ? 'Déjeuner'
+              : premier.repas_type === 'diner' ? 'Dîner'
+              : premier.repas_type === 'dessert_midi' ? 'Dessert de midi' : 'Dessert';
+            setProchain({ label: aVenir.length > 0 ? nom : `Demain, ${nom.toLowerCase()}`, meal: premier.meal });
             setPlanningVide(false);
           } else {
             setProchain(null);
@@ -221,7 +228,7 @@ export default function AujourdhuiPage() {
                     </>
                   )}
                   {nbRepasRestants > 1 && (
-                    <span className="text-gray-500">+ {nbRepasRestants - 1} autre{nbRepasRestants > 2 ? 's' : ''} repas aujourd&apos;hui</span>
+                    <span className="text-gray-500">+ {nbRepasRestants - 1} autre{nbRepasRestants > 2 ? 's' : ''} repas {prochain.label.startsWith('Demain') ? 'demain' : 'aujourd’hui'}</span>
                   )}
                 </div>
               </Link>

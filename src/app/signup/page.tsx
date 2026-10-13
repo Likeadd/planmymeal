@@ -1,6 +1,6 @@
 'use client';
 
-import { lireSource, track } from '@/lib/analytics';
+import { track } from '@/lib/analytics';
 import { ConnexionGoogle } from '@/components/ConnexionGoogle';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cgu, setCgu] = useState(false);
   const [error, setError] = useState('');
   // Honeypot : champ invisible pour un humain + chrono de remplissage
   const [website, setWebsite] = useState('');
@@ -82,6 +83,10 @@ export default function SignupPage() {
       setError('Tous les champs sont requis.');
       return;
     }
+    if (!cgu) {
+      setError('Veuillez accepter les conditions d’utilisation et la politique de confidentialité.');
+      return;
+    }
     // Politique de mot de passe : 8 caractères minimum, au moins une lettre
     // et un chiffre (Supabase ne le fait pas côté client pour nous).
     const aUneLettre = /[a-zA-Z]/.test(password);
@@ -103,7 +108,7 @@ export default function SignupPage() {
       password,
       website,
       elapsed_ms: Date.now() - montéLe,
-      source: lireSource(),
+      cgu: cgu,
     });
 
     if (!ok) {
@@ -112,7 +117,7 @@ export default function SignupPage() {
       return;
     }
 
-    track('Inscription', { source: lireSource() });
+    track('Inscription');
 
     if (json.session) {
       // Confirmation email désactivée dans Supabase → directement connecté
@@ -139,7 +144,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         <section className="relative overflow-hidden border-b border-gray-200">
           {/* Bulles décoratives */}
           <div className="absolute -top-6 right-10 flex items-center gap-1.5 opacity-60" aria-hidden>
@@ -242,6 +247,12 @@ export default function SignupPage() {
                 ) : (
                 <>
                 <ConnexionGoogle />
+                <p className="mt-3 mb-4 text-xs text-gray-500 text-center">
+                  En continuant avec Google, vous acceptez les{' '}
+                  <Link href="/cgu" className="underline underline-offset-2">conditions d’utilisation</Link>{' '}
+                  et la{' '}
+                  <Link href="/confidentialite" className="underline underline-offset-2">politique de confidentialité</Link>.
+                </p>
                 <form onSubmit={handleSignup} className="space-y-5">
                   {/* Honeypot : invisible et inaccessible pour un humain, rempli par les robots */}
                   <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
@@ -314,8 +325,8 @@ export default function SignupPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600"
-                        tabIndex={-1}
+                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-600"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -332,6 +343,18 @@ export default function SignupPage() {
                         <p className="text-xs text-gray-500 mt-1">{strength.label}</p>
                       </div>
                     )}
+                  </div>
+
+                  {/* Acceptation des CGU / CGV / confidentialité (preuve datée côté serveur) */}
+                  <div className="flex items-start gap-3">
+                    <input id="cgu" type="checkbox" checked={cgu} onChange={(e) => setCgu(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-400 accent-brand-600" />
+                    <label htmlFor="cgu" className="text-sm text-gray-600 leading-snug">
+                      J’ai lu et j’accepte les{' '}
+                      <Link href="/cgu" target="_blank" className="text-brand-600 underline underline-offset-2">conditions d’utilisation</Link>{' '}
+                      et la{' '}
+                      <Link href="/confidentialite" target="_blank" className="text-brand-600 underline underline-offset-2">politique de confidentialité</Link>.
+                    </label>
                   </div>
 
                   {/* Submit */}

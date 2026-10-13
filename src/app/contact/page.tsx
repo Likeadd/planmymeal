@@ -48,7 +48,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-gray-200">
           <div className="absolute -top-6 right-10 flex items-center gap-1.5 opacity-60" aria-hidden>
@@ -204,7 +204,7 @@ export default function ContactPage() {
                   <Heart className="w-5 h-5" />
                 </div>
                 <h2 className="font-display text-lg font-bold">Une question fréquente ?</h2>
-                <p className="mt-2 text-sm text-white/80 leading-relaxed">
+                <p className="mt-2 text-sm text-white/95 leading-relaxed">
                   La réponse est peut-être déjà dans notre FAQ.
                 </p>
                 <Link href="/faq"

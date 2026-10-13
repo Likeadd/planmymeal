@@ -144,7 +144,8 @@ export function AbonnementSettings({ onChange }: { onChange?: () => void }) {
           <p className="text-sm text-gray-700">
             <strong>Droit de rétractation.</strong> Vous disposez de {DELAI_RETRACTATION_JOURS} jours après votre souscription
             (jusqu’au {dateFr(etat.retractationJusquau)}) pour changer d’avis, sans motif : l’abonnement s’arrête
-            immédiatement et vous êtes <strong>remboursé intégralement</strong>.
+            immédiatement et vous êtes <strong>remboursé intégralement</strong>.{' '}
+            <Link href="/retractation" className="underline underline-offset-2">Détails</Link>
           </p>
           {confirmer === 'retractation' ? (
             <div className="flex flex-wrap gap-2" role="alertdialog" aria-label="Confirmer la rétractation">

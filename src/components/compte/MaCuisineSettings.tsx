@@ -122,7 +122,7 @@ export function MaCuisineSettings() {
                 <span className="block text-sm font-semibold flex items-center gap-1">
                   {actif && <Check className="w-3.5 h-3.5" />}{r.label}
                 </span>
-                <span className={`block text-[11px] mt-0.5 ${actif ? 'text-white/80' : verrouille ? 'text-gray-500' : 'text-gray-500'}`}>{r.sous}</span>
+                <span className={`block text-[11px] mt-0.5 ${actif ? 'text-white/95' : verrouille ? 'text-gray-500' : 'text-gray-500'}`}>{r.sous}</span>
               </button>
             );
           })}

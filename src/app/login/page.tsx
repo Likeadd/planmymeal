@@ -15,7 +15,7 @@ import { LoadingButton } from '@/components/LoadingButton';
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </main>
     }>
@@ -122,7 +122,7 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         <section className="relative overflow-hidden border-b border-gray-200">
           {/* Bulles décoratives */}
           <div className="absolute -top-6 right-10 flex items-center gap-1.5 opacity-60" aria-hidden>
@@ -176,6 +176,12 @@ function LoginForm() {
                 )}
 
                 <ConnexionGoogle />
+                <p className="mt-3 mb-4 text-xs text-gray-500 text-center">
+                  En continuant avec Google, vous acceptez les{' '}
+                  <Link href="/cgu" className="underline underline-offset-2">conditions d’utilisation</Link>{' '}
+                  et la{' '}
+                  <Link href="/confidentialite" className="underline underline-offset-2">politique de confidentialité</Link>.
+                </p>
                 <form onSubmit={handleLogin} className="space-y-5">
                   {/* Email */}
                   <div>
@@ -215,8 +221,8 @@ function LoginForm() {
                       <button
                         type="button"
                         onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600"
-                        tabIndex={-1}
+                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-600"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>

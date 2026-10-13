@@ -91,7 +91,7 @@ export default async function MenuSemainePage({ params }: { params: Promise<{ sl
       {[jsonLdFilAriane(maillons), jsonLdListe, jsonLdFaq].map((d, i) => (
         <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(d) }} />
       ))}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <main id="contenu" className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         <FilAriane maillons={maillons} className="mb-4" />
 
         <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-1.5">Semaine du {semaine} · nouveau menu chaque lundi</p>

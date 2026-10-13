@@ -55,6 +55,7 @@ function patchProfil(p: Record<string, unknown>): ProfilUpdate {
   const eq = texteListe(p.equipements, 20); if (eq) out.equipements = eq;
   const ar = booleen(p.auto_restes); if (ar !== undefined) out.auto_restes = ar;
   if ('rythme_desserts' in p) out.rythme_desserts = validerRythmeDesserts(p.rythme_desserts);
+  const et = booleen(p.emails_transactionnels); if (et !== undefined) out.emails_transactionnels = et;
   const us = booleen(p.utiliser_saison); if (us !== undefined) out.utiliser_saison = us;
   if ('calories_par_jour' in p) out.calories_par_jour = borne(p.calories_par_jour, BORNES.kcal);
   if (p.onboarding_complete === true) out.onboarding_complete = true;

@@ -49,7 +49,7 @@ export default async function CategorieRecettesPage({ params }: { params: Promis
   return (
     <>
     <LandingHeader />
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <main id="contenu" className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdFilAriane(maillons)) }} />
       <FilAriane maillons={maillons} className="mb-4" />
 

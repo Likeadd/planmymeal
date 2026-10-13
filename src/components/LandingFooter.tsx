@@ -9,11 +9,15 @@ import { BrandMark } from '@/components/BrandMark';
 
 const FOOTER_LINKS = [
   ['FAQ', '/faq'],
-  ['Mentions légales', '/mentions-legales'],
   ['Menus', '/menu-semaine'],
-  ['CGV', '/cgv'],
-  ['Résilier', '/resiliation'],
   ['Contact', '/contact'],
+  ['Mentions légales', '/mentions-legales'],
+  ['CGU', '/cgu'],
+  ['CGV', '/cgv'],
+  ['Confidentialité', '/confidentialite'],
+  ['Cookies', '/cookies'],
+  ['Rétractation', '/retractation'],
+  ['Résilier', '/resiliation'],
 ];
 
 /** `sansNewsletter` : pages connexion / inscription, où l'inscription à la newsletter n'a pas lieu d'être. */
@@ -70,6 +74,7 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
                   onChange={e => setEmail(e.target.value)}
                   placeholder="ADRESSE EMAIL"
                   aria-label="Votre adresse email"
+                  autoComplete="email"
                   className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-hidden uppercase"
                 />
                 <button type="submit" aria-label="S’inscrire" disabled={statut === 'envoi'}
@@ -77,6 +82,12 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </form>
+            )}
+            {statut !== 'ok' && (
+              <p className="mt-2 text-xs text-gray-600 leading-snug">
+                Votre adresse sert uniquement à vous envoyer le menu de la semaine, après confirmation par email. Désinscription en un clic dans
+                chaque message. <Link href="/confidentialite" className="underline underline-offset-2">En savoir plus</Link>.
+              </p>
             )}
             {statut === 'erreur' && (
               <p className="text-red-600 text-xs mt-2">Une erreur est survenue, réessayez.</p>

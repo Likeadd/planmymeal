@@ -176,7 +176,7 @@ export default function FavorisPage() {
                     ? 'bg-brand-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                   {f.label}
-                  <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({count})</span>
+                  <span className={`ml-1 ${typeFilter === f.value ? 'text-white/95' : 'text-gray-500'}`}>({count})</span>
                 </button>
               );
             })}

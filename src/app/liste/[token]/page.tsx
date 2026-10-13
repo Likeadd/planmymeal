@@ -43,7 +43,7 @@ export default async function ListePartagePage({ params }: { params: Promise<{ t
   return (
     <>
       <LandingHeader />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <main id="contenu" className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <p className="print:hidden text-[11px] font-semibold tracking-[0.14em] uppercase text-brand-500 mb-1.5">Liste partagée</p>
         <h1 className="font-display font-bold text-2xl sm:text-3xl text-gray-900">Liste de courses</h1>
         <p className="mt-1 text-gray-600 text-sm">Semaine du {formatWeekRange(plan.semaineDebut)}</p>

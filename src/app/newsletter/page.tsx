@@ -35,7 +35,7 @@ export default async function NewsletterPage({
   const tokenValide = !!token && /^[0-9a-f-]{36}$/i.test(token);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-8 max-w-sm text-center">
         {cfg && tokenValide ? (
           <>
@@ -61,6 +61,6 @@ export default async function NewsletterPage({
         )}
         <Link href="/" className="inline-block mt-4 text-sm text-gray-500 underline">Retour à l&apos;accueil</Link>
       </div>
-    </div>
+    </main>
   );
 }

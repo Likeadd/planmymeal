@@ -46,13 +46,14 @@ export function CookieBanner() {
       <div className="pointer-events-auto max-w-xl mx-auto bg-white/95 backdrop-blur border border-gray-200 rounded-full shadow-pop pl-4 pr-1.5 py-1.5 flex items-center gap-3">
         <Cookie className="w-4 h-4 text-brand-500 shrink-0" aria-hidden />
         <p className="text-xs text-gray-600 flex-1 leading-snug">
-          Cookies techniques uniquement, audience anonyme sans cookie.{' '}
-          <Link href="/confidentialite" className="inline-block py-3 -my-3 px-1 -mx-1 text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">
+          Pas de publicité ni de suivi : cookies techniques uniquement, audience anonyme sans cookie.{' '}
+          <Link href="/cookies" className="inline-block py-3 -my-3 px-1 -mx-1 text-brand-700 underline underline-offset-2 decoration-brand-300 hover:text-brand-800">
             Détails
           </Link>
         </p>
         <button
           onClick={fermer}
+          aria-label="Fermer l’information sur les cookies"
           className="shrink-0 px-3.5 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-full hover:bg-brand-700 transition-colors"
         >
           OK

@@ -1,17 +1,15 @@
 'use client';
 
-// Capte la source d'acquisition à la 1re visite et suit les clics d'inscription.
+// Suit les clics d'inscription (événement Plausible anonyme).
 // Un seul écouteur délégué : tout lien vers /signup (accueil, fiche, tarifs, menu
 // partagé…) envoie « CTA inscription » avec l'emplacement, sans modifier chaque page.
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { capterSource, track } from '@/lib/analytics';
+import { track } from '@/lib/analytics';
 
 export function SuiviSource() {
   const pathname = usePathname();
-
-  useEffect(() => { capterSource(); }, []);
 
   useEffect(() => {
     const clic = (e: MouseEvent) => {

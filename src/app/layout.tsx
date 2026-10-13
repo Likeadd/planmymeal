@@ -98,6 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className={`${inter.variable} min-h-screen flex flex-col`}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdSite) }} />
+        {/* Lien d'évitement (clavier / lecteurs d'écran) : visible uniquement au focus */}
+        <a href="#contenu"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-full focus:bg-brand-700 focus:text-white focus:text-sm focus:font-semibold">
+          Aller au contenu principal
+        </a>
         <AuthProvider>
           {children}
           {/* Repositionne les ancres /#section après stabilisation des polices

@@ -11,4 +11,7 @@
 ## Informations légales
 - [Mentions légales](https://getplanmymeal.com/mentions-legales)
 - [Politique de confidentialité](https://getplanmymeal.com/confidentialite)
+- [Politique de cookies](https://getplanmymeal.com/cookies)
+- [Conditions d'utilisation](https://getplanmymeal.com/cgu)
 - [Conditions générales de vente](https://getplanmymeal.com/cgv)
+- [Rétractation et remboursement](https://getplanmymeal.com/retractation)

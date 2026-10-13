@@ -159,7 +159,7 @@ export function WeekColumns({
             <div key={day.jour} className="contents">
               <div className={cn('min-h-[88px] rounded-2xl flex flex-col items-center justify-center text-center px-2',
                 auj ? 'bg-brand-500 text-white shadow-cta' : 'bg-white border border-gray-100')}>
-                <span className={cn('text-[13px] font-semibold', auj ? 'text-white/85' : 'text-gray-500')}>
+                <span className={cn('text-[13px] font-semibold', auj ? 'text-white/95' : 'text-gray-500')}>
                   {auj ? "Aujourd'hui" : day.jour}
                 </span>
                 <span className={cn('font-bold leading-tight', auj ? 'text-lg' : 'text-2xl text-gray-900')}>

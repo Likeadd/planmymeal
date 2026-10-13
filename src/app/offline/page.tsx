@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function OfflinePage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-8 max-w-sm text-center">
         <div className="text-5xl mb-4">📵</div>
         <h1 className="text-xl font-bold text-gray-900">Vous êtes hors ligne</h1>
@@ -20,6 +20,6 @@ export default function OfflinePage() {
           Réessayer
         </a>
       </div>
-    </div>
+    </main>
   );
 }

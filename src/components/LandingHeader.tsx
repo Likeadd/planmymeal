@@ -57,7 +57,7 @@ export default function LandingHeader() {
               {mobileMenuOpen ? <X className="w-5 h-5 text-gray-800" /> : <Menu className="w-5 h-5 text-gray-800" />}
             </button>
             {/* gap-4 sur écrans moyens (md→lg), aéré seulement à partir de lg */}
-            <nav className="hidden lg:flex items-center gap-4 lg:gap-9">
+            <nav aria-label="Navigation principale" className="hidden lg:flex items-center gap-4 lg:gap-9">
               {NAV_LINKS.map(([label, href]) => (
                 <Link key={href} href={href} className={lienNav(pathname === href)}>
                   {label}
@@ -83,7 +83,7 @@ export default function LandingHeader() {
 
           {/* Actions droite : liens Tarifs/FAQ puis auth */}
           <div className="hidden lg:flex items-center justify-end gap-6">
-            <nav className="flex items-center gap-4 lg:gap-9">
+            <nav aria-label="Tarifs et questions fréquentes" className="flex items-center gap-4 lg:gap-9">
               {NAV_LINKS_DROITE.map(([label, href]) => (
                 <Link key={href} href={href} className={lienNav(pathname === href)}>
                   {label}

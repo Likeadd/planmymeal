@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type Stripe from 'stripe';
 import { ingredientTexte, quantiteLisible } from '../src/lib/quantites';
-import { nettoyerSource } from '../src/lib/analytics';
 import { etatDepuisStripe } from '../src/lib/abonnement';
 
 // ============================================================================
@@ -29,22 +28,6 @@ describe('quantiteLisible / ingredientTexte', () => {
     expect(ingredientTexte(2, 'g', 'Épinards frais')).toBe('2 g d’épinards frais');
     expect(ingredientTexte(3, 'pcs', 'Tomate')).toBe('3 tomates');
     expect(ingredientTexte(1, 'pcs', 'Oignon')).toBe('1 oignon');
-  });
-});
-
-describe('nettoyerSource', () => {
-  it('accepte les noms simples et normalise la casse', () => {
-    expect(nettoyerSource('TikTok')).toBe('tiktok');
-    expect(nettoyerSource('partage-menu')).toBe('partage-menu');
-    expect(nettoyerSource('google.com')).toBe('google.com');
-  });
-
-  it('rejette tout ce qui n’est pas un nom simple', () => {
-    expect(nettoyerSource('<script>alert(1)</script>')).toBeNull();
-    expect(nettoyerSource('a b')).toBeNull();
-    expect(nettoyerSource('x'.repeat(41))).toBeNull();
-    expect(nettoyerSource('')).toBeNull();
-    expect(nettoyerSource(null)).toBeNull();
   });
 });
 

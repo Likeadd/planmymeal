@@ -185,14 +185,14 @@ export default function OnboardingPage() {
   // État de chargement pendant la vérification du middleware
   if (authLoading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col">
+    <main id="contenu" className="min-h-screen bg-gray-50 flex flex-col">
       {saving && <ChargementPlanning etape={etapeFinale} />}
       <header className="bg-gray-50 border-b border-gray-200">
         <div className="container-app py-4 flex items-center justify-between">
@@ -273,7 +273,11 @@ export default function OnboardingPage() {
 
                 <div>
                   <h3 className="font-semibold mb-1">Votre profil <span className="text-gray-400 font-normal text-sm">(facultatif)</span></h3>
-                  <p className="text-sm text-gray-500 mb-4">Ces informations servent uniquement à calculer vos besoins.</p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Ces informations, facultatives, servent uniquement à calculer vos besoins en calories. Elles peuvent relever de votre santé :
+                    en les renseignant, vous consentez à leur traitement pour ce seul usage. Modifiables ou effaçables à tout moment dans Mon compte
+                    (<a href="/confidentialite#section-3" target="_blank" className="underline underline-offset-2">en savoir plus</a>).
+                  </p>
                   <div className="flex gap-2 mb-4">
                     {([['femme', 'Femme'], ['homme', 'Homme'], [null, 'Non précisé']] as [Sexe | null, string][]).map(([val, label]) => (
                       <Chip key={label} active={form.sexe === val} onClick={() => setForm(f => ({ ...f, sexe: val }))}>{label}</Chip>
@@ -306,7 +310,10 @@ export default function OnboardingPage() {
               <div className="space-y-8">
                 <div>
                   <h3 className="font-semibold mb-3">⚠️ Allergies & intolérances</h3>
-                  <p className="text-sm text-gray-500 mb-4">Ces aliments seront <strong>exclus</strong> de vos repas.</p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Ces aliments seront <strong>exclus</strong> de vos repas. Allergies et intolérances peuvent relever de votre santé : en les cochant,
+                    vous consentez à leur traitement pour filtrer vos recettes (effaçable à tout moment dans Mon compte).
+                  </p>
                   <div className="space-y-5">
                     {GROUPES_ALLERGIES.map(g => (
                       <div key={g.titre}>
@@ -501,7 +508,7 @@ export default function OnboardingPage() {
                           <span className="block text-sm font-semibold flex items-center gap-1">
                             {actif && <Check className="w-3.5 h-3.5" />}{r.label}
                           </span>
-                          <span className={`block text-[11px] mt-0.5 ${actif ? 'text-white/80' : 'text-gray-500'}`}>{r.sous}</span>
+                          <span className={`block text-[11px] mt-0.5 ${actif ? 'text-white/95' : 'text-gray-500'}`}>{r.sous}</span>
                         </button>
                       );
                     })}

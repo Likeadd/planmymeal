@@ -4,6 +4,7 @@ import Link from 'next/link';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
+import { EDITEUR, MAJ_LEGALE } from '@/lib/legal';
 
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
@@ -15,8 +16,9 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           exploité à titre individuel (immatriculation en cours) :
         </p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Numéro SIRET : en cours d’attribution — publié ici dès son obtention.</li>
-          <li>Directeur de la publication : [Nom complet à compléter]</li>
+          <li>Éditeur et directeur de la publication : <strong>{EDITEUR.nom}</strong></li>
+          <li>Adresse : {EDITEUR.adresse}</li>
+          <li>{EDITEUR.siret ? <>Numéro SIRET : {EDITEUR.siret}</> : 'Numéro SIRET : en cours d’attribution — publié ici dès son obtention.'}</li>
           <li>Contact : <a href="mailto:contact@getplanmymeal.com" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">contact@getplanmymeal.com</a></li>
         </ul>
       </>
@@ -29,7 +31,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
         <p>
           Le site est hébergé par <strong>Vercel Inc.</strong> (
           <a href="https://vercel.com" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">vercel.com</a>
-          ).
+          ), 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis — téléphone : +1 559 288 7060. Le site s’exécute dans la région de
+          Dublin (Irlande).
         </p>
         <p>
           Les données applicatives sont stockées sur une infrastructure sécurisée
@@ -74,6 +77,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           Vos données sont utilisées uniquement pour le fonctionnement du
           service : création de compte, génération de menus personnalisés et
           gestion de l’abonnement. Elles ne sont jamais revendues à des tiers.
+          Le détail figure dans la{' '}
+          <Link href="/confidentialite" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">politique de confidentialité</Link>.
         </p>
         <p>
           Pour exercer vos droits, écrivez-nous à{' '}
@@ -88,13 +93,14 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
       <>
         <p>
           Le site utilise uniquement des cookies techniques nécessaires au
-          fonctionnement du service (session de connexion, préférences).
+          fonctionnement du service (session de connexion, préférences) — voir la{' '}
+          <Link href="/cookies" className="text-brand-600 underline underline-offset-2 decoration-brand-300 hover:text-brand-700">politique de cookies</Link>.
         </p>
         <p>
           La mesure d’audience est assurée par <strong>Plausible</strong>, un
-          outil respectueux de la vie privée qui ne dépose aucun cookie et ne
-          collecte aucune donnée personnelle — aucun consentement n’est donc
-          requis pour son utilisation. Aucun cookie publicitaire ou de suivi
+          outil de mesure d’audience anonyme qui ne dépose aucun cookie et ne
+          conserve aucune donnée personnelle : il est exempté de consentement
+          et vous pouvez vous y opposer. Aucun cookie publicitaire ou de suivi
           n’est déposé.
         </p>
       </>
@@ -137,7 +143,7 @@ export default function MentionsLegalesPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-gray-200">
           <div className="absolute -top-6 right-10 flex items-center gap-1.5 opacity-60" aria-hidden>
@@ -183,7 +189,7 @@ export default function MentionsLegalesPage() {
                 modification du texte, pas « aujourd'hui ». `new Date()` au
                 rendu affichait la date du build côté serveur et celle de la
                 visite côté client → mismatch (et date trompeuse). */}
-            Dernière mise à jour : 12 octobre 2026.
+            Dernière mise à jour : {MAJ_LEGALE}.
           </p>
 
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-center">

@@ -15,8 +15,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceRateLimit, rateLimit } from '@/lib/rate-limit';
 import { logRequestSecurityEvent } from '@/lib/security-log';
-import { getSupabaseAdmin } from '@/lib/supabase';
-import { nettoyerSource } from '@/lib/analytics';
 import {
   supabaseForResponse, magicLinkRedirect, normaliserEmail, normaliserPrenom,
   motDePasseValide, DUREE_MIN_FORMULAIRE_MS,
@@ -43,6 +41,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, session: false }); // leurre
     }
 
+    // Acceptation des CGU / de la politique de confidentialité : exigée côté serveur (preuve datée)
+    if (body.cgu !== true) {
+      return NextResponse.json({ error: 'Veuillez accepter les conditions d’utilisation et la politique de confidentialité.' }, { status: 400 });
+    }
+
     const prenom = normaliserPrenom(body.name);
     const email = normaliserEmail(body.email);
     if (!prenom || !email) {
@@ -67,7 +70,7 @@ export async function POST(request: NextRequest) {
       email,
       password: body.password,
       options: {
-        data: { full_name: prenom },
+        data: { full_name: prenom, cgu_acceptees_le: new Date().toISOString() },
         emailRedirectTo: magicLinkRedirect(request),
       },
     });
@@ -84,12 +87,6 @@ export async function POST(request: NextRequest) {
       }
       console.error('Erreur POST /api/auth/signup:', error.message);
       return NextResponse.json({ error: ERREUR_GENERIQUE }, { status: 500 });
-    }
-
-    // Source d'acquisition (jamais bloquante) : rattachée au profil créé par le trigger d'inscription
-    const source = nettoyerSource(typeof body.source === 'string' ? body.source : null);
-    if (source && data.user?.id) {
-      try { await getSupabaseAdmin().from('profiles').update({ acquisition_source: source }).eq('id', data.user.id); } catch { /* best-effort */ }
     }
 
     // Confirmation email désactivée côté Supabase → session immédiate.

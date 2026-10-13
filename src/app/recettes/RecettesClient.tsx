@@ -156,7 +156,7 @@ function PuceFiltre({
         : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'}`}>
       {children}
       {compteur != null && (
-        <span className={`ml-1 ${actif ? 'text-white/70' : 'text-gray-500'}`}>({fmt(compteur)})</span>
+        <span className={`ml-1 ${actif ? 'text-white/95' : 'text-gray-500'}`}>({fmt(compteur)})</span>
       )}
     </button>
   );
@@ -407,7 +407,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
                     ? 'bg-brand-500 text-white shadow-xs'
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-brand-50 hover:text-brand-600'}`}>
                     {f.label}
-                    <span className={`ml-1 ${typeFilter === f.value ? 'text-white/70' : 'text-gray-500'}`}>({fmt(count)})</span>
+                    <span className={`ml-1 ${typeFilter === f.value ? 'text-white/95' : 'text-gray-500'}`}>({fmt(count)})</span>
                   </button>
                 );
               })}
@@ -427,7 +427,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
 
               {/* Cuisine */}
               {cuisines.length > 1 && (
-                <select value={cuisineFilter} onChange={e => setCuisineFilter(e.target.value)}
+                <select aria-label="Filtrer par cuisine" value={cuisineFilter} onChange={e => setCuisineFilter(e.target.value)}
                   className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                   <option value="toutes">Toutes cuisines</option>
                   {cuisines.map(c => <option key={c} value={c}>{c}</option>)}
@@ -480,7 +480,7 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
                   className={`inline-flex items-center min-h-[40px] px-4 py-2 text-xs font-medium rounded-full border transition-colors ${equipementFilter === eq
                     ? 'bg-accent-500 text-white border-accent-500 shadow-xs'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-accent-300 hover:text-accent-600'}`}>
-                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/60' : 'text-gray-500'}`}>({fmt(count)})</span>
+                    {eq} <span className={`ml-0.5 ${equipementFilter === eq ? 'text-white/95' : 'text-gray-500'}`}>({fmt(count)})</span>
                   </button>
                 );
               })}
@@ -490,13 +490,13 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
 
                 <div className="flex flex-wrap gap-2">
               {/* Difficulté */}
-              <select value={difficulteFilter} onChange={e => setDifficulteFilter(e.target.value as typeof difficulteFilter)}
+              <select aria-label="Filtrer par difficulté" value={difficulteFilter} onChange={e => setDifficulteFilter(e.target.value as typeof difficulteFilter)}
                 className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                 {DIFFICULTES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
               </select>
 
               {/* Saison */}
-              <select value={saisonFilter} onChange={e => setSaisonFilter(e.target.value as Saison | 'toutes')}
+              <select aria-label="Filtrer par saison" value={saisonFilter} onChange={e => setSaisonFilter(e.target.value as Saison | 'toutes')}
                 className="text-xs font-medium bg-white border border-gray-200 rounded-full px-4 min-h-[40px] py-2 focus:outline-hidden focus:ring-2 focus:ring-brand-300 cursor-pointer">
                 {SAISONS_FILTRES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
@@ -596,9 +596,9 @@ export default function RecettesClient({ initial }: { initial: CatalogueInitial 
 
                   <div className="p-4">
                     <Link href={recetteHref(meal)}>
-                    <h3 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-10">
+                    <h2 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-brand-600 transition-colors line-clamp-2 min-h-10">
                       {titreRecette(meal.titre)}
-                    </h3>
+                    </h2>
                   </Link>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mb-4">

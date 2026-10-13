@@ -26,6 +26,7 @@ import { ProfileSettings } from '@/components/compte/ProfileSettings';
 import { PasswordSettings } from '@/components/compte/PasswordSettings';
 import { ActivitySettings } from '@/components/compte/ActivitySettings';
 import { DangerZone } from '@/components/compte/DangerZone';
+import { DonneesSettings } from '@/components/compte/DonneesSettings';
 
 // Les sections de réglages vivent dans src/components/compte/ (extraites pour
 // testabilité — audit P3) : PlanCard, MaCuisineSettings, ProfileSettings,
@@ -34,7 +35,7 @@ import { DangerZone } from '@/components/compte/DangerZone';
 export default function AccountPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </main>
     }>
@@ -68,7 +69,7 @@ function AccountContent() {
 
   if (loading || !user || !profile) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main id="contenu" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </main>
     );
@@ -284,6 +285,7 @@ function AccountContent() {
           <ProfileSettings key={JSON.stringify([profile.full_name, profile.email])} />
           <PasswordSettings />
           <ActivitySettings />
+          <DonneesSettings />
           <DangerZone />
         </div>
       </div>

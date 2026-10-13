@@ -4,7 +4,7 @@ import Link from 'next/link';
 import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
-import { DELAI_RETRACTATION_JOURS, EMAIL_CONTACT, MEDIATEUR, mediateurConfigure } from '@/lib/legal';
+import { DELAI_RETRACTATION_JOURS, EDITEUR, EMAIL_CONTACT, MAJ_LEGALE, MEDIATEUR, mediateurConfigure } from '@/lib/legal';
 
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
@@ -16,6 +16,11 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
         <strong>getplanmymeal.com</strong> : génération de menus personnalisés,
         liste de courses et fonctionnalités associées. Toute souscription
         implique l’acceptation pleine et entière des présentes conditions.
+        Le vendeur est <strong>{EDITEUR.nom}</strong>, {EDITEUR.adresse}
+        {EDITEUR.siret && <> (SIRET {EDITEUR.siret})</>}, joignable à{' '}
+        <a href={`mailto:${EMAIL_CONTACT}`} className="text-brand-600 underline underline-offset-2">{EMAIL_CONTACT}</a>.
+        L’usage du service est également régi par les{' '}
+        <Link href="/cgu" className="text-brand-600 underline underline-offset-2">conditions d’utilisation</Link>.
       </p>
     ),
   },
@@ -104,7 +109,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           <li>
             ou adresser une demande dépourvue d’ambiguïté à{' '}
             <a href={`mailto:${EMAIL_CONTACT}`} className="text-brand-600 underline underline-offset-2">{EMAIL_CONTACT}</a>,
-            par exemple avec le modèle de formulaire ci-dessous.
+            par exemple avec le modèle de formulaire ci-dessous, également disponible sur la page{' '}
+            <Link href="/retractation" className="text-brand-600 underline underline-offset-2">Rétractation et remboursement</Link>.
           </li>
         </ul>
         <p>
@@ -201,7 +207,7 @@ export default function CgvPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         {/* Hero */}
         <section className="relative overflow-hidden border-b border-gray-200">
           <div className="absolute -top-6 right-10 flex items-center gap-1.5 opacity-60" aria-hidden>
@@ -247,7 +253,7 @@ export default function CgvPage() {
                 modification du texte, pas « aujourd'hui ». `new Date()` au
                 rendu affichait la date du build côté serveur et celle de la
                 visite côté client → mismatch (et date trompeuse). */}
-            Dernière mise à jour : 12 octobre 2026.
+            Dernière mise à jour : {MAJ_LEGALE}.
           </p>
 
           <div className="mt-8 bg-white border border-gray-200 rounded-2xl p-6 text-center">

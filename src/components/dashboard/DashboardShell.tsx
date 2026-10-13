@@ -54,7 +54,7 @@ export function DashboardShell({
       <div className="min-h-screen bg-gray-50">
         <LandingHeader />
         {/* Même largeur que l'en-tête du site : logo et titres alignés */}
-        <main className="[&_.container-app]:max-w-7xl">{children}</main>
+        <main id="contenu" className="[&_.container-app]:max-w-7xl">{children}</main>
         <LandingFooter />
       </div>
     );
@@ -67,7 +67,7 @@ export function DashboardShell({
       {/* ── Mobile : topbar compacte (lg:hidden) ── */}
       <MobileTopbar />
 
-      <main className="pb-20 lg:pb-0">{children}</main>
+      <main id="contenu" className="pb-20 lg:pb-0">{children}</main>
 
       {/* ── Mobile : bottom-nav 4 onglets ────────────────────────────── */}
       <BottomNav />
@@ -109,7 +109,7 @@ function Topbar({ onRegenerate, regenerating, showRegenerate, libelle }: {
         <BrandMark href="/" height={34} className="shrink-0" />
 
         {/* Nav centrale : liens micro-caps espacés comme la landing (gap-6/9) */}
-        <nav className="flex-1 flex items-center justify-center gap-6 lg:gap-9 min-w-0">
+        <nav aria-label="Navigation principale" className="flex-1 flex items-center justify-center gap-6 lg:gap-9 min-w-0">
           {NAV_ITEMS.map(item => (
             <NavLink key={item.href} item={item} />
           ))}
@@ -235,7 +235,7 @@ function BottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-creme-50 border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="Navigation mobile" className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-creme-50 border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around px-2 py-1.5">
           {items.map(item => {
             const active = item.match.some(m => pathname.startsWith(m));

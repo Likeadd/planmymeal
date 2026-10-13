@@ -12,7 +12,7 @@ export default function FaqPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main>
+      <main id="contenu">
         <FaqHero />
         <FaqContent />
         <FaqCta />
@@ -124,7 +124,7 @@ function FaqCta() {
         <h2 className="font-display text-2xl sm:text-3xl font-bold text-white text-balance">
           Vous ne trouvez pas votre réponse ?
         </h2>
-        <p className="mt-3 text-white/80 text-sm sm:text-base max-w-md mx-auto">
+        <p className="mt-3 text-white/95 text-sm sm:text-base max-w-md mx-auto">
           Notre équipe répond rapidement, avec plaisir.
         </p>
         <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -16,7 +16,7 @@ export default function ResiliationPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <LandingHeader />
-      <main className="max-w-xl mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-6">
+      <main id="contenu" className="max-w-xl mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-6">
         <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900">Résilier mon abonnement</h1>
         <p className="text-gray-600">
           Résiliez en un clic, sans motif et sans frais. Vous gardez l’accès jusqu’à la fin de la période déjà payée.

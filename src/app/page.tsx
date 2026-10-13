@@ -51,7 +51,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serialiserJsonLd(jsonLdApp) }} />
       <LandingHeader />
-      <main>
+      <main id="contenu">
         <Hero />
         <ChiffresCles />
         <Features />
@@ -666,7 +666,7 @@ function Pricing() {
                   <>
                     <div className="mt-2 flex items-baseline gap-1">
                       <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>{prix ? prix.montant : '0'}€</span>
-                      <span className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-gray-500'}`}>/{prix ? prix.unite : 'mois'}</span>
+                      <span className={`text-sm ${plan.highlighted ? 'text-white/95' : 'text-gray-500'}`}>/{prix ? prix.unite : 'mois'}</span>
                     </div>
                     {/* Ligne de réassurance : équivalent mensuel + économie (réserve la hauteur en mensuel) */}
                     <p className={`text-xs mt-1 min-h-4 font-semibold ${plan.highlighted ? 'text-white/90' : 'text-sauge-700'}`}>
@@ -675,7 +675,7 @@ function Pricing() {
                   </>
                 );
               })()}
-              <p className={`text-sm mt-1 ${plan.highlighted ? 'text-white/70' : 'text-gray-500'}`}>{plan.desc}</p>
+              <p className={`text-sm mt-1 ${plan.highlighted ? 'text-white/95' : 'text-gray-500'}`}>{plan.desc}</p>
 
               <ul className="mt-6 mb-8 space-y-2.5 flex-1">
                 {plan.features.map((f, i) => (
@@ -762,7 +762,7 @@ function SectionFinale() {
           <h2 id="finale-titre" className="font-display text-3xl sm:text-4xl font-bold leading-tight">
             Votre semaine de menus, prête en un clic.
           </h2>
-          <p className="mt-4 text-white/85 leading-relaxed">
+          <p className="mt-4 text-white/95 leading-relaxed">
             Répondez à quelques questions : vos menus et votre liste de courses sont composés aussitôt.
           </p>
           <Link href={isLoggedIn ? '/dashboard' : '/signup'}
@@ -770,7 +770,7 @@ function SectionFinale() {
             {isLoggedIn ? 'Voir ma semaine' : 'Optimiser ma semaine'}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden />
           </Link>
-          <p className="mt-4 text-xs text-white/75">Inscription gratuite · sans carte bancaire</p>
+          <p className="mt-4 text-xs text-white/95">Inscription gratuite · sans carte bancaire</p>
         </Reveal>
       </div>
     </section>

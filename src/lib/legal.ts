@@ -20,3 +20,17 @@ export const MEDIATEUR = {
 };
 
 export const mediateurConfigure = MEDIATEUR.nom !== '' && /^https:\/\//.test(MEDIATEUR.url);
+
+/**
+ * Identité de l'éditeur (LCEN art. 6-III, Code de la consommation L111-1) : à renseigner
+ * dans les variables d'environnement Vercel. Tant qu'elles sont vides, un texte entre
+ * crochets reste visible pour ne pas oublier de les compléter avant l'ouverture.
+ */
+export const EDITEUR = {
+  nom: (process.env.NEXT_PUBLIC_EDITEUR_NOM ?? '').trim() || '[Nom et prénom de l’éditeur à compléter]',
+  adresse: (process.env.NEXT_PUBLIC_EDITEUR_ADRESSE ?? '').trim() || '[Adresse postale à compléter]',
+  siret: (process.env.NEXT_PUBLIC_EDITEUR_SIRET ?? '').trim(),
+};
+
+/** Date de dernière mise à jour des textes légaux (figée, jamais calculée au rendu) */
+export const MAJ_LEGALE = '13 octobre 2026';

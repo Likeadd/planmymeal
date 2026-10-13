@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/newsletter-hebdo",
       "schedule": "0 8 * * 0"
+    },
+    {
+      "path": "/api/cron/purge-inactifs",
+      "schedule": "0 4 1 * *"
     }
   ]
 }

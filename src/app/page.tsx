@@ -615,7 +615,7 @@ function Pricing() {
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<'pro' | 'famille' | null>(null);
   // L'annuel est mis en avant par défaut (meilleur prix, moins de résiliations)
-  const [periode, setPeriode] = useState<Periode>('annuel');
+  const [periode, setPeriode] = useState<Periode>('mensuel');
 
   const handleUpgrade = async (plan: 'pro' | 'famille') => {
     if (!user) {

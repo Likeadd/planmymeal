@@ -90,14 +90,21 @@ export default function AujourdhuiPage() {
             .maybeSingle();
           if (!alive) return;
           const planEmbed = plan as unknown as WeeklyPlanEmbed | null;
-          const slots = (planEmbed?.plan_meals ?? [])
+          const planMeals = planEmbed?.plan_meals ?? [];
+          // Déjeuner « restes » : meal_id garde l'ancien plat, le vrai repas est le dîner de la veille
+          // (même règle que le planning, cf. WeekDayTabs).
+          const dinerVeille = planMeals.find(pm => pm.jour_semaine === todayIndex - 1 && pm.repas_type === 'diner')?.meals;
+          const slots = planMeals
             .filter(pm => pm.jour_semaine === todayIndex)
-            .map(pm => ({
-              ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
-              repas_type: pm.repas_type,
-              est_reste_de: pm.est_reste_de,
-              meal: pm.meals ? toRecettePlanning(pm.meals) : pm.texte_libre ? repasPersonnalise(pm.texte_libre) : null,
-            }))
+            .map(pm => {
+              const mealRaw = pm.repas_type === 'dejeuner' && pm.est_reste_de != null && dinerVeille ? dinerVeille : pm.meals;
+              return {
+                ordre: ORDRE_CRENEAUX[pm.repas_type as RepasType] ?? 99,
+                repas_type: pm.repas_type,
+                est_reste_de: pm.est_reste_de,
+                meal: mealRaw ? toRecettePlanning(mealRaw) : pm.texte_libre ? repasPersonnalise(pm.texte_libre) : null,
+              };
+            })
             .sort((a, b) => a.ordre - b.ordre);
           const prochains = slots.filter(s => s.meal);
           setNbRepasRestants(prochains.length);

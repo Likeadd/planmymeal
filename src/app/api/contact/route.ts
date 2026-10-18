@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { sendEmail } from '@/lib/email';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@<>"'`,;()\\]+@[^\s@<>"'`,;()\\]+\.[^\s@<>"'`,;()\\]{2,}$/;
 const DESTINATAIRE = process.env.CONTACT_EMAIL || 'contact@getplanmymeal.com';
 const SUJETS = ['Question générale', 'Mon abonnement', 'Un problème technique', 'Données personnelles', 'Partenariat'];
 

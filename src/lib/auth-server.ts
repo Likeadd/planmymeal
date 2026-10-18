@@ -27,7 +27,7 @@ export function magicLinkRedirect(request: NextRequest): string {
   return `${base.replace(/\/$/, '')}/auth/callback?next=/onboarding`;
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMAIL_RE = /^[^\s@<>"'`,;()\\]+@[^\s@<>"'`,;()\\]+\.[^\s@<>"'`,;()\\]{2,}$/;
 
 export function normaliserEmail(v: unknown): string | null {
   if (typeof v !== 'string') return null;

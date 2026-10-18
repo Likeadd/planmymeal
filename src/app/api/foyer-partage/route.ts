@@ -15,6 +15,8 @@ import { reponsePaywall } from '@/lib/paywall-serveur';
 import { getAuthUserAndClient } from '@/lib/api-auth';
 import { publicErrorMessage, UserError } from '@/lib/utils';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** GET : état complet du foyer de l'appelant (créé à la volée si absent). */
 export async function GET(request: NextRequest) {
@@ -158,7 +160,12 @@ export async function POST(request: NextRequest) {
       case 'rejoindre': {
         const code = typeof body.code === 'string' ? body.code.trim() : '';
         if (!code) return NextResponse.json({ error: 'Code manquant' }, { status: 400 });
-        const { data: householdId, error } = await supabase.rpc('household_join', { p_code: code });
+        // Anti brute-force des codes (16^8 combinaisons) : 8 tentatives / 10 min par compte, puis
+        // appel via la clé de service — household_join n'est plus exécutable depuis le navigateur.
+        const tentatives = await enforceUserRateLimit(request, user.id, { name: 'foyer-rejoindre', limit: 8, windowMs: 10 * 60_000 });
+        if (tentatives) return tentatives;
+        const { data: householdId, error } = await (getSupabaseAdmin() as unknown as SupabaseClient)
+          .rpc('household_join_as', { p_user: user.id, p_code: code });
         if (error) throw erreurRpc(error);
         return NextResponse.json({ success: true, household_id: householdId });
       }

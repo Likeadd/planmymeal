@@ -61,3 +61,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: publicErrorMessage(error) }, { status: 500 });
   }
 }
+
+/** DELETE : révoque tous les liens de partage de menu de l'utilisateur (les anciens liens renvoient « introuvable »). */
+export async function DELETE(request: NextRequest) {
+  const limited = await enforceRateLimit(request, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
+
+  try {
+    const { user } = await getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    const userLimited = await enforceUserRateLimit(request, user.id, { name: 'planning-partager', limit: 20, windowMs: 60_000 });
+    if (userLimited) return userLimited;
+
+    const { error } = await getSupabaseAdmin()
+      .from('weekly_plans')
+      .update({ share_token: null })
+      .eq('user_id', user.id)
+      .not('share_token', 'is', null);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Erreur DELETE /api/planning/partager:', error);
+    return NextResponse.json({ error: publicErrorMessage(error) }, { status: 500 });
+  }
+}

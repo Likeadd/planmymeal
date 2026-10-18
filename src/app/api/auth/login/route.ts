@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { enforceRateLimit, rateLimit } from '@/lib/rate-limit';
+import { enforceRateLimit, rateLimit, clientIp } from '@/lib/rate-limit';
 import { logRequestSecurityEvent } from '@/lib/security-log';
 import { supabaseForResponse, normaliserEmail } from '@/lib/auth-server';
 
@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: MESSAGE_ECHEC }, { status: 400 });
     }
 
-    if (!(await rateLimit(`login-email:${email}`, 5, FENETRE_MS)).ok) {
+    // 5 essais par couple (email, IP) : un tiers ne peut pas verrouiller votre compte depuis une autre IP ;
+    // plafond global par email (attaque distribuée) bien plus haut.
+    const tropEssais = !(await rateLimit(`login-email-ip:${email}:${clientIp(request)}`, 5, FENETRE_MS)).ok
+      || !(await rateLimit(`login-email:${email}`, 30, 60 * 60_000)).ok;
+    if (tropEssais) {
       logRequestSecurityEvent(request, 'login_abuse', { email });
       return NextResponse.json(
         { error: 'Trop de tentatives. Réessayez dans quelques minutes.' },

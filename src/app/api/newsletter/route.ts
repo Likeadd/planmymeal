@@ -18,7 +18,7 @@ import { sendEmail } from '@/lib/email';
 import { newsletterConfirmationHtml } from '@/lib/email-templates';
 import { SITE_URL } from '@/lib/seo';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@<>"'`,;()\\]+@[^\s@<>"'`,;()\\]+\.[^\s@<>"'`,;()\\]{2,}$/;
 
 export async function POST(request: NextRequest) {
   // Anti-abus : endpoint public, sans authentification.

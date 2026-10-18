@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Download, Mail } from 'lucide-react';
+import { Download, Link2Off, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -40,6 +40,16 @@ export function DonneesSettings() {
     setEnCours(false);
   };
 
+  const revoquerLiens = async () => {
+    try {
+      const res = await fetch('/api/planning/partager', { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      toast.success('Vos liens de partage ne fonctionnent plus.');
+    } catch {
+      toast.error('Révocation impossible pour le moment.');
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xs">
       <h2 className="font-semibold text-gray-900 text-lg flex items-center gap-2 mb-1">
@@ -57,7 +67,14 @@ export function DonneesSettings() {
         </span>
       </label>
 
-      <div className="mt-5 pt-5 border-t border-gray-100">
+      <div className="mt-5 pt-5 border-t border-gray-100 space-y-4">
+        <div>
+          <button type="button" onClick={revoquerLiens}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-800 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
+            <Link2Off className="w-4 h-4" aria-hidden /> Désactiver mes liens de partage
+          </button>
+          <p className="mt-2 text-xs text-gray-500">Les menus que vous avez partagés ne seront plus accessibles par leur lien.</p>
+        </div>
         <a href="/api/compte/export" download
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-800 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">
           <Download className="w-4 h-4" aria-hidden /> Télécharger mes données (JSON)

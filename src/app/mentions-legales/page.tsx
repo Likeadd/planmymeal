@@ -5,7 +5,6 @@ import LandingHeader from '@/components/LandingHeader';
 import LandingFooter from '@/components/LandingFooter';
 import { Underlined } from '@/components/WavyUnderline';
 import { EDITEUR, MAJ_LEGALE } from '@/lib/legal';
-import { MESURE_AVEC_CONSENTEMENT } from '@/lib/consentement';
 
 const SECTIONS: { title: string; body: ReactNode }[] = [
   {
@@ -101,8 +100,8 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           La mesure d’audience est assurée par <strong>Plausible</strong>, un
           outil de mesure d’audience anonyme qui ne dépose aucun cookie et ne
           conserve aucune donnée personnelle : il est exempté de consentement
-          et vous pouvez vous y opposer. Aucun cookie publicitaire n’est déposé.
-          {MESURE_AVEC_CONSENTEMENT && ' Les outils d’analyse complémentaires (Google Analytics, Amplitude) ne sont utilisés qu’avec votre consentement.'}
+          et vous pouvez vous y opposer. Aucun cookie publicitaire ou de suivi
+          n’est déposé.
         </p>
       </>
     ),

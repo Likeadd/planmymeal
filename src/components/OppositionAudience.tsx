@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-// Plausible ignore tout navigateur dont localStorage.plausible_ignore vaut « true »
-// (mécanisme officiel d'exclusion) : droit d'opposition à la mesure d'audience.
+// Droit d'opposition à la mesure d'audience : Plausible ignore tout navigateur dont
+// localStorage.plausible_ignore vaut « true » ; la mesure interne honore aussi pmm_no_track.
 const CLE = 'plausible_ignore';
+const CLE_INTERNE = 'pmm_no_track';
 
 export function OppositionAudience() {
   const [exclu, setExclu] = useState(false);
@@ -17,7 +18,7 @@ export function OppositionAudience() {
   const basculer = () => {
     const suivant = !exclu;
     try {
-      if (suivant) localStorage.setItem(CLE, 'true'); else localStorage.removeItem(CLE);
+      if (suivant) { localStorage.setItem(CLE, 'true'); localStorage.setItem(CLE_INTERNE, '1'); } else { localStorage.removeItem(CLE); localStorage.removeItem(CLE_INTERNE); }
       setExclu(suivant);
     } catch { /* stockage indisponible : l'opposition ne peut pas être mémorisée */ }
   };

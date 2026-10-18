@@ -2,9 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageLegale, lienTexte, type SectionLegale } from '@/components/PageLegale';
 import { EDITEUR, EMAIL_CONTACT, MAJ_LEGALE } from '@/lib/legal';
-import { AMPLITUDE_KEY, GA_ID, MESURE_AVEC_CONSENTEMENT } from '@/lib/consentement';
-
-const OUTILS = [GA_ID && 'Google Analytics 4', AMPLITUDE_KEY && 'Amplitude'].filter(Boolean).join(' et ');
 
 export const metadata: Metadata = {
   title: 'Politique de confidentialité',
@@ -48,10 +45,7 @@ const SECTIONS: SectionLegale[] = [
           <li><strong>Newsletter (sans compte) :</strong> votre adresse email, après confirmation de votre part.</li>
           <li><strong>Messages envoyés via le formulaire de contact :</strong> nom, email et contenu du message.</li>
           <li><strong>Données techniques de sécurité :</strong> adresse IP, type de requête et page concernée, uniquement lors d’événements de sécurité (trop de tentatives, robot détecté). Des compteurs anti-abus associés à l’adresse IP sont effacés sous 24 heures.</li>
-          <li><strong>Mesure d’audience :</strong> statistiques anonymes (pages vues, source de la visite, pays) — voir section 7.</li>
-          {MESURE_AVEC_CONSENTEMENT && (
-            <li><strong>Analyse (uniquement si vous acceptez) :</strong> pages visitées (adresse anonymisée), actions principales, type d’appareil, pays approximatif{AMPLITUDE_KEY ? ' et, si vous êtes connecté, un identifiant technique de compte (sans email ni nom) avec votre formule d’abonnement, pour mesurer le retour des utilisateurs' : ''} — {OUTILS}.</li>
-          )}
+          <li><strong>Mesure d’audience :</strong> statistiques anonymes (pages publiques vues, source de la visite, pays, type d’appareil, navigateur, actions principales), sans cookie ni adresse IP conservée — voir section 7.</li>
         </ul>
         <p>
           <strong>Nous ne faisons pas de publicité ciblée, ne vendons aucune donnée et n’utilisons aucun traceur publicitaire.</strong>{' '}
@@ -67,7 +61,7 @@ const SECTIONS: SectionLegale[] = [
       <>
         <ul>
           <li><strong>Exécution du contrat</strong> (art. 6.1.b RGPD) : créer votre compte, composer vos menus et listes de courses, gérer votre abonnement, vous envoyer les emails liés à votre compte (confirmation, abonnement, résiliation).</li>
-          <li><strong>Consentement explicite</strong> (art. 6.1.a et 9.2.a) : pour vos <strong>allergies, intolérances, âge, sexe, taille et poids</strong>, qui peuvent révéler des informations de santé. Vous les saisissez volontairement après une information claire, ils sont facultatifs, et vous pouvez les modifier, les effacer ou retirer votre consentement à tout moment dans <Link href="/compte" className={lienTexte}>Mon compte</Link> sans conséquence sur le reste du service. Le retrait du consentement ne remet pas en cause les traitements passés. C’est aussi le fondement de la <strong>newsletter</strong> (double confirmation par email){MESURE_AVEC_CONSENTEMENT ? <> et des <strong>outils d’analyse {OUTILS}</strong> (bouton « Tout accepter » de la bannière, retirable à tout moment via « Gérer mes cookies »)</> : null}.</li>
+          <li><strong>Consentement explicite</strong> (art. 6.1.a et 9.2.a) : pour vos <strong>allergies, intolérances, âge, sexe, taille et poids</strong>, qui peuvent révéler des informations de santé. Vous les saisissez volontairement après une information claire, ils sont facultatifs, et vous pouvez les modifier, les effacer ou retirer votre consentement à tout moment dans <Link href="/compte" className={lienTexte}>Mon compte</Link> sans conséquence sur le reste du service. Le retrait du consentement ne remet pas en cause les traitements passés. C’est aussi le fondement de la <strong>newsletter</strong> (double confirmation par email).</li>
           <li><strong>Intérêt légitime</strong> (art. 6.1.f) : sécurité du service, prévention des abus et de la fraude, récapitulatif hebdomadaire de votre semaine par email (désactivable en un clic dans Mon compte), mesure d’audience anonyme et statistiques d’usage internes agrégées (nombre de comptes, de semaines générées, sans exploitation individuelle).</li>
           <li><strong>Obligation légale</strong> (art. 6.1.c) : conservation des factures et pièces comptables.</li>
         </ul>
@@ -88,8 +82,6 @@ const SECTIONS: SectionLegale[] = [
           <li><strong>Stripe</strong> (Stripe Payments Europe Ltd, Irlande) — paiement des abonnements, conforme PCI-DSS. Reçoit votre email et les informations de paiement que vous saisissez chez lui.</li>
           <li><strong>Resend</strong> (États-Unis) — envoi des emails (confirmation de compte, récapitulatif, newsletter, résiliation). Reçoit votre adresse email et le contenu du message.</li>
           <li><strong>Plausible Analytics</strong> (Plausible Insights OÜ, Estonie, hébergement dans l’Union européenne) — mesure d’audience anonyme.</li>
-          {GA_ID && <li><strong>Google Analytics 4</strong> (Google Ireland Ltd / Google LLC, États-Unis) — mesure d’audience, <strong>uniquement si vous acceptez</strong>.</li>}
-          {AMPLITUDE_KEY && <li><strong>Amplitude</strong> (Amplitude Inc., États-Unis ; données hébergées dans l’Union européenne) — analyse de la rétention, <strong>uniquement si vous acceptez</strong>.</li>}
           <li><strong>Anthropic</strong> (États-Unis) — uniquement si vous importez une recette depuis une page web ou un texte : le texte à analyser lui est transmis, jamais vos données de compte.</li>
           <li><strong>Google</strong> — uniquement si vous choisissez « Continuer avec Google » pour vous connecter.</li>
         </ul>
@@ -111,10 +103,7 @@ const SECTIONS: SectionLegale[] = [
         <li><strong>Newsletter :</strong> jusqu’à votre désinscription ; une inscription non confirmée est supprimée sous 7 jours. Après désinscription, votre adresse est conservée seule, pour ne plus vous écrire.</li>
         <li><strong>Messages de contact :</strong> le temps de traiter votre demande, puis au plus 12 mois après le dernier échange.</li>
         <li><strong>Journal de sécurité (adresse IP) :</strong> 90 jours. Compteurs anti-abus : 24 heures.</li>
-        <li><strong>Mesure d’audience :</strong> statistiques agrégées et anonymes, sans donnée personnelle.</li>
-        {MESURE_AVEC_CONSENTEMENT && (
-          <li><strong>Analyse avec consentement :</strong> {GA_ID ? 'Google Analytics 14 mois au plus' : ''}{GA_ID && AMPLITUDE_KEY ? ' ; ' : ''}{AMPLITUDE_KEY ? 'Amplitude 25 mois au plus' : ''} ; cookies : 13 mois au plus. Votre choix est mémorisé 6 mois.</li>
-        )}
+        <li><strong>Mesure d’audience :</strong> données anonymes, 25 mois au plus (l’identifiant de visiteur change chaque jour et ne permet pas de vous reconnaître).</li>
       </ul>
     ),
   },
@@ -147,10 +136,9 @@ const SECTIONS: SectionLegale[] = [
     body: (
       <>
         <p>
-          PlanMyMeal n’utilise <strong>aucun cookie ou traceur publicitaire</strong>. Sont utilisés : un cookie de session
+          PlanMyMeal n’utilise <strong>aucun cookie ou traceur publicitaire ou de profilage</strong>. Seuls sont utilisés : un cookie de session
           pour rester connecté, quelques données de fonctionnement stockées dans votre navigateur (par exemple votre planning en mode hors
-          connexion) et une mesure d’audience anonyme sans cookie — éléments exemptés de consentement.
-          {MESURE_AVEC_CONSENTEMENT ? <> {OUTILS} ne sont chargés <strong>qu’avec votre accord</strong> (bannière « Tout refuser / Tout accepter », modifiable à tout moment par « Gérer mes cookies » en bas de page).</> : ' Aucune bannière à accepter.'}
+          connexion) et une mesure d’audience anonyme sans cookie. Ces éléments sont exemptés de consentement : aucune bannière à accepter.
         </p>
         <p>
           Le détail (noms, finalités, durées) figure dans la <Link href="/cookies" className={lienTexte}>politique de cookies</Link>.

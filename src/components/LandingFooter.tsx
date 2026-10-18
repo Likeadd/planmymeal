@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { anneeParis } from '@/lib/dates';
 import { BrandMark } from '@/components/BrandMark';
-import { EVENEMENT_OUVRIR, MESURE_AVEC_CONSENTEMENT } from '@/lib/consentement';
 
 const FOOTER_LINKS = [
   ['FAQ', '/faq'],
@@ -98,14 +97,6 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
 
           {/* Liens */}
           <ul className={`flex flex-wrap gap-x-6 gap-y-2 ${sansNewsletter ? 'justify-center' : 'md:justify-end'}`}>
-            {MESURE_AVEC_CONSENTEMENT && (
-              <li>
-                <button type="button" onClick={() => window.dispatchEvent(new Event(EVENEMENT_OUVRIR))}
-                  className="text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">
-                  Gérer mes cookies
-                </button>
-              </li>
-            )}
             {FOOTER_LINKS.map(([label, href]) => (
               <li key={label}>
                 <Link href={href} className="text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">

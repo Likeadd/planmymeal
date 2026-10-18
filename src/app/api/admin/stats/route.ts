@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getAuthUser } from '@/lib/api-auth';
+import { estAdmin } from '@/lib/admin-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { publicErrorMessage } from '@/lib/utils';
 import { enforceRateLimit } from '@/lib/rate-limit';
@@ -31,11 +31,7 @@ export async function GET(request: NextRequest) {
   if (limited) return limited;
 
   try {
-    const { user } = await getAuthUser(request);
-    const admins = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-    if (!user || !user.email || !admins.includes(user.email.toLowerCase())) {
-      return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
-    }
+    if (!(await estAdmin(request))) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
 
     const db = getSupabaseAdmin();
     const depuis = new Date(Date.now() - JOURS * JOUR_MS).toISOString();

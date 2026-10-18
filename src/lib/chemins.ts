@@ -12,3 +12,6 @@ export function cheminAnonyme(pathname: string): string {
     .replace(/^\/recettes\/categorie\/[^/]+/, '/recettes/categorie/[slug]')
     .replace(/^\/menu-semaine\/[^/]+/, '/menu-semaine/[slug]') || '/';
 }
+
+/** Clés de localStorage par lesquelles un visiteur s'oppose à la mesure d'audience (Plausible et mesure interne). */
+export const OPPOSITION_CLES = ['plausible_ignore', 'pmm_no_track'];

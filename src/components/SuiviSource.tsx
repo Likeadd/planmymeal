@@ -8,11 +8,18 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { track } from '@/lib/analytics';
+import { envoyerMesure, track } from '@/lib/analytics';
 import { cheminAnonyme, pagePublique } from '@/lib/chemins';
 
 export function SuiviSource() {
   const pathname = usePathname();
+
+  // Page vue pour la mesure interne (pages publiques seulement)
+  useEffect(() => {
+    if (!pagePublique(pathname)) return;
+    const p = new URLSearchParams(window.location.search);
+    envoyerMesure({ t: 'p', c: pathname, r: document.referrer, s: p.get('ref') || p.get('utm_source') || '' });
+  }, [pathname]);
 
   useEffect(() => {
     const clic = (e: MouseEvent) => {

@@ -123,7 +123,7 @@ describe('varianteDeLaSemaine', () => {
   });
 });
 
-import { cheminAnonyme, pagePublique } from '../src/lib/analytics';
+import { cheminAnonyme, pagePublique } from '../src/lib/chemins';
 
 describe('mesure d’audience anonyme', () => {
   it('retire tout identifiant des chemins mesurés', () => {
@@ -137,35 +137,5 @@ describe('mesure d’audience anonyme', () => {
   it('ne mesure jamais l’espace connecté', () => {
     for (const p of ['/aujourdhui', '/dashboard', '/compte', '/compte/x', '/admin', '/api/profil']) expect(pagePublique(p)).toBe(false);
     for (const p of ['/', '/recettes', '/recette/12', '/menu-de-la-semaine', '/signup']) expect(pagePublique(p)).toBe(true);
-  });
-});
-
-import { DUREE_CHOIX_MS, enregistrerChoix, lireChoix, nomEvenementGa } from '../src/lib/consentement';
-
-describe('consentement aux outils d’analyse', () => {
-  const faux = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
-  it('pas de choix par défaut → rien n’est chargé', () => { expect(lireChoix(faux())).toBeNull(); });
-  it('mémorise accepter / refuser', () => {
-    const s = faux();
-    enregistrerChoix('accepte', s, 1000); expect(lireChoix(s, 2000)).toBe('accepte');
-    enregistrerChoix('refuse', s, 1000); expect(lireChoix(s, 2000)).toBe('refuse');
-  });
-  it('le choix expire au bout de 6 mois puis est redemandé', () => {
-    const s = faux();
-    enregistrerChoix('accepte', s, 0);
-    expect(lireChoix(s, DUREE_CHOIX_MS - 1)).toBe('accepte');
-    expect(lireChoix(s, DUREE_CHOIX_MS + 1)).toBeNull();
-  });
-  it('ignore une valeur corrompue ou falsifiée', () => {
-    const s = faux();
-    s.setItem('pmm_consentement', '{"choix":"oui","le":1}'); expect(lireChoix(s, 2)).toBeNull();
-    s.setItem('pmm_consentement', 'pas du json'); expect(lireChoix(s, 2)).toBeNull();
-    s.setItem('pmm_consentement', JSON.stringify({ choix: 'accepte', le: 5000 })); expect(lireChoix(s, 10)).toBeNull(); // date dans le futur
-  });
-  it('noms d’événements GA4 : ASCII, minuscules, « _ »', () => {
-    expect(nomEvenementGa('Onboarding terminé')).toBe('onboarding_termine');
-    expect(nomEvenementGa('CTA inscription')).toBe('cta_inscription');
-    expect(nomEvenementGa('Défilement')).toBe('defilement');
-    expect(nomEvenementGa('123 test')).toBe('e_123_test');
   });
 });

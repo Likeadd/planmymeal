@@ -8,6 +8,8 @@ import { AuthProvider } from '@/components/AuthProvider';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { ScrollAncre } from '@/components/ScrollAncre';
 import { CookieBanner } from '@/components/CookieBanner';
+import { ConsentementCookies } from '@/components/ConsentementCookies';
+import { MESURE_AVEC_CONSENTEMENT } from '@/lib/consentement';
 import { SuiviSource } from '@/components/SuiviSource';
 import { GlobalLoadingBar } from '@/components/GlobalLoadingBar';
 import { ScrollReveal } from '@/components/ScrollReveal';
@@ -110,9 +112,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Suspense fallback={null}>
             <ScrollAncre />
           </Suspense>
+          {/* GA4 / Amplitude : seulement si configurés, et chargés après consentement explicite */}
+          {MESURE_AVEC_CONSENTEMENT && <ConsentementCookies />}
         </AuthProvider>
         <ServiceWorkerRegister />
-        <CookieBanner />
+        {!MESURE_AVEC_CONSENTEMENT && <CookieBanner />}
         <SuiviSource />
         <GlobalLoadingBar />
         {/* Sans JavaScript, les animations d'apparition ne se déclencheraient

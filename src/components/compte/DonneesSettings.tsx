@@ -9,7 +9,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Download, Link2Off, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { MESURE_AVEC_CONSENTEMENT } from '@/lib/consentement';
 import { useAuth } from '@/components/AuthProvider';
+import { GererCookies } from '@/components/GererCookies';
 
 export function DonneesSettings() {
   const { profile } = useAuth();
@@ -68,6 +70,12 @@ export function DonneesSettings() {
       </label>
 
       <div className="mt-5 pt-5 border-t border-gray-100 space-y-4">
+        {MESURE_AVEC_CONSENTEMENT && (
+          <div>
+            <p className="text-sm font-medium text-gray-800 mb-2">Cookies d’analyse (Google Analytics, Amplitude)</p>
+            <GererCookies />
+          </div>
+        )}
         <div>
           <button type="button" onClick={revoquerLiens}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-800 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">

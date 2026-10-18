@@ -89,3 +89,36 @@ describe('formatage', () => {
     expect(formatDateLongueFr('2026-03-16', { day: 'numeric', month: 'long' })).toContain('mars');
   });
 });
+
+import { getMondayMenu } from '../src/lib/dates';
+import { VARIANTES, varianteDeLaSemaine } from '../src/lib/menu-public';
+
+describe('menu de la semaine : publication le lundi à 8 h (Paris)', () => {
+  it('avant 8 h le lundi, c’est encore le menu de la semaine précédente', () => {
+    expect(getMondayMenu(new Date('2026-10-19T05:59:00Z'))).toBe('2026-10-12'); // lundi 07:59 à Paris (CEST)
+    expect(getMondayMenu(new Date('2026-10-19T06:00:00Z'))).toBe('2026-10-19'); // lundi 08:00 à Paris
+    expect(getMondayMenu(new Date('2026-10-18T22:00:00Z'))).toBe('2026-10-12'); // dimanche soir
+    expect(getMondayMenu(new Date('2026-10-23T10:00:00Z'))).toBe('2026-10-19'); // vendredi
+  });
+  it('heure d’hiver : 8 h Paris = 7 h UTC', () => {
+    expect(getMondayMenu(new Date('2026-11-02T06:59:00Z'))).toBe('2026-10-26');
+    expect(getMondayMenu(new Date('2026-11-02T07:00:00Z'))).toBe('2026-11-02');
+  });
+});
+
+describe('varianteDeLaSemaine', () => {
+  it('une variante par semaine, le budget change toujours d’une semaine à l’autre', () => {
+    let lundi = Date.parse('2026-01-05T12:00:00Z');
+    let precedent = varianteDeLaSemaine('2026-01-05');
+    for (let i = 1; i <= 120; i++) {
+      lundi += 7 * 86_400_000;
+      const v = varianteDeLaSemaine(new Date(lundi).toISOString().slice(0, 10));
+      expect(v.budget).not.toBe(precedent.budget);
+      expect(VARIANTES).toContain(v);
+      precedent = v;
+    }
+  });
+  it('est stable pour une semaine donnée', () => {
+    expect(varianteDeLaSemaine('2026-10-19')).toBe(varianteDeLaSemaine('2026-10-19'));
+  });
+});

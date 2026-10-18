@@ -74,6 +74,16 @@ export const VARIANTES: VarianteMenu[] = [
 
 export const varianteParSlug = (slug: string) => VARIANTES.find(v => v.slug === slug);
 
+/**
+ * Variante (budget, foyer, régime) mise en avant la semaine du `lundi` : une par semaine, en rotation
+ * sur les 10 variantes. Deux semaines consécutives n'ont jamais le même budget (garanti par l'ordre
+ * de VARIANTES, vérifié par un test).
+ */
+export function varianteDeLaSemaine(lundi: string): VarianteMenu {
+  const semaines = Math.floor(Date.parse(`${lundi}T12:00:00Z`) / (7 * 86_400_000));
+  return VARIANTES[semaines % VARIANTES.length];
+}
+
 export interface JourMenu { jour: string; dejeuner: MealCatalogue; diner: MealCatalogue }
 export interface MenuPublic {
   variante: VarianteMenu;
@@ -110,7 +120,7 @@ const coutListe = (repas: MealCatalogue[], personnes: number) => {
 };
 
 /** Compose le menu de la semaine pour une variante ; null si le budget est intenable avec le catalogue. */
-export function composerMenu(idx: Index, v: VarianteMenu, semaineDebut: string): MenuPublic | null {
+export function composerMenu(idx: Index, v: VarianteMenu, semaineDebut: string, graine: string = semaineDebut): MenuPublic | null {
   const filtres = (e: Entree) =>
     e.m.type_repas === 'plat' && e.prix != null
     && (v.tempsMax == null || e.temps <= v.tempsMax)
@@ -123,7 +133,7 @@ export function composerMenu(idx: Index, v: VarianteMenu, semaineDebut: string):
 
   for (const bassin of bassins) {
     for (let essai = 0; essai < 6; essai++) {
-      const rng = aleatoire(hash(`${semaineDebut}|${v.slug}|${essai}`));
+      const rng = aleatoire(hash(`${graine}|${v.slug}|${essai}`));
       const melange = [...bassin].sort(() => rng() - 0.5);
       const choisis: Entree[] = [];
       const cuisines = new Map<string, number>();

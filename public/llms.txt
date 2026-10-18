@@ -4,6 +4,8 @@
 
 ## Pages principales
 - [Accueil](https://getplanmymeal.com/): présentation et tarifs
+- [Menu de la semaine](https://getplanmymeal.com/menu-de-la-semaine): menu exemple de 14 repas avec liste de courses chiffrée, nouveau budget chaque lundi à 8 h
+- [Menus par budget](https://getplanmymeal.com/menu-semaine): 10 menus (30 €, 50 €, végétarien, rapide, protéiné…)
 - [Recettes](https://getplanmymeal.com/recettes): catalogue de recettes filtrable (régime, temps, cuisine, budget)
 - [Questions fréquentes](https://getplanmymeal.com/faq): fonctionnement, données, abonnement
 - [Contact](https://getplanmymeal.com/contact)

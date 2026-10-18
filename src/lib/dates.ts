@@ -41,6 +41,21 @@ export function getMondayParis(date: Date = new Date()): string {
   return base.toISOString().split('T')[0];
 }
 
+const fmtHeureParis = new Intl.DateTimeFormat('en-GB', { timeZone: TZ_APP, hour: '2-digit', hour12: false });
+
+/** Heure (Paris) à laquelle le nouveau menu de la semaine est publié, le lundi */
+export const HEURE_MENU_HEBDO = 8;
+
+/**
+ * Lundi (YYYY-MM-DD) du menu PUBLIC en vigueur : le nouveau menu de la semaine sort le lundi à 8 h
+ * (Paris) ; le lundi avant 8 h, c'est encore celui de la semaine précédente.
+ */
+export function getMondayMenu(date: Date = new Date()): string {
+  const heure = Number(fmtHeureParis.format(date)) % 24;
+  const avantPublication = jourSemaineParis(date) === 0 && heure < HEURE_MENU_HEBDO;
+  return getMondayParis(avantPublication ? new Date(date.getTime() - 24 * 3_600_000) : date);
+}
+
 /** Retourne le lundi de la semaine courante (YYYY-MM-DD) */
 export function getMonday(): string {
   return getMondayParis();

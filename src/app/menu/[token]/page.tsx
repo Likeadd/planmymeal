@@ -111,8 +111,8 @@ export default async function MenuPartagePage({ params }: { params: Promise<{ to
                 <ul className="space-y-1">
                   {section.items.map(item => (
                     <li key={item.ingredient_id} className="text-[13px] text-gray-600 flex justify-between gap-2">
-                      <span>{item.nom}</span>
-                      {item.prix != null && <span className="text-gray-400">{formatPrix(item.prix)}</span>}
+                      <span className="min-w-0 flex-1 break-words">{item.nom}</span>
+                      {item.prix != null && <span className="shrink-0 whitespace-nowrap text-gray-500">{formatPrix(item.prix)}</span>}
                     </li>
                   ))}
                 </ul>

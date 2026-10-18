@@ -129,8 +129,8 @@ export function MenuVue({ menu, chemin, maillons, titre, accroche, autresMenus =
                 <ul className="space-y-1">
                   {[...section.items].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')).map(item => (
                     <li key={item.ingredient_id} className="text-[13px] text-gray-600 flex justify-between gap-2">
-                      <span>{item.nom}</span>
-                      <span className="text-gray-400 whitespace-nowrap">{quantiteCourses(item.quantite_totale, item.unite, item.nom)}</span>
+                      <span className="min-w-0 flex-1 break-words">{item.nom}</span>
+                      <span className="shrink-0 text-gray-500 whitespace-nowrap">{quantiteCourses(item.quantite_totale, item.unite, item.nom)}</span>
                     </li>
                   ))}
                 </ul>

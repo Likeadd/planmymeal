@@ -304,8 +304,8 @@ export default function RecetteClient({
           {/* Mobile : ingrédients → étapes → ustensiles & nutrition (on cuisine
               avec les étapes, elles ne doivent pas arriver en dernier).
               Desktop : ingrédients + extras à gauche, étapes à droite. */}
-          <div className="grid lg:grid-cols-3 lg:grid-rows-[auto_1fr] gap-6 lg:gap-8 items-start">
-            <div className="lg:col-span-1 lg:col-start-1 lg:row-start-1 space-y-6">
+          <div className="grid lg:grid-cols-5 lg:grid-rows-[auto_1fr] gap-6 lg:gap-8 items-start">
+            <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-6">
               {/* Ingrédients avec prix */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
@@ -326,23 +326,23 @@ export default function RecetteClient({
                       return (
                         <div
                           key={i}
-                          className={`flex items-center justify-between py-2 text-sm ${
+                          className={`flex items-center gap-2.5 py-2 text-sm ${
                             i < ingredients.length - 1 ? 'border-b border-gray-50' : ''
                           }`}
                         >
-                          <span className={iq.est_optionnel ? 'text-gray-500 italic' : 'text-gray-700'}>
+                          {/* Nom : prend la place restante et passe à la ligne ; quantité et prix : colonnes
+                              fixes, jamais coupées — l'alignement reste identique sur toutes les lignes. */}
+                          <span className={`min-w-0 flex-1 break-words hyphens-auto ${iq.est_optionnel ? 'text-gray-500 italic' : 'text-gray-700'}`}>
                             {iq.ingredient.nom}
                             {iq.est_optionnel && (
                               <span className="text-xs text-gray-500 ml-1">(optionnel)</span>
                             )}
                           </span>
-                          <span className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">
-                              {quantiteLisible(iq.quantite, iq.unite, iq.ingredient.nom)}
-                            </span>
-                            <span className="text-xs text-gray-500 min-w-10 text-right">
-                              {prix != null ? formatPrix(prix) : '—'}
-                            </span>
+                          <span className="shrink-0 whitespace-nowrap text-right font-medium text-gray-900">
+                            {quantiteLisible(iq.quantite, iq.unite, iq.ingredient.nom)}
+                          </span>
+                          <span className="shrink-0 w-11 text-right text-xs text-gray-500">
+                            {prix != null ? formatPrix(prix) : '—'}
                           </span>
                         </div>
                       );
@@ -352,7 +352,7 @@ export default function RecetteClient({
               </div>
             </div>
 
-            <div className="lg:col-span-1 lg:col-start-1 lg:row-start-2 space-y-6 order-3 lg:order-none">
+            <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2 space-y-6 order-3 lg:order-none">
               {/* Ustensiles */}
               {meal.ustensiles && meal.ustensiles.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-xs">
@@ -396,7 +396,7 @@ export default function RecetteClient({
             </div>
 
             {/* ─── Colonne droite : instructions pas à pas ─── */}
-            <div className="lg:col-span-2 lg:col-start-2 lg:row-start-1 lg:row-span-2 order-2 lg:order-none">
+            <div className="lg:col-span-3 lg:col-start-3 lg:row-start-1 lg:row-span-2 order-2 lg:order-none">
               <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-8 shadow-xs">
                 <h2 className="font-bold text-gray-900 mb-6 flex items-center gap-2 text-lg">
                   <ChefIcon className="w-5 h-5 text-brand-500" />

@@ -62,7 +62,7 @@ const SECTIONS: SectionLegale[] = [
         <ul>
           <li><strong>Exécution du contrat</strong> (art. 6.1.b RGPD) : créer votre compte, composer vos menus et listes de courses, gérer votre abonnement, vous envoyer les emails liés à votre compte (confirmation, abonnement, résiliation).</li>
           <li><strong>Consentement explicite</strong> (art. 6.1.a et 9.2.a) : pour vos <strong>allergies, intolérances, âge, sexe, taille et poids</strong>, qui peuvent révéler des informations de santé. Vous les saisissez volontairement après une information claire, ils sont facultatifs, et vous pouvez les modifier, les effacer ou retirer votre consentement à tout moment dans <Link href="/compte" className={lienTexte}>Mon compte</Link> sans conséquence sur le reste du service. Le retrait du consentement ne remet pas en cause les traitements passés. C’est aussi le fondement de la <strong>newsletter</strong> (double confirmation par email).</li>
-          <li><strong>Intérêt légitime</strong> (art. 6.1.f) : sécurité du service, prévention des abus et de la fraude, récapitulatif hebdomadaire de votre semaine par email (désactivable en un clic dans Mon compte), mesure d’audience anonyme.</li>
+          <li><strong>Intérêt légitime</strong> (art. 6.1.f) : sécurité du service, prévention des abus et de la fraude, récapitulatif hebdomadaire de votre semaine par email (désactivable en un clic dans Mon compte), mesure d’audience anonyme et statistiques d’usage internes agrégées (nombre de comptes, de semaines générées, sans exploitation individuelle).</li>
           <li><strong>Obligation légale</strong> (art. 6.1.c) : conservation des factures et pièces comptables.</li>
         </ul>
         <p>

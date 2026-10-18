@@ -33,4 +33,4 @@ export const EDITEUR = {
 };
 
 /** Date de dernière mise à jour des textes légaux (figée, jamais calculée au rendu) */
-export const MAJ_LEGALE = '13 octobre 2026';
+export const MAJ_LEGALE = '18 octobre 2026';

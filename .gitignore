@@ -55,3 +55,4 @@ supabase/.temp
 
 # sauvegardes de la base (données personnelles)
 /backups
+marketing/

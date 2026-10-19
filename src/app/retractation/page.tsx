@@ -6,7 +6,7 @@ import { DELAI_RETRACTATION_JOURS, EDITEUR, EMAIL_CONTACT, MAJ_LEGALE } from '@/
 export const metadata: Metadata = {
   title: 'Rétractation et remboursement',
   description:
-    'Vous avez 14 jours pour vous rétracter après avoir souscrit un abonnement PlanMyMeal et être remboursé intégralement. Bouton en un clic, modèle de formulaire et délais de remboursement.',
+    'Vous avez 14 jours pour vous rétracter après avoir souscrit un abonnement PlanMyMeal : remboursement intégral la première fois. Bouton en un clic, modèle de formulaire et délais de remboursement.',
   alternates: { canonical: '/retractation' },
 };
 
@@ -35,8 +35,9 @@ const SECTIONS: SectionLegale[] = [
           sans donner de motif et sans pénalité (articles L221-18 et suivants du Code de la consommation).
         </p>
         <p>
-          <strong>Chez PlanMyMeal, vous êtes remboursé intégralement</strong>, même si vous avez déjà utilisé le service pendant ce délai. Aucune
-          retenue n’est appliquée. Le plan Gratuit n’est pas payant : il n’y a rien à rétracter, vous pouvez simplement supprimer votre compte.
+          <strong>Lors de votre première rétractation, vous êtes remboursé intégralement</strong>, même si vous avez déjà utilisé le service
+          pendant ce délai. Si vous vous rétractez à nouveau après une nouvelle souscription, le remboursement est calculé au prorata de la période
+          non utilisée : en payant, vous avez demandé que le service commence immédiatement (article L221-25 du Code de la consommation). Le plan Gratuit n’est pas payant : il n’y a rien à rétracter, vous pouvez simplement supprimer votre compte.
         </p>
       </>
     ),
@@ -110,7 +111,7 @@ export default function RetractationPage() {
     <PageLegale
       titre="Rétractation et"
       motSouligne="remboursement."
-      accroche="14 jours pour changer d’avis, remboursement intégral, en un clic ou par email."
+      accroche="14 jours pour changer d’avis, remboursement intégral la première fois, en un clic ou par email."
       sections={SECTIONS}
       majLe={MAJ_LEGALE}
     />

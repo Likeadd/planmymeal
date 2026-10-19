@@ -96,8 +96,10 @@ const SECTIONS: { title: string; body: ReactNode }[] = [
           sans avoir à justifier de motif ni à supporter de pénalités.
         </p>
         <p>
-          PlanMyMeal accorde ce droit sans condition : même si le service a été
-          utilisé pendant ce délai, <strong>le client est remboursé intégralement</strong>.
+          En souscrivant, le client demande que le service commence immédiatement. Lors de sa{' '}
+          <strong>première</strong> rétractation, PlanMyMeal le rembourse néanmoins <strong>intégralement</strong>, même
+          si le service a été utilisé pendant ce délai. En cas de rétractation sur un abonnement souscrit ensuite, le
+          remboursement est calculé au prorata de la période non utilisée (article L221-25 du Code de la consommation).
         </p>
         <p>Pour l’exercer, le client peut au choix :</p>
         <ul className="list-disc pl-5 space-y-1">

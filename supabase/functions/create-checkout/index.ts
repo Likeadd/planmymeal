@@ -59,11 +59,16 @@ serve(async (req: Request) => {
     // Charger le profil
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('email, plan, stripe_customer_id')
+      .select('email, plan, stripe_customer_id, stripe_subscription_id')
       .eq('id', user.id)
       .single();
 
     if (!profile) throw new PublicError('Profil introuvable');
+
+    // Un seul abonnement à la fois (audit VULN-003) : évite la double facturation
+    if (profile.stripe_subscription_id || (profile.plan && profile.plan !== 'gratuit')) {
+      throw new PublicError('Vous avez déjà un abonnement : gérez-le depuis la page Compte.');
+    }
 
     const body = await req.json();
     const plan: 'pro' | 'famille' = body.plan === 'famille' ? 'famille' : 'pro';
@@ -101,12 +106,22 @@ serve(async (req: Request) => {
     }
 
     // Créer la session Checkout
+    // Clé d'idempotence : deux clics (ou deux onglets) la même minute = une seule session
+    const idempotencyKey = `checkout-${user.id}-${plan}-${periode}-${Math.floor(Date.now() / 60_000)}`;
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       subscription_data: { metadata: { supabase_user_id: user.id, plan, periode } },
+      // Demande d'exécution immédiate + acceptation des CGV (art. L221-25) : condition du remboursement au
+      // prorata en cas de nouvelle rétractation. Nécessite l'URL des CGV dans Stripe → Paramètres → Public details.
+      consent_collection: { terms_of_service: 'required' },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message: `J’accepte les [conditions générales de vente](${APP_URL}/cgv) et je demande que le service commence immédiatement. Rétractation possible sous 14 jours : remboursement intégral la première fois, au prorata du service fourni ensuite.`,
+        },
+      },
       success_url: `${APP_URL}/compte?success=true`,
       cancel_url: `${APP_URL}/compte?canceled=true`,
       metadata: {
@@ -114,7 +129,7 @@ serve(async (req: Request) => {
         plan,
         periode,
       },
-    });
+    }, { idempotencyKey });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

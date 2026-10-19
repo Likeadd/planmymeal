@@ -19,7 +19,12 @@ const HOTE_SUPABASE = (() => {
 // Pages statiques : CSP sans nonce (voir src/lib/csp.ts) ; les pages dynamiques reçoivent une CSP à nonce du proxy.
 const CSP = construireCsp({ isDev });
 
+// Origine autorisée en lecture cross-origin : le site lui-même (audit VULN-018). Sans cette valeur, la
+// plateforme ajoute « Access-Control-Allow-Origin: * » aux pages statiques.
+const ORIGINE_SITE = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
+
 const securityHeaders = [
+  ...(ORIGINE_SITE ? [{ key: 'Access-Control-Allow-Origin', value: ORIGINE_SITE }, { key: 'Vary', value: 'Origin' }] : []),
   // Force HTTPS (inclut les sous-domaines ; preload une fois la politique stabilisée)
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
   // Empêche le sniffing MIME (scripts servis en image, etc.)

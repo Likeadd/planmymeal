@@ -12,6 +12,9 @@ validateEnv({ failOnCritical: process.env.NODE_ENV === 'production' });
 // hors des domaines listés (anti-injection de code). 'unsafe-eval' n'est
 // autorisé qu'en dev (HMR) ; 'unsafe-inline' reste requis par Next sans nonce.
 const isDev = process.env.NODE_ENV !== 'production';
+const HOTE_SUPABASE = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname || 'invalid.supabase.co'; } catch { return 'invalid.supabase.co'; }
+})();
 const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://plausible.io`,
@@ -68,7 +71,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        // Uniquement NOTRE projet Supabase (audit VULN-012) : sinon l'optimiseur d'images servait les
+        // images publiques de n'importe quel projet *.supabase.co sous notre domaine.
+        hostname: HOTE_SUPABASE,
         pathname: '/storage/v1/object/public/**',
       },
     ],

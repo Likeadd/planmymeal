@@ -7,7 +7,7 @@ const TAILLE_MAX_API = 1_000_000; // 1 Mo
 const SESSION_MAX_MS = 30 * 24 * 60 * 60_000; // 30 jours
 const METHODES_SURES = ['GET', 'HEAD', 'OPTIONS'];
 /** Pages réservées aux connectés, et pages de connexion (redirigées si déjà connecté). */
-const PAGES_PROTEGEES = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget', '/admin'];
+const PAGES_PROTEGEES = ['/aujourdhui', '/dashboard', '/onboarding', '/compte', '/planning', '/favoris', '/frigo', '/budget', '/admin', '/nouveau-mot-de-passe'];
 const PAGES_AUTH = ['/login', '/signup'];
 
 /**

@@ -93,6 +93,10 @@ export function clientIp(request: NextRequest): string {
   // x-real-ip est posé par la plateforme (non falsifiable par le client) ;
   // dans x-forwarded-for, seule la DERNIÈRE entrée est ajoutée par le proxy
   // de confiance — la première peut être inventée par le client.
+  // Sur Vercel, x-vercel-forwarded-for est réécrit par la plateforme (audit VULN-016). Hors Vercel, ces
+  // en-têtes doivent être posés par un proxy de confiance, sinon ils sont falsifiables par le client.
+  const vercel = request.headers.get('x-vercel-forwarded-for');
+  if (vercel) return vercel.split(',')[0].trim();
   const reelle = request.headers.get('x-real-ip');
   if (reelle) return reelle.trim();
   const forwarded = request.headers.get('x-forwarded-for');

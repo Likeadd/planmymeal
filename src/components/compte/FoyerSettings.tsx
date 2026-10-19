@@ -213,7 +213,7 @@ export function FoyerSettings() {
           <label className="flex-1 min-w-[180px] flex flex-col gap-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Rejoindre un foyer (code reçu)</span>
             <input type="text" value={codeSaisi} onChange={e => setCodeSaisi(e.target.value.toUpperCase())}
-              placeholder="XXXX-XXXX" maxLength={9}
+              placeholder="XXXX-XXXX-XXXX" maxLength={14}
               className="px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-brand-300" />
           </label>
           <button disabled={busy || !codeSaisi.trim()}

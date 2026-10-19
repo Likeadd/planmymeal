@@ -185,14 +185,15 @@ interface MealInsert {
 
 /**
  * Insère la recette (personnelle, non publique) + ses liens d'ingrédients.
- * Retourne l'id, ou lève avec le nom de l'ingrédient fautif — jamais l'erreur
- * silencieuse qui avait laissé 455 recettes sans composition (audit).
+ * Les ingrédients absents du référentiel ne sont JAMAIS créés : la table `ingredients` est partagée par
+ * tous les comptes (sélecteurs du frigo, des allergies…) et ne doit pas recevoir de texte venant d'une page
+ * web choisie par un utilisateur (audit VULN-006). Ils sont renvoyés pour être signalés à l'utilisateur.
  */
 async function enregistrerRecette(
   recette: RecetteExtraite,
   userId: string,
   admin: ReturnType<typeof getSupabaseAdmin>
-): Promise<number> {
+): Promise<{ mealId: number; nonReconnus: string[] }> {
   const meal: MealInsert = {
     titre: recette.titre,
     description: recette.description,
@@ -216,21 +217,17 @@ async function enregistrerRecette(
   if (error || !inserted) throw new Error(error?.message ?? 'Erreur enregistrement recette');
   const mealId = inserted.id;
 
-  // Ingrédients : lien par lien, avec création à la volée si le catalogue
-  // n'a pas le nom (rayon 'epicerie_salee' par défaut, l'utilisateur corrigera).
+  // Ingrédients : lien par lien, uniquement vers le référentiel existant
+  const nonReconnus: string[] = [];
   for (const ing of recette.ingredients) {
     const { data: existant } = await admin.from('ingredients')
       .select('id').eq('nom', ing.nom).maybeSingle();
 
-    let ingredientId = existant?.id ?? null;
+    const ingredientId = existant?.id ?? null;
     if (ingredientId == null) {
-      const { data: nouveau, error: errIng } = await admin.from('ingredients')
-        .insert({ nom: ing.nom, rayon: 'epicerie_salee', saison: 'toutes' })
-        .select('id').single();
-      if (errIgnored(errIng, ing.nom)) continue; // ingrédient refusé → signalé, non bloquant
-      ingredientId = nouveau?.id ?? null;
+      nonReconnus.push(ing.nom.slice(0, 60));
+      continue;
     }
-    if (ingredientId == null) continue;
 
     const { error: errLien } = await admin.from('meal_ingredients').insert({
       meal_id: mealId,
@@ -242,7 +239,7 @@ async function enregistrerRecette(
     if (errIgnored(errLien, ing.nom)) continue;
   }
 
-  return mealId;
+  return { mealId, nonReconnus };
 }
 
 /** Log + vrai retour : un ingrédient refusé ne peut plus passer en silence */
@@ -335,7 +332,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const mealId = await enregistrerRecette(recette, user.id, admin);
+    const { mealId, nonReconnus } = await enregistrerRecette(recette, user.id, admin);
 
     return NextResponse.json({
       success: true,
@@ -346,6 +343,8 @@ export async function POST(request: NextRequest) {
         nb_etapes: recette.instructions.length,
         portions: recette.portions,
       },
+      /** Ingrédients absents du référentiel : non ajoutés (à choisir manuellement) */
+      ingredients_non_reconnus: nonReconnus,
     });
   } catch (error) {
     if (error instanceof AIError) {

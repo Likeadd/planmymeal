@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import { validateEnv } from './src/lib/env';
+import { construireCsp } from './src/lib/csp';
 
 // ── Validation de l'environnement au build ──────────────────────────────────
 // En production (`next build`), une variable CRITIQUE manquante fait échouer
@@ -15,21 +16,8 @@ const isDev = process.env.NODE_ENV !== 'production';
 const HOTE_SUPABASE = (() => {
   try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname || 'invalid.supabase.co'; } catch { return 'invalid.supabase.co'; }
 })();
-const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://plausible.io`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://m.stripe.network https://plausible.io",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  ...(isDev ? [] : ['upgrade-insecure-requests']),
-].join('; ');
+// Pages statiques : CSP sans nonce (voir src/lib/csp.ts) ; les pages dynamiques reçoivent une CSP à nonce du proxy.
+const CSP = construireCsp({ isDev });
 
 const securityHeaders = [
   // Force HTTPS (inclut les sous-domaines ; preload une fois la politique stabilisée)

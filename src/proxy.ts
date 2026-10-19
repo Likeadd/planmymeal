@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { construireCsp, nouveauNonce } from '@/lib/csp';
 
 /** Taille max d'un corps de requête API (aucun upload de fichier dans l'app). */
 const TAILLE_MAX_API = 1_000_000; // 1 Mo
@@ -54,7 +55,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  // CSP à nonce pour ces pages rendues à chaque requête (audit VULN-010) : Next.js lit le nonce dans
+  // l'en-tête de la requête et l'applique à ses propres scripts.
+  const nonce = nouveauNonce();
+  const csp = construireCsp({ nonce, isDev: process.env.NODE_ENV !== 'production' });
+  const entetes = new Headers(request.headers);
+  entetes.set('x-nonce', nonce);
+  entetes.set('Content-Security-Policy', csp);
+  const suite = () => {
+    const r = NextResponse.next({ request: { headers: entetes } });
+    r.headers.set('Content-Security-Policy', csp);
+    return r;
+  };
+
+  let supabaseResponse = suite();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,7 +78,8 @@ export async function proxy(request: NextRequest) {
         getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
+          entetes.set('cookie', request.cookies.toString());
+          supabaseResponse = suite();
           cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options));
         },
       },

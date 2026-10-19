@@ -14,6 +14,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/../supabase/database.types';
 import { prixParPortion } from '@/lib/budget';
+import { UserError } from '@/lib/utils';
 import { getSaisonActuelle, JOURS_NOMS } from '@/lib/dates';
 import {
   alimentsRejetesParMembre, chargerFamille, compromisFamille, type Famille,
@@ -455,6 +456,11 @@ export async function enregistrerPreference(
   input: PreferenceInput,
   supabase: Db
 ): Promise<void> {
+  // Appelée avec la clé de service : on n'accepte que les recettes publiques ou créées par l'utilisateur,
+  // sinon le titre d'une recette privée d'un autre compte devenait lisible (audit VULN-002).
+  const { data: visible } = await supabase.from('meals').select('id')
+    .eq('id', mealId).or(`is_public.eq.true,created_by.eq.${userId}`).maybeSingle();
+  if (!visible) throw new UserError('Recette introuvable');
   const patch = normaliserPreference(input);
   const { error } = await supabase.from('user_meal_preferences').upsert(
     { user_id: userId, meal_id: mealId, ...patch, updated_at: new Date().toISOString() },

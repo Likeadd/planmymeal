@@ -34,6 +34,8 @@ import { validerRecetteExtraite, type RecetteExtraite } from '@/lib/ai/recette';
 const TAILLE_HTML_MAX = 2_000_000; // 2 Mo : une page recette dépasse rarement 500 ko
 const TIMEOUT_FETCH_MS = 10_000;
 const TIMEOUT_IA_MS = 60_000;
+/** Plafond quotidien d'imports IA par compte, tous plans confondus (coût) */
+export const IMPORTS_MAX_PAR_JOUR = 30;
 
 const SYSTEM_PROMPT = `Tu es un extracteur de recettes de cuisine. À partir du contenu fourni, tu produces UNIQUEMENT un objet JSON, sans aucun texte autour, au format exact :
 {"titre": string, "description": string|null, "type_repas": "entree"|"plat"|"dessert", "temps_preparation_min": number, "temps_cuisson_min": number|null, "portions": number, "instructions": string[], "ingredients": [{"nom": string, "quantite": number, "unite": "g"|"ml"|"pcs"|"cac"|"cas"|"pincee"|"sachet"|"boite"|"botte"|"tranche", "est_optionnel": boolean}], "cuisine": string|null}
@@ -263,6 +265,9 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     const userLimited = await enforceUserRateLimit(request, user.id, { name: 'import-recette', limit: 5, windowMs: 10 * 60_000 });
     if (userLimited) return userLimited;
+    // Plafond de coût IA, quel que soit le plan (audit VULN-008) : 30 imports par 24 h et par compte
+    const parJour = await enforceUserRateLimit(request, user.id, { name: 'import-recette-jour', limit: IMPORTS_MAX_PAR_JOUR, windowMs: 24 * 3600_000 });
+    if (parJour) return parJour;
 
     // Quota : l'extraction IA a un coût réel. Plan gratuit → IMPORTS_GRATUITS_PAR_MOIS
     // recettes personnelles par 30 jours glissants ; Pro/Famille → illimité

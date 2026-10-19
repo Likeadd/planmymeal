@@ -38,3 +38,16 @@ describe('enregistrerPreference (VULN-002)', () => {
     expect(appels.some(a => a.table === 'user_meal_preferences' && a.upsert)).toBe(true);
   });
 });
+
+import { sansEmailEnClair } from '../src/lib/security-log';
+
+describe('journal de sécurité sans email en clair (VULN-011)', () => {
+  it('remplace l’email par une empreinte stable', () => {
+    const a = sansEmailEnClair({ email: 'Marie@Exemple.fr', action: 'x' });
+    expect(a).not.toHaveProperty('email');
+    expect(a).toMatchObject({ action: 'x' });
+    expect(String(a?.email_hash)).toMatch(/^[0-9a-f]{16}$/);
+    expect(sansEmailEnClair({ email: 'marie@exemple.fr' })?.email_hash).toBe(a?.email_hash);
+    expect(JSON.stringify(a)).not.toContain('exemple');
+  });
+});

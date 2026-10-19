@@ -79,9 +79,16 @@ export const ENV_SPECS: EnvSpec[] = [
     usage: 'Envoi des emails (bienvenue, récap hebdo)',
   },
   {
+    // Critique (audit VULN-001) : sans elle, liens des emails, sitemap et redirections retombaient sur un
+    // domaine codé en dur — dangereux si ce domaine n'est pas (ou plus) le vôtre.
     key: 'NEXT_PUBLIC_SITE_URL',
+    severity: 'critical',
+    usage: 'URL canonique du site (sitemap, robots, OG, liens des emails, redirections Auth)',
+  },
+  {
+    key: 'CONTACT_EMAIL',
     severity: 'recommended',
-    usage: 'URL canonique (sitemap, robots, OG — fallback https://getplanmymeal.com)',
+    usage: 'Destinataire des formulaires de contact et des demandes de recettes (fallback contact@getplanmymeal.com)',
   },
   {
     key: 'ANTHROPIC_API_KEY',

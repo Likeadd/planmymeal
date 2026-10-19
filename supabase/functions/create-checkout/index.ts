@@ -18,8 +18,11 @@ const STRIPE_PRICE_ID_PRO = Deno.env.get('STRIPE_PRICE_ID_PRO')!;
 const STRIPE_PRICE_ID_FAMILLE = Deno.env.get('STRIPE_PRICE_ID_FAMILLE')!;
 const STRIPE_PRICE_ID_PRO_ANNUEL = Deno.env.get('STRIPE_PRICE_ID_PRO_ANNUEL');
 const STRIPE_PRICE_ID_FAMILLE_ANNUEL = Deno.env.get('STRIPE_PRICE_ID_FAMILLE_ANNUEL');
-// URL de retour fixe (jamais l'en-tête Origin, falsifiable) — secret APP_URL
-const APP_URL = (Deno.env.get('APP_URL') ?? 'https://getplanmymeal.com').replace(/\/$/, '');
+// URL de retour fixe (jamais l'en-tête Origin, falsifiable) — secret APP_URL OBLIGATOIRE (audit VULN-001) :
+// pas de domaine par défaut codé en dur vers lequel renvoyer des clients après paiement.
+const APP_URL_SECRET = Deno.env.get('APP_URL');
+if (!APP_URL_SECRET) throw new Error('Secret APP_URL manquant : supabase secrets set APP_URL=https://votre-domaine');
+const APP_URL = APP_URL_SECRET.replace(/\/$/, '');
 
 /** Erreur dont le message peut être montré à l'utilisateur. */
 class PublicError extends Error {}

@@ -65,3 +65,9 @@ describe('validateEnv', () => {
     warn.mockRestore();
   });
 });
+
+describe('audit VULN-001 : URL du site obligatoire en production', () => {
+  it('NEXT_PUBLIC_SITE_URL est critique (le build de production échoue sans elle)', () => {
+    expect(CRITICAL_KEYS).toContain('NEXT_PUBLIC_SITE_URL');
+  });
+});

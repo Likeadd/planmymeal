@@ -227,6 +227,11 @@ function LoginForm() {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
+                    <p className="mt-2 text-right">
+                      <Link href="/mot-de-passe-oublie" className="text-xs font-medium text-brand-700 hover:text-brand-800 underline underline-offset-2">
+                        Mot de passe oublié ?
+                      </Link>
+                    </p>
                   </div>
 
                   {/* Submit */}

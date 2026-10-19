@@ -4,7 +4,7 @@
 //
 // Déploiement Supabase :
 //   supabase functions deploy stripe-webhook
-//   → Secrets requis : STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+//   → Secrets requis : STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_PRO(_ANNUEL), STRIPE_PRICE_ID_FAMILLE(_ANNUEL)
 //   → JWT vérification : DÉSACTIVÉE (appelée par Stripe, pas par l'utilisateur)
 // ============================================================================
 
@@ -24,12 +24,22 @@ const stripe = new Stripe(STRIPE_SECRET_KEY, {
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Prix Stripe → formule (audit VULN-005) : un changement d'offre via le portail client est répercuté.
+const PLAN_PAR_PRIX: Record<string, 'pro' | 'famille'> = Object.fromEntries([
+  [Deno.env.get('STRIPE_PRICE_ID_PRO'), 'pro'],
+  [Deno.env.get('STRIPE_PRICE_ID_PRO_ANNUEL'), 'pro'],
+  [Deno.env.get('STRIPE_PRICE_ID_FAMILLE'), 'famille'],
+  [Deno.env.get('STRIPE_PRICE_ID_FAMILLE_ANNUEL'), 'famille'],
+].filter(([prix]) => !!prix)) as Record<string, 'pro' | 'famille'>;
+
 serve(async (req: Request) => {
   const signature = req.headers.get('stripe-signature');
   if (!signature) {
     return new Response(JSON.stringify({ error: 'Signature manquante' }), { status: 400 });
   }
 
+  // Événement enregistré comme traité : retiré du journal si le traitement échoue, pour que Stripe le renvoie
+  let eventEnregistre: string | null = null;
   try {
     const body = await req.text();
     const event = await stripe.webhooks.constructEventAsync(
@@ -39,6 +49,14 @@ serve(async (req: Request) => {
     );
 
     console.log(`📦 Événement Stripe reçu : ${event.type}`);
+
+    // Idempotence : Stripe peut renvoyer le même événement ; il n'est traité qu'une fois.
+    const { error: dejaVu } = await supabaseAdmin.from('stripe_events').insert({ id: event.id, type: event.type });
+    if (dejaVu) {
+      if (dejaVu.code === '23505') return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200 });
+      throw new Error(`Journal des événements indisponible : ${dejaVu.message}`); // Stripe réessaiera
+    }
+    eventEnregistre = event.id;
 
     switch (event.type) {
       // ── Paiement réussi → activer le plan ──────────
@@ -108,10 +126,18 @@ serve(async (req: Request) => {
         const customerId = subscription.customer as string;
         const status = subscription.status;
 
-        // Abonnement actif : le plan (défini au checkout) est conservé.
+        // Abonnement actif : la formule suit le prix réellement facturé (changement via le portail).
         // Impayé définitif : retour au gratuit.
-        if (status === 'active') {
-          console.log(`✅ Abonnement ${status} pour customer ${customerId}`);
+        if (status === 'active' || status === 'trialing') {
+          const plan = PLAN_PAR_PRIX[subscription.items.data[0]?.price?.id ?? ''];
+          if (plan) {
+            await supabaseAdmin.from('profiles')
+              .update({ plan, stripe_subscription_id: subscription.id })
+              .eq('stripe_customer_id', customerId);
+          } else {
+            console.error(`❌ Prix inconnu pour customer ${customerId} : formule inchangée (vérifiez les secrets STRIPE_PRICE_ID_*)`);
+          }
+          console.log(`✅ Abonnement ${status} pour customer ${customerId} → ${plan ?? 'inchangé'}`);
         } else if (status === 'unpaid' || status === 'canceled' || status === 'incomplete_expired') {
           await supabaseAdmin.from('profiles')
             .update({ plan: 'gratuit', stripe_subscription_id: null })
@@ -120,10 +146,17 @@ serve(async (req: Request) => {
         }
         break;
       }
+      // ── Échec de paiement : Stripe relance ; l'accès est coupé au statut « unpaid » ci-dessus ──
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        console.warn(`⚠️ Paiement échoué pour customer ${invoice.customer} (tentative ${invoice.attempt_count})`);
+        break;
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (error: any) {
+    if (eventEnregistre) await supabaseAdmin.from('stripe_events').delete().eq('id', eventEnregistre);
     console.error('❌ Erreur webhook:', error.message);
     return new Response(JSON.stringify({ error: 'Webhook invalide' }), { status: 400 });
   }

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   // Champ piège : invisible pour un humain, rempli par les robots.
   if (typeof body?.site === 'string' && body.site) return NextResponse.json({ success: true });
 
-  const nom = typeof body?.name === 'string' ? body.name.trim() : '';
+  const nom = typeof body?.name === 'string' ? body.name.replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : '';
   const email = typeof body?.email === 'string' ? body.email.trim() : '';
   const message = typeof body?.message === 'string' ? body.message.trim() : '';
   const sujet = SUJETS.includes(body?.subject) ? body.subject : SUJETS[0];

@@ -89,3 +89,17 @@ describe('liste de courses partageable', () => {
     expect(texte).toContain('https://exemple.fr/liste/abc');
   });
 });
+
+import { montantRemboursement } from '../src/lib/abonnement';
+
+describe('montantRemboursement (VULN-003)', () => {
+  const debut = 1_000_000, fin = debut + 30 * 86_400; // période de 30 jours
+  it('première rétractation : 100 %, même après usage', () => {
+    expect(montantRemboursement(599, debut, fin, (debut + 13 * 86_400) * 1000, false)).toBe(599);
+  });
+  it('rétractation suivante : au prorata de la période non utilisée', () => {
+    expect(montantRemboursement(600, debut, fin, (debut + 10 * 86_400) * 1000, true)).toBe(400);
+    expect(montantRemboursement(600, debut, fin, (fin + 1) * 1000, true)).toBe(0);
+    expect(montantRemboursement(600, debut, fin, (debut - 50) * 1000, true)).toBe(600);
+  });
+});

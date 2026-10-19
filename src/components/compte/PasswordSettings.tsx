@@ -2,19 +2,14 @@
 
 // ============================================================================
 // PasswordSettings — changement de mot de passe (extraite du compte).
-// Le mot de passe actuel est vérifié via signInWithPassword avant updateUser.
+// Le mot de passe actuel est vérifié CÔTÉ SERVEUR (/api/compte/mot-de-passe).
 // ============================================================================
 
 import { useState } from 'react';
 import { Eye, EyeOff, Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/AuthProvider';
-import { createBrowserClient } from '@/lib/supabase';
 
 export function PasswordSettings() {
-  const { user } = useAuth();
-  const supabase = createBrowserClient();
-
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -66,22 +61,18 @@ export function PasswordSettings() {
     setSaving(true);
 
     try {
-      // Vérifier le mot de passe actuel en re-vérifiant la session
-      // (signInWithPassword échoue si le mot de passe est incorrect)
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email: user?.email ?? '',
-        password: currentPassword,
+      // Vérification du mot de passe actuel et changement CÔTÉ SERVEUR (audit VULN-004)
+      const res = await fetch('/api/compte/mot-de-passe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actuel: currentPassword, nouveau: newPassword }),
       });
-      if (verifyError) {
-        setError('Le mot de passe actuel est incorrect.');
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setError(json.error || 'Erreur lors de la mise à jour du mot de passe.');
         setSaving(false);
         return;
       }
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-      if (updateError) throw updateError;
 
       toast.success('Mot de passe mis à jour.');
       setCurrentPassword('');

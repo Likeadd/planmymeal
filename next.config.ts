@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import { validateEnv } from './src/lib/env';
+import { construireCsp } from './src/lib/csp';
 
 // ── Validation de l'environnement au build ──────────────────────────────────
 // En production (`next build`), une variable CRITIQUE manquante fait échouer
@@ -12,23 +13,18 @@ validateEnv({ failOnCritical: process.env.NODE_ENV === 'production' });
 // hors des domaines listés (anti-injection de code). 'unsafe-eval' n'est
 // autorisé qu'en dev (HMR) ; 'unsafe-inline' reste requis par Next sans nonce.
 const isDev = process.env.NODE_ENV !== 'production';
-const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://plausible.io`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://m.stripe.network https://plausible.io",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  ...(isDev ? [] : ['upgrade-insecure-requests']),
-].join('; ');
+const HOTE_SUPABASE = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').hostname || 'invalid.supabase.co'; } catch { return 'invalid.supabase.co'; }
+})();
+// Pages statiques : CSP sans nonce (voir src/lib/csp.ts) ; les pages dynamiques reçoivent une CSP à nonce du proxy.
+const CSP = construireCsp({ isDev });
+
+// Origine autorisée en lecture cross-origin : le site lui-même (audit VULN-018). Sans cette valeur, la
+// plateforme ajoute « Access-Control-Allow-Origin: * » aux pages statiques.
+const ORIGINE_SITE = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
 
 const securityHeaders = [
+  ...(ORIGINE_SITE ? [{ key: 'Access-Control-Allow-Origin', value: ORIGINE_SITE }, { key: 'Vary', value: 'Origin' }] : []),
   // Force HTTPS (inclut les sous-domaines ; preload une fois la politique stabilisée)
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
   // Empêche le sniffing MIME (scripts servis en image, etc.)
@@ -68,7 +64,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        // Uniquement NOTRE projet Supabase (audit VULN-012) : sinon l'optimiseur d'images servait les
+        // images publiques de n'importe quel projet *.supabase.co sous notre domaine.
+        hostname: HOTE_SUPABASE,
         pathname: '/storage/v1/object/public/**',
       },
     ],

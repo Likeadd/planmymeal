@@ -32,3 +32,18 @@ export function etatDepuisStripe(sub: Stripe.Subscription, maintenant = Date.now
 
 export const dateFr = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+
+/**
+ * Montant à rembourser (centimes) lors d'une rétractation (audit VULN-003) :
+ *   - première rétractation du client : 100 % (geste commercial annoncé dans les CGV) ;
+ *   - rétractations suivantes : au prorata du service non fourni (art. L221-25 du Code de la consommation,
+ *     l'exécution immédiate ayant été demandée au paiement) — empêche « s'abonner / se rétracter » en boucle.
+ */
+export function montantRemboursement(
+  montant: number, debutSec: number, finSec: number, maintenantMs: number, dejaRetracte: boolean,
+): number {
+  if (!dejaRetracte) return montant;
+  const duree = Math.max(1, finSec - debutSec);
+  const utilise = Math.min(1, Math.max(0, (maintenantMs / 1000 - debutSec) / duree));
+  return Math.max(0, Math.round(montant * (1 - utilise)));
+}

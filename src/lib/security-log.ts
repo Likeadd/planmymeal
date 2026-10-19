@@ -8,6 +8,7 @@
 // Ne fait jamais échouer la requête appelante.
 // ============================================================================
 
+import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
@@ -32,7 +33,19 @@ export interface SecurityEvent {
   details?: Record<string, unknown>;
 }
 
+/**
+ * Minimisation (audit VULN-011) : une adresse email n'est jamais journalisée en clair, seulement une
+ * empreinte (permet de corréler les tentatives sur un même compte sans stocker l'adresse).
+ */
+export function sansEmailEnClair(details: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!details || typeof details.email !== 'string') return details;
+  const { email, ...reste } = details;
+  const sel = process.env.ANALYTICS_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  return { ...reste, email_hash: createHash('sha256').update(`${sel}|${email.toLowerCase()}`).digest('hex').slice(0, 16) };
+}
+
 export function logSecurityEvent(event: SecurityEvent): void {
+  event = { ...event, details: sansEmailEnClair(event.details) };
   console.warn('[security]', JSON.stringify({ at: new Date().toISOString(), ...event }));
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;

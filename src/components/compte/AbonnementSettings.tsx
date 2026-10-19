@@ -45,7 +45,9 @@ export function AbonnementSettings({ onChange }: { onChange?: () => void }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Une erreur est survenue.');
       if (action === 'retractation') {
-        toast.success(data.rembourse
+        toast.success(data.rembourse && data.partiel
+          ? 'Rétractation enregistrée : vous êtes remboursé au prorata de la période non utilisée.'
+          : data.rembourse
           ? 'Rétractation enregistrée : vous êtes remboursé intégralement.'
           : 'Rétractation enregistrée : votre remboursement est en cours de traitement.');
         setEtat({ actif: false });
@@ -144,7 +146,7 @@ export function AbonnementSettings({ onChange }: { onChange?: () => void }) {
           <p className="text-sm text-gray-700">
             <strong>Droit de rétractation.</strong> Vous disposez de {DELAI_RETRACTATION_JOURS} jours après votre souscription
             (jusqu’au {dateFr(etat.retractationJusquau)}) pour changer d’avis, sans motif : l’abonnement s’arrête
-            immédiatement et vous êtes <strong>remboursé intégralement</strong>.{' '}
+            immédiatement et vous êtes <strong>remboursé intégralement</strong> (au prorata si vous vous êtes déjà rétracté une fois).{' '}
             <Link href="/retractation" className="underline underline-offset-2">Détails</Link>
           </p>
           {confirmer === 'retractation' ? (

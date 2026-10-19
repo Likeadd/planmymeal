@@ -25,8 +25,9 @@ export async function POST(request: NextRequest) {
   if (parJour) return parJour;
 
   const body = await request.json().catch(() => ({}));
-  const titre = typeof body?.titre === 'string' ? body.titre.trim() : '';
-  const details = typeof body?.details === 'string' ? body.details.trim() : '';
+  // Caractères de contrôle retirés (audit VULN-014) : le titre part dans l'objet de l'email (en-tête)
+  const titre = typeof body?.titre === 'string' ? body.titre.replace(/[\u0000-\u001F\u007F]/g, ' ').trim() : '';
+  const details = typeof body?.details === 'string' ? body.details.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').trim() : '';
   if (titre.length < 3 || titre.length > 120) return NextResponse.json({ error: 'Le nom du plat doit contenir entre 3 et 120 caractères.' }, { status: 400 });
   if (details.length > 600) return NextResponse.json({ error: 'Les précisions sont limitées à 600 caractères.' }, { status: 400 });
 

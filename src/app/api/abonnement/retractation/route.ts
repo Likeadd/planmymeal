@@ -14,7 +14,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { enforceRateLimit, enforceUserRateLimit } from '@/lib/rate-limit';
 import { getStripeClient } from '@/lib/stripe-serveur';
-import { etatDepuisStripe } from '@/lib/abonnement';
+import { etatDepuisStripe, montantRemboursement } from '@/lib/abonnement';
 import { sendEmail } from '@/lib/email';
 import { abonnementEmailHtml } from '@/lib/email-templates';
 import { SITE_URL } from '@/lib/seo';
@@ -49,19 +49,36 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // 1) Plus aucun prélèvement possible
+    // Rétractation déjà exercée par ce client ? (abonnements annulés marqués « retractation »)
+    const anciens = await stripe.subscriptions.list({ customer: customerId, status: 'canceled', limit: 20 });
+    const dejaRetracte = anciens.data.some(s => s.metadata?.retractation === 'oui');
+
+    // 1) Plus aucun prélèvement possible (marqué pour les prochaines rétractations)
+    await stripe.subscriptions.update(subId, { metadata: { ...sub.metadata, retractation: 'oui' } });
     await stripe.subscriptions.cancel(subId);
     // 2) Retour au plan gratuit tout de suite (le webhook ferait de même)
     await admin.from('profiles').update({ plan: 'gratuit', stripe_subscription_id: null }).eq('id', user.id);
 
     // 3) Remboursement intégral du paiement qui a ouvert l'abonnement
     let rembourse = false;
+    let remboursementPartiel = false;
     try {
       const charges = await stripe.charges.list({ customer: customerId, limit: 10 });
       const paiement = charges.data.find(c => c.status === 'succeeded' && !c.refunded && c.created >= sub.start_date - 3600);
       if (paiement) {
-        await stripe.refunds.create({ charge: paiement.id, reason: 'requested_by_customer' });
+        const item = sub.items.data[0];
+        const montant = montantRemboursement(
+          paiement.amount, item?.current_period_start ?? sub.start_date, item?.current_period_end ?? sub.start_date,
+          Date.now(), dejaRetracte,
+        );
+        if (montant > 0) {
+          await stripe.refunds.create(
+            { charge: paiement.id, amount: montant, reason: 'requested_by_customer' },
+            { idempotencyKey: `retractation-${subId}` },
+          );
+        }
         rembourse = true;
+        remboursementPartiel = montant < paiement.amount;
       }
     } catch (e) {
       console.error('[retractation] remboursement à traiter MANUELLEMENT', { userId: user.id, subId, erreur: e instanceof Error ? e.message : e });
@@ -77,8 +94,10 @@ export async function POST(request: NextRequest) {
           titre: 'Rétractation enregistrée',
           paragraphes: [
             'Nous avons bien enregistré votre rétractation : votre abonnement est terminé et votre compte est repassé en formule gratuite.',
-            rembourse
+            rembourse && !remboursementPartiel
               ? 'La totalité des sommes versées vous est remboursée sur le moyen de paiement utilisé ; le crédit apparaît sous quelques jours selon votre banque (14 jours maximum).'
+              : rembourse
+              ? 'Ayant déjà exercé votre droit de rétractation lors d’un précédent abonnement, vous êtes remboursé au prorata de la période non utilisée (article L221-25 du Code de la consommation), sur le moyen de paiement utilisé, sous 14 jours maximum.'
               : `Votre remboursement intégral est en cours de traitement manuel : vous serez recontacté sous 48 h. En cas de doute, écrivez-nous à ${EMAIL_CONTACT}.`,
           ],
         }, SITE_URL),
@@ -86,7 +105,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ ok: true, rembourse });
+    return NextResponse.json({ ok: true, rembourse, partiel: remboursementPartiel });
   } catch (error) {
     console.error('Erreur rétractation:', error);
     return NextResponse.json({ error: publicErrorMessage(error) }, { status: 500 });

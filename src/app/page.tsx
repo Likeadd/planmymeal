@@ -193,7 +193,7 @@ function Features() {
         <Reveal className="text-center max-w-2xl mx-auto">
           <h2 className="font-display text-4xl sm:text-5xl font-bold text-gray-900 leading-tight">
             Tout pour bien manger,{' '}
-            <span className="whitespace-nowrap"><Underlined color="#7C5FBF">au même endroit.</Underlined></span>
+            <span className="sm:whitespace-nowrap"><Underlined color="#7C5FBF">au même endroit.</Underlined></span>
           </h2>
           <p className="mt-6 text-gray-600 text-lg leading-relaxed">
             Sept critères pris en compte à chaque optimisation :

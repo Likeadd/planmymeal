@@ -326,7 +326,7 @@ export default function SignupPage() {
                         type="button"
                         onClick={() => setShowPassword((s) => !s)}
                         aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-600"
+                        className="absolute right-0.5 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-gray-600"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -381,7 +381,7 @@ export default function SignupPage() {
 
               {/* Lien retour */}
               <p className="mt-6 text-center">
-                <Link href="/" className="text-sm text-gray-500 hover:text-gray-600 transition-colors">
+                <Link href="/" className="inline-block py-2.5 text-sm text-gray-500 hover:text-gray-600 transition-colors">
                   ← Retour à l&apos;accueil
                 </Link>
               </p>

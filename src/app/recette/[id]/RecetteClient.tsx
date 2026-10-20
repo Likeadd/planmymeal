@@ -219,7 +219,7 @@ export default function RecetteClient({
             </div>
 
             {/* Partager / Like / Dislike */}
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap max-w-full">
               <BoutonPartager type="recette" titre={titreRecette(meal.titre)}
                 texte={`Une recette à essayer : ${titreRecette(meal.titre)}`} chemin={recetteHref(meal)} />
               <button
@@ -234,7 +234,12 @@ export default function RecetteClient({
                 title={feedback === 'liked' ? 'Retirer des favoris' : 'Ajouter aux favoris'}
               >
                 <Heart className={`w-5 h-5 ${feedback === 'liked' ? 'fill-current' : ''}`} />
-                {feedback === 'liked' ? 'Favori' : 'Ajouter aux favoris'}
+                {feedback === 'liked' ? 'Favori' : (
+                  <>
+                    <span className="min-[400px]:hidden">Favoris</span>
+                    <span className="max-[399px]:hidden">Ajouter aux favoris</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={() => handleFeedback('disliked')}

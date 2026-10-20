@@ -78,7 +78,7 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
                   className="flex-1 bg-transparent text-sm tracking-wider text-gray-800 placeholder-gray-500 outline-hidden uppercase"
                 />
                 <button type="submit" aria-label="S’inscrire" disabled={statut === 'envoi'}
-                  className="text-brand-600 hover:text-brand-700 transition-colors disabled:opacity-50">
+                  className="p-3 -m-3 text-brand-600 hover:text-brand-700 transition-colors disabled:opacity-50">
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </form>
@@ -96,10 +96,10 @@ export default function LandingFooter({ sansNewsletter = false }: { sansNewslett
           </>)}
 
           {/* Liens */}
-          <ul className={`flex flex-wrap gap-x-6 gap-y-2 ${sansNewsletter ? 'justify-center' : 'md:justify-end'}`}>
+          <ul className={`flex flex-wrap gap-x-6 gap-y-0 ${sansNewsletter ? 'justify-center' : 'md:justify-end'}`}>
             {FOOTER_LINKS.map(([label, href]) => (
               <li key={label}>
-                <Link href={href} className="text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">
+                <Link href={href} className="inline-block py-2.5 text-[11px] font-semibold tracking-[0.16em] uppercase text-gray-700 hover:text-brand-600 transition-colors">
                   {label}
                 </Link>
               </li>

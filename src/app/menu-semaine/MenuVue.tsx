@@ -152,7 +152,7 @@ export function MenuVue({ menu, chemin, maillons, titre, accroche, autresMenus =
           <div className="mt-3 divide-y divide-gray-100 rounded-2xl border border-gray-100 bg-white">
             {faq.map(f => (
               <details key={f.q} className="group p-4">
-                <summary className="cursor-pointer list-none font-semibold text-gray-900 flex justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                <summary className="cursor-pointer list-none min-h-[44px] items-center font-semibold text-gray-900 flex justify-between gap-3 [&::-webkit-details-marker]:hidden">
                   {f.q}<span className="text-brand-500 group-open:rotate-45 transition-transform" aria-hidden>+</span>
                 </summary>
                 <p className="mt-2 text-sm text-gray-600">{f.r}</p>

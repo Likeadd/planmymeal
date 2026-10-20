@@ -60,7 +60,7 @@ export default function MotDePasseOubliePage() {
           </form>
         )}
         <p className="mt-6 text-center text-sm">
-          <Link href="/login" className="text-brand-700 font-medium underline underline-offset-2">Retour à la connexion</Link>
+          <Link href="/login" className="inline-block py-2.5 text-brand-700 font-medium underline underline-offset-2">Retour à la connexion</Link>
         </p>
       </main>
       <LandingFooter sansNewsletter />

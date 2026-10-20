@@ -100,7 +100,7 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ['node_modules/**', '.next/**', 'out/**', 'scripts/**'],
+    ignores: ['node_modules/**', '.next/**', 'out/**', 'scripts/**', 'marketing/**'],
   },
 ];
 

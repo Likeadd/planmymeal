@@ -2,6 +2,14 @@ import type { NextConfig } from 'next';
 import { validateEnv } from './src/lib/env';
 import { construireCsp } from './src/lib/csp';
 
+// ── URL du site ─────────────────────────────────────────────────────────────
+// NEXT_PUBLIC_SITE_URL si définie ; sinon, sur Vercel, le domaine de production du projet (fourni par la
+// plateforme : VERCEL_PROJECT_PRODUCTION_URL) — le build ne dépend ainsi pas d'un domaine personnalisé déjà
+// branché. Aucun domaine n'est codé en dur (audit VULN-001). La valeur est injectée dans le bundle client.
+const URL_VERCEL = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const SITE_URL_RESOLUE = (process.env.NEXT_PUBLIC_SITE_URL || (URL_VERCEL ? `https://${URL_VERCEL}` : '')).trim().replace(/\/$/, '');
+if (SITE_URL_RESOLUE) process.env.NEXT_PUBLIC_SITE_URL = SITE_URL_RESOLUE;
+
 // ── Validation de l'environnement au build ──────────────────────────────────
 // En production (`next build`), une variable CRITIQUE manquante fait échouer
 // le build avec la liste précise de ce qui manque — au lieu d'un crash
@@ -40,6 +48,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  env: SITE_URL_RESOLUE ? { NEXT_PUBLIC_SITE_URL: SITE_URL_RESOLUE } : {},
   // Ne révèle pas la stack technique (X-Powered-By: Next.js)
   poweredByHeader: false,
   // Production : supprime les console.log/info/debug du bundle (garde error/warn)

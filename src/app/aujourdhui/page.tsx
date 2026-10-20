@@ -49,7 +49,7 @@ interface AUtiliser {
 const ORDRE_CRENEAUX: Record<string, number> = { dejeuner: 0, dessert_midi: 1, diner: 2, dessert: 3 };
 type RepasType = string;
 /** Heure (Paris) après laquelle un créneau est considéré comme passé */
-const FIN_CRENEAU: Record<string, number> = { dejeuner: 14, dessert_midi: 15, diner: 21, dessert: 23 };
+const FIN_CRENEAU: Record<string, number> = { dejeuner: 14, dessert_midi: 14, diner: 21, dessert: 21 };
 
 export default function AujourdhuiPage() {
   const { user, profile, loading: authLoading } = useAuth();

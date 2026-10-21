@@ -18,7 +18,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  Clock, Flame, AlertTriangle, ShoppingCart, Wallet, ArrowRight,
+  Clock, Flame, AlertTriangle, ShoppingCart, Wallet, ArrowRight, Refrigerator,
   ChefHat, CalendarDays,
 } from 'lucide-react';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
@@ -57,6 +57,8 @@ export default function AujourdhuiPage() {
 
   const [prochain, setProchain] = useState<{ label: string; meal: RecettePlanning } | null>(null);
   const [nbRepasRestants, setNbRepasRestants] = useState(0);
+  /** Produits frais / surgelés du prochain repas : à sortir du frigo ou du congélateur */
+  const [aSortir, setASortir] = useState<{ nom: string; surgele: boolean }[]>([]);
   const [aUtiliser, setAUtiliser] = useState<AUtiliser[]>([]);
   const [nbCourses, setNbCourses] = useState(0);
   const [recap, setRecap] = useState<BudgetRecap | null>(null);
@@ -124,6 +126,16 @@ export default function AujourdhuiPage() {
               : premier.repas_type === 'dessert_midi' ? 'Dessert de midi' : 'Dessert';
             setProchain({ label: aVenir.length > 0 ? nom : `Demain, ${nom.toLowerCase()}`, meal: premier.meal });
             setPlanningVide(false);
+            if (!premier.meal.personnalise) {
+              const { data: lignes } = await supabase
+                .from('meal_ingredients')
+                .select('est_optionnel, ingredients(nom, rayon)')
+                .eq('meal_id', premier.meal.id);
+              if (!alive) return;
+              setASortir((lignes ?? [])
+                .filter(l => !l.est_optionnel && ['viande_poisson', 'frais', 'surgeles'].includes(l.ingredients?.rayon ?? ''))
+                .map(l => ({ nom: l.ingredients!.nom, surgele: l.ingredients!.rayon === 'surgeles' })));
+            }
           } else {
             setProchain(null);
             setPlanningVide(true);
@@ -232,7 +244,25 @@ export default function AujourdhuiPage() {
                   )}
                 </div>
               </Link>
-            ) : (
+            ) : null}
+
+            {/* ── À sortir pour le prochain repas (frais / surgelés) ─────── */}
+            {prochain && aSortir.length > 0 && (
+              <div className="rounded-3xl border border-accent-200 bg-accent-50 p-5">
+                <p className="text-[11px] font-semibold tracking-[0.14em] uppercase text-accent-700 mb-2 flex items-center gap-1.5">
+                  <Refrigerator className="w-3.5 h-3.5" /> À sortir · {prochain.label}
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {aSortir.map(a => (
+                    <li key={a.nom} className="rounded-full bg-white border border-accent-200 px-3 py-1 text-sm text-gray-800">
+                      {a.surgele ? '🧊' : '🥩'} {a.nom}{a.surgele && <span className="text-accent-700"> · à décongeler</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {!prochain && (
               <div className="rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50/60 p-6 text-center">
                 <p className="text-sm text-gray-500">
                   {planningVide

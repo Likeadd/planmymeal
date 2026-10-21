@@ -11,7 +11,6 @@
 
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 import type { ExplicationLigne, RepasSlot } from '@/types';
 import { errorMessage } from '@/lib/utils';
 
@@ -26,7 +25,6 @@ export function WhyModal({
 }) {
   const [lignes, setLignes] = useState<ExplicationLigne[] | null>(null);
   const [error, setError] = useState('');
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,13 +55,7 @@ export function WhyModal({
       role="dialog" aria-modal="true" aria-label="Pourquoi ce repas ?">
       <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-xs" onClick={onClose} aria-hidden />
 
-      <motion.div
-        // `initial` identique au SSR (useReducedMotion vaut null côté serveur) :
-        // seul le durée change → pas d'hydration mismatch.
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-        className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
+      <div className="animate-sheet-in relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
 
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -92,14 +84,11 @@ export function WhyModal({
           {!error && lignes && (
             <ul className="space-y-2.5">
               {lignes.map((l, i) => (
-                <motion.li key={i}
-                  initial={{ opacity: 0, x: -6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : i * 0.04 }}
-                  className="flex items-start gap-3 text-sm text-gray-700">
+                <li key={i} style={{ animationDelay: `${i * 40}ms` }}
+                  className="animate-list-in flex items-start gap-3 text-sm text-gray-700">
                   <span className="text-base leading-5 shrink-0" aria-hidden>{l.emoji}</span>
                   <span className="leading-relaxed">{l.texte}</span>
-                </motion.li>
+                </li>
               ))}
             </ul>
           )}
@@ -108,7 +97,7 @@ export function WhyModal({
             Ces raisons proviennent de tes réglages et de ton historique — jamais d&apos;une justification inventée.
           </p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

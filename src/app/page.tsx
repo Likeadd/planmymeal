@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight, BadgeEuro, Brain, Check, ChefHat, Loader2, Minus,
   Plus, Refrigerator, ShoppingCart, Sparkles, Users, UtensilsCrossed,
@@ -521,7 +520,6 @@ function CellulePlan({ value }: { value: CelluleComparatif }) {
 }
 
 function Comparatif({ onUpgrade, loadingPlan, periode }: { onUpgrade: (plan: 'pro' | 'famille') => void; loadingPlan: 'pro' | 'famille' | null; periode: Periode }) {
-  const reduceMotion = useReducedMotion();
   const cols: { key: 'gratuit' | 'pro' | 'famille'; name: string; prix: string; cta?: boolean; accent?: boolean }[] = [
     { key: 'gratuit', name: 'Gratuit', prix: '0 €' },
     { key: 'pro', name: 'Pro', prix: `${prixPlan('pro', periode).montant} €/${prixPlan('pro', periode).unite}`, cta: true, accent: true },
@@ -558,16 +556,10 @@ function Comparatif({ onUpgrade, loadingPlan, periode }: { onUpgrade: (plan: 'pr
                   <span className="block text-xs text-gray-500 mt-0.5">{c.prix}</span>
                   {/* CTA payant : Famille prend l'accent, Pro le brand (plan mis en avant) */}
                   {/* CTA Famille : fondu APRÈS Pro — l'œil voit d'abord le plan mis en
-                      avant, puis l'option montante. whileInView comme Reveal, pour que
-                      l'animation joue à l'entrée dans le viewport (et pas avant). */}
+                      avant, puis l'option montante. data-reveal (ScrollReveal) : l'animation
+                      joue à l'entrée dans le viewport (et pas avant). */}
                   {c.cta && (
-                    <motion.div
-                      className="mt-2"
-                      initial={{ opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '-80px' }}
-                      transition={reduceMotion ? { duration: 0 } : { duration: 0.45, delay: c.key === 'famille' ? 0.35 : 0, ease: 'easeOut' }}
-                    >
+                    <div className="mt-2" data-reveal style={{ '--i': c.key === 'famille' ? 6 : 0 } as React.CSSProperties}>
                     <button
                       type="button"
                       onClick={() => onUpgrade(c.key as 'pro' | 'famille')}
@@ -582,7 +574,7 @@ function Comparatif({ onUpgrade, loadingPlan, periode }: { onUpgrade: (plan: 'pr
                         <>Choisir {c.name} <ArrowRight className="w-3.5 h-3.5" /></>
                       )}
                     </button>
-                    </motion.div>
+                    </div>
                   )}
                 </th>
               ))}

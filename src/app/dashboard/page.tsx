@@ -418,6 +418,18 @@ function DashboardInner() {
           </div>
 
           {activeTab === 'planning' && (<>
+            {/* Partage au foyer : visible ici plutôt que caché dans l'icône de l'en-tête */}
+            {stats.totalMeals > 0 && (
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 px-4 py-3">
+                <p className="text-sm text-gray-700 min-w-0">
+                  <strong className="font-semibold text-gray-900">👨‍👩‍👧 Envoyez le menu à votre foyer</strong>
+                  <span className="hidden sm:inline"> : un lien à ouvrir sans compte.</span>
+                </p>
+                <BoutonPartager type="menu" libelle="Envoyer" className="shrink-0"
+                  titre={`Notre menu de la semaine du ${formatWeekRange(semaineDebut)}`}
+                  texte="Voici le menu de la semaine :" resoudreUrl={() => lienPublicMenu(semaineDebut)} />
+              </div>
+            )}
             {verrouilles.size > 0 && <BandeauVerrou nbVerrouilles={verrouilles.size} className="mb-4" />}
             {/* Clé de lecture des pastilles du foyer — bandeau complet sur
                 mobile seulement : en desktop la version inline est fondue dans

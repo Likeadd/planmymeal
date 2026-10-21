@@ -162,6 +162,18 @@
 }
 .animate-page-in { animation: pageIn 0.15s ease-out; }
 
+/* ── Feuilles et modales (remplace framer-motion) : glissement depuis le bas ── */
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-sheet-in { animation: sheetIn 0.22s ease-out; }
+@keyframes listIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-list-in { animation: listIn 0.2s ease-out backwards; }
+
 /* ── Entrée du hero : mouvement SEUL, jamais d'opacité — le titre reste
    lisible même si l'animation ne joue pas (aperçus de partage, robots,
    onglet en arrière-plan). ── */
@@ -221,7 +233,7 @@ html.reveal-on [data-reveal]:not([data-revealed]) { opacity: 0; }
 
 /* ── Accessibilité : prefers-reduced-motion coupe TOUTES les animations CSS ──
    (shimmer, slide-up, transitions, smooth-scroll…) — les états finaux restent
-   lisibles. Les animations framer-motion sont gérées par useReducedMotion. */
+   lisibles. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

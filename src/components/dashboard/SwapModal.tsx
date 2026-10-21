@@ -12,7 +12,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Clock, Loader2, Pencil, Plus, Search, Shuffle, Utensils, X } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 import type { RecetteSwap, RepasSlot, TypeRepas } from '@/types';
 import type { MealCatalogue } from '@/lib/db-rows';
 import { formatMinutes, formatCalories, familleDessert, titreRecette } from '@/lib/utils';
@@ -76,7 +75,6 @@ export function SwapModal({
   const [loading, setLoading] = useState(true);
   const [chargementPlus, setChargementPlus] = useState(false);
   const [erreur, setErreur] = useState(false);
-  const reduceMotion = useReducedMotion();
 
   // Recherche différée : une requête par pause de frappe, pas par touche.
   useEffect(() => {
@@ -156,13 +154,7 @@ export function SwapModal({
       role="dialog" aria-modal="true" aria-label="Remplacer ce repas" data-jour={dayIndex}>
       <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xs" onClick={onClose} aria-hidden />
 
-      <motion.div
-        // `initial` identique au SSR (useReducedMotion vaut null côté serveur) :
-        // seul le durée change → pas d'hydration mismatch.
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-        className="relative w-full sm:max-w-lg bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
+      <div className="animate-sheet-in relative w-full sm:max-w-lg bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
 
         <div className="sticky top-0 z-10 bg-creme-50/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between gap-3">
           <h3 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -290,7 +282,7 @@ export function SwapModal({
             </>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -19,7 +19,6 @@ import {
   Refrigerator, Loader2, Plus, Trash2, Sparkles, Check, Zap, AlertTriangle, X, Minus,
   Clock, ShoppingCart, RefreshCw,
 } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { gererPaywall } from '@/lib/paywall';
 import type { FridgeItem, Ingredient } from '@/types';
@@ -135,7 +134,6 @@ export default function FrigoPage() {
   const [seuilPeremption, setSeuilPeremption] = useState('');
   /** Modale « Ajouter un article » — repliée par défaut (nouveau design) */
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
-  const reduceMotion = useReducedMotion();
   /** Aliments cochés (ingredient_id) pour la recherche de recettes */
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [recettes, setRecettes] = useState<RecetteFrigo[] | null>(null);
@@ -672,11 +670,7 @@ export default function FrigoPage() {
           role="dialog" aria-modal="true" aria-label="Ajouter un article au frigo">
           <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-xs" onClick={() => setAjoutOuvert(false)} aria-hidden />
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-            className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[88vh] overflow-y-auto">
+          <div className="animate-sheet-in relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[88vh] overflow-y-auto">
 
             <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -762,7 +756,7 @@ export default function FrigoPage() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </DashboardShell>

@@ -7,7 +7,6 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { Loader2, X, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +26,6 @@ interface Props {
 export function ChangerSheet({
   libelleCreneau, titreActuel, onClose, onHasard, onChoisir, onEcrire, onVider, secondaires = [],
 }: Props) {
-  const reduceMotion = useReducedMotion();
   const [ecriture, setEcriture] = useState(false);
   const [texte, setTexte] = useState('');
   const [enCours, setEnCours] = useState<string | null>(null);
@@ -54,15 +52,11 @@ export function ChangerSheet({
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true"
       aria-label={`Changer le repas de ${libelleCreneau}`}>
       <div className="absolute inset-0 bg-gray-900/40" onClick={onClose} aria-hidden />
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-        className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto">
+      <div className="animate-sheet-in relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-xl px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto">
         <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-200 sm:hidden" aria-hidden />
-        <div className="mt-4 flex items-start justify-between gap-3">
+        <div className="mt-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-display font-bold text-xl text-gray-900">Changer le repas de {libelleCreneau}</h3>
+            <h3 className="font-display font-bold text-lg sm:text-xl text-gray-900 leading-snug">Changer le repas de {libelleCreneau}</h3>
             {titreActuel && <p className="mt-0.5 text-sm text-gray-500 truncate">Actuellement : {titreActuel}</p>}
           </div>
           <button onClick={onClose} aria-label="Fermer" className="p-2 -mr-2 rounded-full text-gray-500 hover:bg-gray-100">
@@ -87,17 +81,19 @@ export function ChangerSheet({
           </form>
         ) : (
           <>
-            <div className="mt-5 flex flex-col gap-3">
+            {/* Compact : les 4 choix ET les autres actions tiennent sur un petit téléphone (iPhone SE)
+                sans devoir deviner qu'il faut faire défiler. */}
+            <div className="mt-4 flex flex-col gap-2">
               {choix.map(c => (
                 <button key={c.cle} onClick={c.action} disabled={enCours != null}
-                  className={cn('w-full flex items-center gap-4 rounded-2xl border px-4 py-4 text-left transition-colors active:scale-[0.99] disabled:opacity-60',
+                  className={cn('w-full flex items-center gap-3 rounded-2xl border px-4 py-3 min-h-[56px] text-left transition-colors active:scale-[0.99] disabled:opacity-60',
                     c.mis ? 'border-brand-300 bg-brand-50 hover:bg-brand-100' : 'border-gray-200 bg-creme-50 hover:bg-gray-50')}>
-                  <span className="text-2xl w-8 text-center" aria-hidden>
+                  <span className="text-xl w-7 text-center" aria-hidden>
                     {enCours === c.cle ? <Loader2 className="w-6 h-6 animate-spin text-brand-500 mx-auto" /> : c.emoji}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block font-bold text-gray-900 text-base">{c.titre}</span>
-                    <span className="block text-sm text-gray-500">{c.sous}</span>
+                    <span className="block font-bold text-gray-900 text-[15px] leading-tight">{c.titre}</span>
+                    <span className="block text-[13px] text-gray-500 leading-tight mt-0.5">{c.sous}</span>
                   </span>
                   <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
                 </button>
@@ -105,13 +101,13 @@ export function ChangerSheet({
             </div>
 
             {secondaires.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-gray-100">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Autres actions</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Autres actions</p>
+                <div className="grid grid-cols-2 gap-2">
                   {secondaires.map(s => (
                     <button key={s.label} onClick={() => { onClose(); s.onClick(); }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3.5 min-h-[40px] text-sm font-medium text-gray-700 hover:bg-gray-200">
-                      <span aria-hidden>{s.emoji}</span>{s.label}
+                      className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 min-h-[44px] text-left text-[13px] font-semibold text-gray-800 leading-tight hover:bg-gray-50">
+                      <span aria-hidden className="shrink-0">{s.emoji}</span><span className="min-w-0">{s.label}</span>
                     </button>
                   ))}
                 </div>
@@ -119,7 +115,7 @@ export function ChangerSheet({
             )}
           </>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

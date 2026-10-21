@@ -10,9 +10,9 @@
 // ============================================================================
 
 import { BoutonDebloquer } from '@/components/dashboard/Verrou';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { ShoppingCart, RotateCcw, Route, ArrowDownAZ, ClipboardCopy } from 'lucide-react';
+import { ShoppingCart, RotateCcw, Route, ArrowDownAZ, ClipboardCopy, Store } from 'lucide-react';
 import { BoutonPartager } from '@/components/BoutonPartager';
 import { lienPublicListe, listeEnTexte, rangMagasin } from '@/lib/liste-courses';
 import { copyToClipboard } from '@/lib/utils';
@@ -40,6 +40,18 @@ export function ShoppingListView({
   // Tri des rayons : parcours magasin (défaut) ou alphabétique. État local :
   // une préférence de course ne vaut pas la complexité d'une persistance.
   const [triMagasin, setTriMagasin] = useState(true);
+  // Mode « En magasin » : écran gardé allumé, articles cochés masqués (ce qui reste à prendre seulement)
+  const [enMagasin, setEnMagasin] = useState(false);
+  useEffect(() => {
+    if (!enMagasin || !('wakeLock' in navigator)) return;
+    let verrou: WakeLockSentinel | null = null;
+    const demander = () => { navigator.wakeLock.request('screen').then(v => { verrou = v; }).catch(() => {}); };
+    // Le verrou est relâché quand l'onglet passe en arrière-plan : on le redemande au retour
+    const auRetour = () => { if (document.visibilityState === 'visible') demander(); };
+    demander();
+    document.addEventListener('visibilitychange', auRetour);
+    return () => { document.removeEventListener('visibilitychange', auRetour); void verrou?.release(); };
+  }, [enMagasin]);
   const sectionsTriees = triMagasin
     ? [...sections].sort((a, b) =>
         rangMagasin(a.rayon || a.label) - rangMagasin(b.rayon || b.label)
@@ -96,9 +108,19 @@ export function ShoppingListView({
           </div>
         </div>
 
+        <button onClick={() => { setEnMagasin(v => !v); if (!enMagasin) track('Mode magasin'); }} aria-pressed={enMagasin}
+          className={`mb-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-2xl text-sm font-semibold transition-colors ${
+            enMagasin ? 'bg-forest-500 text-white' : 'bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100'}`}>
+          <Store className="w-4 h-4" aria-hidden />
+          {enMagasin ? 'Mode magasin activé · Quitter' : 'Je suis au magasin'}
+        </button>
+        {enMagasin && (
+          <p className="-mt-1 mb-3 text-xs text-gray-500 text-center">L’écran reste allumé et les articles cochés disparaissent.</p>
+        )}
+
         {/* Tri des rayons : parcours magasin (défaut) ou alphabétique */}
         {sections.length >= 2 && (
-          <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-full w-fit p-1">
+          <div className="flex items-center gap-1 bg-gray-50 border border-gray-100 rounded-full w-fit p-1 mb-3">
             <button onClick={() => setTriMagasin(true)} aria-pressed={triMagasin}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 triMagasin ? 'bg-white text-brand-600 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -125,6 +147,8 @@ export function ShoppingListView({
       </div>
 
       {(limite != null ? tronquer(sectionsTriees, limite) : sectionsTriees).map(section => {
+        const visibles = enMagasin ? section.items.filter(it => !it.checked) : section.items;
+        if (visibles.length === 0) return null;
         const nbCoche = section.items.filter(it => it.checked).length;
         const tousCoche = nbCoche === section.items.length;
         const pct = section.items.length > 0 ? (nbCoche / section.items.length) * 100 : 0;
@@ -152,24 +176,23 @@ export function ShoppingListView({
               </div>
             </div>
             <div className="divide-y divide-gray-50">
-              {section.items.map(item => (
-                <div key={`${section.label}-${item.nom}`} className="flex items-center gap-3.5 px-4 sm:px-5 py-4 hover:bg-gray-50 transition-colors">
-                  {/* Case : cercle visuel 28 px, zone de frappe 36 px (bouton) */}
-                  <button onClick={() => onToggle(section.label, item.nom)}
-                    aria-pressed={item.checked}
-                    aria-label={item.checked ? `Décocher ${item.nom}` : `Cocher ${item.nom}`}
-                    className="w-9 h-9 -m-1 rounded-full flex items-center justify-center shrink-0 transition-transform duration-150 active:scale-90">
-                    <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-150 ${item.checked ? 'bg-forest-500 border-forest-500' : 'border-gray-300 hover:border-forest-400 scale-95'}`}>
-                      {/* Check dessiné : le trait suit la coche (stroke-dashoffset) */}
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                        <path className={`check-path ${item.checked ? 'check-path-on' : ''}`}
-                          strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                  </button>
+              {visibles.map(item => (
+                // Ligne entière cliquable : cible tactile large, pratique avec un panier à la main
+                <button key={`${section.label}-${item.nom}`} type="button" onClick={() => onToggle(section.label, item.nom)}
+                  aria-pressed={item.checked}
+                  aria-label={item.checked ? `Décocher ${item.nom}` : `Cocher ${item.nom}`}
+                  className="w-full flex items-center gap-3.5 px-4 sm:px-5 py-4 text-left hover:bg-gray-50 transition-colors active:bg-gray-100">
+                  {/* Case : cercle visuel 28 px */}
+                  <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${item.checked ? 'bg-forest-500 border-forest-500' : 'border-gray-300 scale-95'}`}>
+                    {/* Check dessiné : le trait suit la coche (stroke-dashoffset) */}
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                      <path className={`check-path ${item.checked ? 'check-path-on' : ''}`}
+                        strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
                   <span className={`flex-1 text-[15px] transition-colors duration-200 ${item.checked ? 'text-gray-500 line-through' : 'text-gray-700'}`}>{item.nom}</span>
                   <span className="text-[15px] font-bold text-gray-900 whitespace-nowrap">{item.quantite}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>

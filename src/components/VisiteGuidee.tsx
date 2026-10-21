@@ -26,7 +26,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { cn } from '@/lib/utils';

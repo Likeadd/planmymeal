@@ -12,7 +12,7 @@
 import { BoutonDebloquer, CarteVerrouillee } from '@/components/dashboard/Verrou';
 import { useRef } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Loader2, Package, Check, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Package, Check, Lock, RefreshCw } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
 import { formatMinutes, cn, titreRecette, emojiRecette } from '@/lib/utils';
 import { formatPrix, prixParPortion } from '@/lib/budget';
@@ -191,8 +191,8 @@ export function WeekDayTabs({
                         </Link>
                       )}
                       <button onClick={() => ouvrir(day.jourIndex, slot)}
-                        className="flex-1 min-h-[52px] rounded-2xl bg-creme-100 border border-gray-200 text-gray-800 font-semibold text-base active:scale-[0.98] transition-transform">
-                        Changer
+                        className="flex-1 min-h-[52px] rounded-2xl bg-white border-2 border-brand-300 text-brand-700 font-semibold text-base flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform">
+                        <RefreshCw className="w-4 h-4" aria-hidden /> Changer
                       </button>
                     </div>
                   </>

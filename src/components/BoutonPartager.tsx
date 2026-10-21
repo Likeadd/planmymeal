@@ -25,6 +25,8 @@ interface Props {
   resoudreUrl?: () => Promise<string>;
   /** `bouton` : icône + libellé ; `icone` : icône seule (barres d'outils) */
   variante?: 'bouton' | 'icone';
+  /** Libellé du bouton (variante `bouton`) */
+  libelle?: string;
   className?: string;
 }
 
@@ -35,7 +37,7 @@ function avecRef(url: string, ref: string): string {
   return u.toString();
 }
 
-export function BoutonPartager({ type, titre, texte, chemin, resoudreUrl, variante = 'bouton', className }: Props) {
+export function BoutonPartager({ type, titre, texte, chemin, resoudreUrl, variante = 'bouton', libelle = 'Partager', className }: Props) {
   const [ouvert, setOuvert] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
@@ -107,7 +109,7 @@ export function BoutonPartager({ type, titre, texte, chemin, resoudreUrl, varian
           ? 'p-2 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-all text-gray-500 min-w-[44px] min-h-[44px] flex items-center justify-center'
           : 'inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600 hover:border-brand-300 hover:text-brand-600 transition-all'}>
         {chargement ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden /> : <Share2 className="w-5 h-5" aria-hidden />}
-        {variante === 'bouton' && 'Partager'}
+        {variante === 'bouton' && libelle}
       </button>
 
       {ouvert && url && (

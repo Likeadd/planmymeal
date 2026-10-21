@@ -12,7 +12,6 @@
 
 import { useState } from 'react';
 import { X, Loader2, Check } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { NOTES_REPAS, type NoteRepas } from '@/lib/memoire';
@@ -29,7 +28,6 @@ export function MealNotation({
   onNoted?: (note: NoteRepas) => void;
 }) {
   const { user } = useAuth();
-  const reduceMotion = useReducedMotion();
 
   const [note, setNote] = useState<NoteRepas | null>(null);
   const [saving, setSaving] = useState(false);
@@ -78,13 +76,7 @@ export function MealNotation({
       role="dialog" aria-modal="true" aria-label="Noter ce repas">
       <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-xs" onClick={onClose} aria-hidden />
 
-      <motion.div
-        // `initial` identique au SSR (useReducedMotion vaut null côté serveur) :
-        // seul le durée change → pas d'hydration mismatch.
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-        className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
+      <div className="animate-sheet-in relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto">
 
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-gray-100 flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -109,16 +101,13 @@ export function MealNotation({
           {note == null && (
             <div className="grid gap-2">
               {NOTES_REPAS.map(({ value, emoji, label }, i) => (
-                <motion.button key={value}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.18, delay: reduceMotion ? 0 : i * 0.03 }}
+                <button key={value} style={{ animationDelay: `${i * 40}ms` }}
                   disabled={saving}
                   onClick={() => choisirNote(value)}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/40 transition-colors text-left disabled:opacity-50">
+                  className="animate-list-in flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/40 transition-colors text-left disabled:opacity-50">
                   <span className="text-xl" aria-hidden>{emoji}</span>
                   <span className="text-sm font-medium text-gray-800">{label}</span>
-                </motion.button>
+                </button>
               ))}
             </div>
           )}
@@ -151,7 +140,7 @@ export function MealNotation({
             </>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

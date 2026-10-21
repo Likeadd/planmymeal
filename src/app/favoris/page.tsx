@@ -4,7 +4,6 @@ import { errorMessage } from '@/lib/utils';
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
 import {
   Star, Clock, Flame, ChefHat as ChefIcon, Loader2, AlertTriangle,
   ArrowLeft, Plus, X, Check, Package, HeartOff,
@@ -54,7 +53,6 @@ export default function FavorisPage() {
   const [typeFilter, setTypeFilter] = useState<TypeRepas | 'tous'>('tous');
   const [sortKey, setSortKey] = useState<SortKey>('defaut');
   const [sortAsc, setSortAsc] = useState(true);
-  const reduceMotion = useReducedMotion();
 
   /** Clic sur un tri : si déjà actif, on inverse la direction */
   const handleSort = (key: SortKey) => {
@@ -294,11 +292,7 @@ export default function FavorisPage() {
           onClick={() => setAddModal(null)}>
           <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-xs" aria-hidden />
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
-            className="relative w-full sm:max-w-md bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto"
+          <div className="animate-sheet-in relative w-full sm:max-w-md bg-creme-50 rounded-t-3xl sm:rounded-3xl shadow-xl border border-gray-100 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-creme-50/95 backdrop-blur-sm px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between gap-3">
               <h3 className="font-display font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -372,7 +366,7 @@ export default function FavorisPage() {
               </button>
             </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </DashboardShell>

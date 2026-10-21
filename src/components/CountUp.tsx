@@ -9,7 +9,7 @@
 // ============================================================================
 
 import { useEffect, useRef, useState } from 'react';
-import { useInView, useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from '@/lib/useReducedMotion';
 
 interface CountUpProps {
   /** Valeur finale */
@@ -23,8 +23,18 @@ interface CountUpProps {
 
 export function CountUp({ value, duration = 1.1, format = v => String(v), className }: CountUpProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const [inView, setInView] = useState(false);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setInView(true); io.disconnect(); }
+    }, { rootMargin: '-40px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {

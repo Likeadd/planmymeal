@@ -447,6 +447,7 @@ export type Database = {
           instructions: string[]
           is_public: boolean
           lipides: number | null
+          classique: boolean
           macros_verifiables: boolean
           portions_par_defaut: number
           proteines: number | null
@@ -479,6 +480,7 @@ export type Database = {
           instructions?: string[]
           is_public?: boolean
           lipides?: number | null
+          classique?: boolean
           macros_verifiables?: boolean
           portions_par_defaut?: number
           proteines?: number | null
@@ -511,6 +513,7 @@ export type Database = {
           instructions?: string[]
           is_public?: boolean
           lipides?: number | null
+          classique?: boolean
           macros_verifiables?: boolean
           portions_par_defaut?: number
           proteines?: number | null

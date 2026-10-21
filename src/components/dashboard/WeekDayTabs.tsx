@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { BoutonDebloquer, CarteVerrouillee } from '@/components/dashboard/Verrou';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Loader2, Package, Check, Lock } from 'lucide-react';
 import type { DayPlan, RepasSlot } from '@/types';
@@ -23,11 +23,17 @@ import { FamilleBadges } from '@/components/dashboard/FamilleBadges';
 import { FamilleLegende } from '@/components/dashboard/FamilleLegende';
 import { useChangerCreneau, repasDuCreneau } from '@/components/dashboard/useChangerCreneau';
 
+export interface JourChoisi { semaine: string; jour: number }
+
 export function WeekDayTabs({
   days, semaineDebut, estSemaineCourante, mealStatuses, regeneratingSlots,
   onMarkStatus, onSwap, onRegenerate, onCustom, onVider, onToggleRestes, restesToggling, verrouilles,
+  jourChoisi, onChoisirJour,
 }: {
   days: DayPlan[];
+  /** Jour affiché choisi par l'utilisateur (null = aujourd'hui / lundi) */
+  jourChoisi: JourChoisi | null;
+  onChoisirJour: (j: JourChoisi) => void;
   /** Jours verrouillés (plan gratuit) : repas floutés */
   verrouilles?: Set<number>;
   /** Lundi de la semaine affichée (YYYY-MM-DD) */
@@ -45,7 +51,10 @@ export function WeekDayTabs({
   restesToggling: number | null;
 }) {
   const todayIndex = useTodayIndex();
-  const [selectedOverride, setSelectedOverride] = useState<number | null>(null);
+  // Jour choisi tenu par la page : un changement de repas recharge le planning et pouvait
+  // remonter ce composant, ce qui le ramenait au lundi.
+  const selectedOverride = jourChoisi?.semaine === semaineDebut ? jourChoisi.jour : null;
+  const setSelectedOverride = (jour: number) => onChoisirJour({ semaine: semaineDebut, jour });
   const selectedIndex = selectedOverride ?? (estSemaineCourante && todayIndex >= 0 ? todayIndex : 0);
   const { profile } = useAuth();
   const { ouvrir, element: changerElement } = useChangerCreneau(days, {

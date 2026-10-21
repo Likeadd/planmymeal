@@ -253,6 +253,10 @@ export function calculateMealScore(input: ScoreInput): number {
   const facteurNouveaute = nbApparitions === 0
     ? 1 + 0.4 * decouverte
     : 1 + 0.4 * (1 - decouverte);
+  // Plats simples du quotidien français (~300 sur ~8 500 plats) : ×80 en confort (≈ 3 repas
+  // sur 4), ×20 en équilibré (≈ 4 sur 10), ×5 en découverte (≈ 1 sur 6) — le tirage est
+  // proportionnel au score sur tout le catalogue.
+  const facteurClassique = meal.classique ? 5 * 16 ** (1 - decouverte) : 1;
 
   // ⭐ Frigo : boost plafonné à +35 %. Volontairement modeste — le frigo est un
   // signal, pas un objectif (on ne construit pas un menu juste pour le vider).
@@ -275,7 +279,7 @@ export function calculateMealScore(input: ScoreInput): number {
 
   return facteurAnciennete * facteurSaison * facteurPreference * facteurVariete
     * facteurConservation * facteurMemoire * facteurFrequence * facteurNouveaute
-    * facteurFrigo * facteurCompromis * facteurObjectifCalories;
+    * facteurFrigo * facteurCompromis * facteurObjectifCalories * facteurClassique;
 }
 
 // Déplacée dans lib/dates.ts (module neutre) pour que la mémoire alimentaire

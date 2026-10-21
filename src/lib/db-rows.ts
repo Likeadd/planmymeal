@@ -126,7 +126,7 @@ const COLONNES_INGREDIENTS_MOTEUR =
 
 /** Pool de candidats du moteur (voir `RecetteMoteur`) */
 export const COLONNES_RECETTE_MOTEUR =
-  `${COLONNES_CARTE}, type_repas, saison, cuisine, conservation_jours, ustensiles, portions_par_defaut, macros_verifiables, ${COLONNES_INGREDIENTS_MOTEUR}`;
+  `${COLONNES_CARTE}, type_repas, saison, cuisine, conservation_jours, ustensiles, portions_par_defaut, macros_verifiables, classique, ${COLONNES_INGREDIENTS_MOTEUR}`;
 
 /** Recettes rapides de `/api/vider-le-frigo` (voir `RecetteFrigo`) */
 export const COLONNES_RECETTE_FRIGO =
@@ -387,6 +387,7 @@ export interface RecetteMoteurEmbed extends CarteEmbedCommun {
   portions_par_defaut: number;
   /** Calibrée par le recalcul : voir `meals.macros_verifiables` */
   macros_verifiables: boolean;
+  classique?: boolean | null;
   meal_ingredients: MealIngredientMoteurEmbed[] | null;
 }
 
@@ -400,6 +401,7 @@ export function toRecetteMoteur(row: RecetteMoteurEmbed): RecetteMoteur {
     cuisine: row.cuisine,
     conservation_jours: row.conservation_jours,
     macros_verifiables: row.macros_verifiables,
+    classique: row.classique === true,
   };
 }
 

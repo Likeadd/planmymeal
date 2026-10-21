@@ -461,6 +461,8 @@ export interface RecetteMoteur extends RecettePlanning {
    * hasard un plat sur une donnée qu'il ne peut pas vérifier.
    */
   macros_verifiables: boolean;
+  /** Plat simple du quotidien français (lentilles-saucisses, steak frites…) : favorisé en mode confort */
+  classique?: boolean;
 }
 
 /**

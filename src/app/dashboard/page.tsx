@@ -26,7 +26,7 @@ import { WeekSkeleton } from '@/components/AppSkeleton';
 import { pushSemaine, replaceSemaine, useSemainePopstate } from '@/lib/useSemaineHistory';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { WeekColumns } from '@/components/dashboard/WeekColumns';
-import { WeekDayTabs } from '@/components/dashboard/WeekDayTabs';
+import { WeekDayTabs, type JourChoisi } from '@/components/dashboard/WeekDayTabs';
 import { FamilleLegende } from '@/components/dashboard/FamilleLegende';
 import { ShoppingListView } from '@/components/dashboard/ShoppingListView';
 import dynamic from 'next/dynamic';
@@ -137,6 +137,8 @@ function DashboardInner() {
     if (intention) ouvrirPaywall('intentions');
     else ouvrirPaywall('generation', lancer);
   }, [regenerate, profile?.plan]);
+  /** Jour affiché sur mobile : gardé ici pour survivre au rechargement du planning après un changement */
+  const [jourMobile, setJourMobile] = useState<JourChoisi | null>(null);
   /** Déplacement en cours (évite les doubles drops + feedback bouton) */
   const [moving, setMoving] = useState(false);
 
@@ -436,7 +438,8 @@ function DashboardInner() {
             <WeekDayTabs days={days} semaineDebut={semaineDebut} estSemaineCourante={estSemaineCourante} mealStatuses={mealStatuses} regeneratingSlots={regeneratingSlots}
               onMarkStatus={handleMarkStatus} onSwap={handleOpenSwap} onRegenerate={regenerateMeal}
               onCustom={setRepasLibre} onVider={viderCreneau}
-              onToggleRestes={toggleRestes} restesToggling={restesToggling} verrouilles={verrouilles} />
+              onToggleRestes={toggleRestes} restesToggling={restesToggling} verrouilles={verrouilles}
+              jourChoisi={jourMobile} onChoisirJour={setJourMobile} />
             </div>
           </>)}
 
